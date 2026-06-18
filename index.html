@@ -17,7 +17,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Keamanan V2.0</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Keamanan V2.0 Fast</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -109,7 +109,6 @@
                             </tr>
                         </thead>
                         <tbody id="tableRiwayatOwner" class="text-xs divide-y divide-gray-100">
-                            <!-- Data disuntik via JS -->
                             <tr><td colspan="4" class="p-4 text-center text-gray-400 font-semibold">Sedang menarik data dari satelit...</td></tr>
                         </tbody>
                     </table>
@@ -124,19 +123,12 @@
 
     <script>
         // =========================================================================
-        // PENGATURAN RADAR UTAMA (SUDAH DI-INJECT OTOMATIS OLEH AI)
+        // PENGATURAN RADAR UTAMA
         // =========================================================================
-        
-        // 1. KOORDINAT LATITUDE & LONGITUDE TOKO KING
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
-        
-        // 2. JARAK MAKSIMAL ABSEN UNTUK KARYAWAN TOKO (Dalam Meter)
         const RADIUS_MAKSIMAL = 50; 
-        
-        // 3. URL GOOGLE APPS SCRIPT
         const API_URL = "https://script.google.com/macros/s/AKfycbx2iy3JGtqLTbzDS5QlIkOj03Sls5UVe5f4fZyo_xnaZ4B8DE836F5ur39EMtNWLxEb/exec";
-
         // =========================================================================
 
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
@@ -150,7 +142,6 @@
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
 
-        // Saat Halaman Dibuka
         window.onload = () => {
             if (!deviceID) {
                 deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase();
@@ -164,7 +155,6 @@
                 bukaSistemKaryawan();
             }
             
-            // Jam Realtime
             setInterval(() => {
                 const now = new Date();
                 document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
@@ -205,7 +195,6 @@
             });
         }
 
-        // --- PINTU RAHASIA OWNER ---
         function loginOwner() {
             Swal.fire({
                 title: 'Akses Mastermind',
@@ -216,15 +205,12 @@
                 confirmButtonText: 'Masuk'
             }).then((res) => {
                 if (res.isConfirmed) {
-                    // SANDI MASTERMIND = Cidalung
                     if (res.value === 'Cidalung') {
-                        // Matikan mode Karyawan (Kamera & GPS biar ga berat)
                         document.getElementById('absenView').classList.add('hidden');
                         document.getElementById('setupView').classList.add('hidden');
                         if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); }
                         if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                         
-                        // Buka Layar Owner
                         document.getElementById('ownerView').classList.remove('hidden');
                         loadDataOwner();
                         Toast.fire({icon: 'success', title: 'Akses Diberikan!'});
@@ -240,7 +226,6 @@
             if (dataProfil) bukaSistemKaryawan(); else document.getElementById('setupView').classList.remove('hidden');
         }
 
-        // --- SISTEM TARIK DATA DARI GOOGLE SHEETS ---
         async function loadDataOwner() {
             const tbody = document.getElementById('tableRiwayatOwner');
             tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center"><i class="fas fa-circle-notch fa-spin text-emerald-500 text-2xl mb-2"></i><br><span class="text-xs text-gray-500">Menarik data dari satelit Google...</span></td></tr>`;
@@ -262,9 +247,8 @@
                         let colorJarak = t.jarak <= RADIUS_MAKSIMAL ? "text-green-600 font-bold" : "text-red-500 font-bold";
                         if (t.tipe === 'MOBILE') colorJarak = "text-gray-600 font-semibold";
 
-                        // Perbaiki format tanggal Google Sheets yang kadang ribet
                         let tgl = new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-                        if (tgl === "Invalid Date") tgl = t.waktu; // Fallback kalau formatnya sudah string
+                        if (tgl === "Invalid Date") tgl = t.waktu; 
 
                         html += `
                         <tr class="hover:bg-gray-50 border-b border-gray-100 transition">
@@ -302,7 +286,6 @@
             });
         }
 
-        // --- SISTEM KAMERA & GPS (MODE KARYAWAN) ---
         async function nyalakanKamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
@@ -349,22 +332,31 @@
             if (!currentLat || !currentLng) return Swal.fire('Tunggu Sebentar!', 'Sistem sedang melacak lokasi satelit Anda.', 'warning');
             if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) return Swal.fire('Akses Ditolak!', `Anda berada ${currentJarak} meter dari toko! Maksimal radius adalah ${RADIUS_MAKSIMAL} meter.`, 'error');
 
-            Swal.fire({ title: 'Memproses Absen...', html: 'Mengambil foto dan menyegel data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Memproses Absen...', html: 'Mengompresi data sat-set...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            kanvas.width = video.videoWidth; kanvas.height = video.videoHeight;
+            // KOMPRESI EKSTRIM FOTO (Max Lebar 400px agar super ringan & anti lag)
+            const MAX_WIDTH = 400;
+            const scale = MAX_WIDTH / video.videoWidth;
+            kanvas.width = MAX_WIDTH; 
+            kanvas.height = video.videoHeight * scale;
+
             ctx.translate(kanvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height);
             ctx.translate(kanvas.width, 0); ctx.scale(-1, 1); // Kembalikan koordinat
             
             const waktuSekarang = new Date().toLocaleString('id-ID');
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, kanvas.height - 90, kanvas.width, 90);
-            ctx.font = "bold 16px monospace";
-            ctx.fillStyle = "#10b981"; ctx.fillText(`KARYAWAN : ${dataProfil.nama} (${dataProfil.tipe})`, 10, kanvas.height - 65);
-            ctx.fillStyle = "#ffffff"; ctx.fillText(`STATUS   : ABSEN ${statusAbsen}`, 10, kanvas.height - 45);
-            ctx.fillText(`WAKTU    : ${waktuSekarang}`, 10, kanvas.height - 25);
-            ctx.fillStyle = "#facc15"; ctx.fillText(`GPS LOC  : ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 10, kanvas.height - 5);
+            
+            // Penyesuaian ukuran Font Watermark ke Kanvas Mini
+            ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, kanvas.height - 70, kanvas.width, 70);
+            ctx.font = "bold 11px monospace";
+            ctx.fillStyle = "#10b981"; ctx.fillText(`KARYAWAN: ${dataProfil.nama} (${dataProfil.tipe})`, 8, kanvas.height - 50);
+            ctx.fillStyle = "#ffffff"; ctx.fillText(`STATUS  : ABSEN ${statusAbsen}`, 8, kanvas.height - 35);
+            ctx.fillText(`WAKTU   : ${waktuSekarang}`, 8, kanvas.height - 20);
+            ctx.fillStyle = "#facc15"; ctx.fillText(`GPS LOC : ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
 
-            const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.8);
+            // SIMPAN JPEG DENGAN KUALITAS 60% (Bikin size jadi ~30KB saja!)
+            const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.6);
+            
             const payloadData = { waktu: waktuSekarang, nama: dataProfil.nama, tipe: dataProfil.tipe, status: statusAbsen, jarak: currentJarak, lat: currentLat, lng: currentLng, fotoBase64: fotoBase64, perangkat: deviceID };
 
             try {
