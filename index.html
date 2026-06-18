@@ -130,7 +130,7 @@
                         <div class="p-3 border-b bg-gray-50 font-bold text-gray-600 text-xs">Daftar Gembok Sandi & Gaji</div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left">
-                                <thead class="bg-gray-100 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-right">Aksi</th></tr></thead>
+                                <thead class="bg-gray-100 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-center">Aksi</th></tr></thead>
                                 <tbody id="tableKaryawanOwner" class="text-xs divide-y divide-gray-100"></tbody>
                             </table>
                         </div>
@@ -284,8 +284,6 @@
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
-            
-            // LOGIKA FIXED: MENAMPILKAN SEMUA NAMA KARYAWAN WALAUPUN BELUM PERNAH ABSEN
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
             if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan didaftarkan.</td></tr>`;
 
@@ -340,7 +338,7 @@
             tbody.innerHTML = bodyHtml;
         }
 
-        // --- DAFTAR KARYAWAN DENGAN SISTEM MATA REKAYASA (SENSORI) ---
+        // --- MANAJEMEN KARYAWAN (TOMBOL EDIT + SENSOR MATA) ---
         function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner');
             const cacheNama = localStorage.getItem('cache_nama_karyawan');
@@ -357,7 +355,7 @@
                             <span id="karGajiText-${idx}">••••••</span>
                             <button onclick="toggleKarView(${idx}, 'gaji')" class="ml-1 text-gray-400 focus:outline-none"><i class="fas fa-eye text-[10px]" id="karGajiIcon-${idx}"></i></button>
                         </td>
-                        <td class="p-2.5 text-right whitespace-nowrap">
+                        <td class="p-2.5 text-center whitespace-nowrap">
                             <button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}')" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-2 py-1 rounded text-xs transition mr-1" title="Edit Data"><i class="fas fa-edit"></i></button>
                             <button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-1 rounded text-xs transition" title="Hapus"><i class="fas fa-trash-alt"></i></button>
                         </td>
@@ -367,7 +365,6 @@
             }
         }
 
-        // SENSOR ALARM MATA
         window.toggleKarView = function(idx, type) {
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
             if (!cacheKaryawan[idx]) return;
@@ -378,12 +375,12 @@
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             } else if (type === 'gaji') {
                 const textEl = document.getElementById(`karGajiText-${idx}`); const iconEl = document.getElementById(`karGajiIcon-${idx}`);
-                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0) + "/hr"; iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
+                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0); iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             }
         };
 
-        // INTEGRASI BARU: PROSES POST + SILENT AUTO SYNC (ANTI LOADING DOUBLE)
+        // --- SISTEM SAT-SET TANPA DOUBLE LOADING ---
         async function tambahKaryawanAPI() {
             const nama = document.getElementById('addNama').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0;
             if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error');
@@ -394,9 +391,9 @@
                 const res = await response.json();
                 if(res.status === 'success') {
                     document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = '';
-                    await fetchAndCacheAll(); // Sinkronisasi di balik layar saat loading spinner yang sama masih berputar!
+                    await fetchAndCacheAll(); // Menyedot data di latar belakang
                     Swal.close();
-                    Toast.fire({ icon: 'success', title: 'Tersimpan & Sinkron!' });
+                    Toast.fire({ icon: 'success', title: 'Tersimpan!' });
                     switchTabOwner('karyawan');
                 }
             } catch(e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
