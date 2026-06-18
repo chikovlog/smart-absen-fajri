@@ -10,14 +10,12 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
-    <!-- HEADER DENGAN PINTU RAHASIA OWNER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
-            <!-- KLIK IKON SATELIT INI UNTUK MASUK MODE OWNER -->
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Keamanan V2.0 Fast</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Keamanan V2.1 Fast</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -26,10 +24,8 @@
         </div>
     </header>
 
-    <!-- KONTEN UTAMA -->
     <main class="flex-grow flex flex-col items-center p-3 md:p-4 w-full max-w-2xl mx-auto relative">
         
-        <!-- FORM SETUP PERANGKAT -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Aktivasi Radar</h2>
             <input type="text" id="inputNama" placeholder="Nama Lengkap Karyawan..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 mb-3 font-bold text-sm transition">
@@ -40,7 +36,6 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-lock mr-1"></i> Simpan & Kunci Perangkat</button>
         </div>
 
-        <!-- TAMPILAN ABSENSI (MODE KARYAWAN) -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 md:p-4 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -50,7 +45,6 @@
                 <div id="displayTipe" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold border border-blue-200 shadow-inner">TIPE</div>
             </div>
 
-            <!-- JENDELA KAMERA -->
             <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden shadow-lg border-4 border-gray-300 mb-3">
                 <video id="kamera" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
                 <div class="absolute inset-0 border-[3px] border-emerald-500 rounded-lg m-3 opacity-40 pointer-events-none"></div>
@@ -58,7 +52,6 @@
                     <i class="fas fa-crosshairs text-7xl text-emerald-500"></i>
                 </div>
                 
-                <!-- Indikator GPS Overlay -->
                 <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-md text-white p-2.5 rounded-lg text-[10px] flex flex-col gap-1 border border-gray-600/50">
                     <span id="liveJam" class="font-mono text-emerald-400 font-bold text-xs tracking-wider">Mencari Sinyal Waktu...</span>
                     <span id="liveGPS" class="font-mono text-gray-300">Menyelaraskan Satelit...</span>
@@ -66,13 +59,12 @@
                 </div>
             </div>
 
-            <!-- TOMBOL AKSI -->
             <div class="grid grid-cols-2 gap-3 w-full mb-3">
-                <button onclick="prosesAbsen('MASUK')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-blue-800">
-                    <i class="fas fa-sign-in-alt text-xl md:text-2xl"></i> <span class="text-xs">ABSEN MASUK</span>
+                <button id="btnMasuk" onclick="prosesAbsen('MASUK')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-blue-800">
+                    <i class="fas fa-sign-in-alt text-xl md:text-2xl"></i> <span id="labelMasuk" class="text-xs text-center leading-tight">ABSEN MASUK</span>
                 </button>
-                <button onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-red-800">
-                    <i class="fas fa-sign-out-alt text-xl md:text-2xl"></i> <span class="text-xs">ABSEN PULANG</span>
+                <button id="btnPulang" onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-red-800">
+                    <i class="fas fa-sign-out-alt text-xl md:text-2xl"></i> <span id="labelPulang" class="text-xs text-center leading-tight">ABSEN PULANG</span>
                 </button>
             </div>
             
@@ -81,9 +73,6 @@
             </button>
         </div>
 
-        <!-- ========================================== -->
-        <!-- PINTU RAHASIA: DASHBOARD OWNER -->
-        <!-- ========================================== -->
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -118,7 +107,6 @@
 
     </main>
 
-    <!-- KANVAS TERSEMBUNYI UNTUK WATERMARK FOTO -->
     <canvas id="kanvasFoto" class="hidden"></canvas>
 
     <script>
@@ -155,9 +143,32 @@
                 bukaSistemKaryawan();
             }
             
+            // MESIN WAKTU DAN DISIPLIN UI
             setInterval(() => {
                 const now = new Date();
                 document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+                
+                const jamSekarang = now.getHours();
+                
+                // Logika Tombol Masuk (Telat >= jam 8)
+                const labelMasuk = document.getElementById('labelMasuk');
+                if (jamSekarang >= 8) {
+                    labelMasuk.innerHTML = '<span class="text-red-300">MASUK<br>(TELAT)</span>';
+                } else {
+                    labelMasuk.innerHTML = 'ABSEN MASUK';
+                }
+
+                // Logika Tombol Pulang (Kunci sebelum jam 17)
+                const btnPulang = document.getElementById('btnPulang');
+                const labelPulang = document.getElementById('labelPulang');
+                if (jamSekarang < 17) {
+                    btnPulang.classList.add('opacity-50', 'grayscale');
+                    labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)';
+                } else {
+                    btnPulang.classList.remove('opacity-50', 'grayscale');
+                    labelPulang.innerHTML = 'ABSEN PULANG';
+                }
+
             }, 1000);
         };
 
@@ -244,6 +255,8 @@
                     let html = "";
                     data.forEach(t => {
                         let colorStatus = t.status.includes("MASUK") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
+                        if (t.status.includes("TELAT")) colorStatus = "text-red-600 bg-red-100"; // Warna spesial untuk yang telat
+                        
                         let colorJarak = t.jarak <= RADIUS_MAKSIMAL ? "text-green-600 font-bold" : "text-red-500 font-bold";
                         if (t.tipe === 'MOBILE') colorJarak = "text-gray-600 font-semibold";
 
@@ -329,12 +342,24 @@
         }
 
         async function prosesAbsen(statusAbsen) {
+            const now = new Date();
+            const jamSekarang = now.getHours();
+
+            // 1. VALIDASI DISIPLIN WAKTU
+            if (statusAbsen === 'PULANG' && jamSekarang < 17) {
+                return Swal.fire('Belum Waktunya!', 'Absen Pulang baru dibuka setelah jam 17:00 (5 Sore). Silakan kembali bekerja!', 'warning');
+            }
+            if (statusAbsen === 'MASUK' && jamSekarang >= 8) {
+                statusAbsen = 'MASUK (TELAT)';
+            }
+
+            // 2. VALIDASI LOKASI GPS
             if (!currentLat || !currentLng) return Swal.fire('Tunggu Sebentar!', 'Sistem sedang melacak lokasi satelit Anda.', 'warning');
             if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) return Swal.fire('Akses Ditolak!', `Anda berada ${currentJarak} meter dari toko! Maksimal radius adalah ${RADIUS_MAKSIMAL} meter.`, 'error');
 
             Swal.fire({ title: 'Memproses Absen...', html: 'Mengompresi data sat-set...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // KOMPRESI EKSTRIM FOTO (Max Lebar 400px agar super ringan & anti lag)
+            // 3. AMBIL FOTO & KOMPRESI
             const MAX_WIDTH = 400;
             const scale = MAX_WIDTH / video.videoWidth;
             kanvas.width = MAX_WIDTH; 
@@ -342,21 +367,29 @@
 
             ctx.translate(kanvas.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height);
-            ctx.translate(kanvas.width, 0); ctx.scale(-1, 1); // Kembalikan koordinat
+            ctx.translate(kanvas.width, 0); ctx.scale(-1, 1); 
             
-            const waktuSekarang = new Date().toLocaleString('id-ID');
+            const waktuSekarang = now.toLocaleString('id-ID');
             
-            // Penyesuaian ukuran Font Watermark ke Kanvas Mini
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, kanvas.height - 70, kanvas.width, 70);
             ctx.font = "bold 11px monospace";
             ctx.fillStyle = "#10b981"; ctx.fillText(`KARYAWAN: ${dataProfil.nama} (${dataProfil.tipe})`, 8, kanvas.height - 50);
-            ctx.fillStyle = "#ffffff"; ctx.fillText(`STATUS  : ABSEN ${statusAbsen}`, 8, kanvas.height - 35);
+            
+            // Warna teks status di foto ngikutin kalau telat
+            if (statusAbsen === 'MASUK (TELAT)') {
+                ctx.fillStyle = "#ef4444"; // Merah
+            } else {
+                ctx.fillStyle = "#ffffff"; // Putih
+            }
+            ctx.fillText(`STATUS  : ABSEN ${statusAbsen}`, 8, kanvas.height - 35);
+            
+            ctx.fillStyle = "#ffffff";
             ctx.fillText(`WAKTU   : ${waktuSekarang}`, 8, kanvas.height - 20);
             ctx.fillStyle = "#facc15"; ctx.fillText(`GPS LOC : ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
 
-            // SIMPAN JPEG DENGAN KUALITAS 60% (Bikin size jadi ~30KB saja!)
             const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.6);
             
+            // 4. KIRIM KE CLOUD
             const payloadData = { waktu: waktuSekarang, nama: dataProfil.nama, tipe: dataProfil.tipe, status: statusAbsen, jarak: currentJarak, lat: currentLat, lng: currentLng, fotoBase64: fotoBase64, perangkat: deviceID };
 
             try {
