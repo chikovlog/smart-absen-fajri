@@ -15,13 +15,12 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
-    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem HRD V2.7</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem HRD V2.8</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -32,7 +31,6 @@
 
     <main class="flex-grow flex flex-col items-center p-3 md:p-4 w-full max-w-2xl mx-auto relative">
         
-        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -45,7 +43,6 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
-        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 md:p-4 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -73,9 +70,6 @@
             <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
         </div>
 
-        <!-- ========================================== -->
-        <!-- DASHBOARD OWNER -->
-        <!-- ========================================== -->
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -94,7 +88,6 @@
                 <button onclick="switchTabOwner('karyawan')" id="tabBtn-karyawan" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">👥 Kelola Pasukan</button>
             </div>
 
-            <!-- PANEL 1: LOG -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left min-w-[500px]">
@@ -104,7 +97,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS & PAYROLL -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm">Buku Matriks & Gaji</span>
@@ -124,7 +116,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -158,7 +149,6 @@
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
-        // LINK API TERBARU DARI KING SUDAH DITANAM PERMANEN DI SINI!
         const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
         // =========================================================================
 
@@ -231,7 +221,7 @@
                     document.getElementById('absenView').classList.add('hidden'); document.getElementById('setupView').classList.add('hidden');
                     if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                     document.getElementById('ownerView').classList.remove('hidden');
-                    refreshSemuaDataInitial(); 
+                    refreshSemuaDataSilent(); 
                 } else if(res.isConfirmed) { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
             });
         }
@@ -243,29 +233,21 @@
             if(tab === 'monitoring') renderTabelHarian(); if(tab === 'rekap') renderMatriks(); if(tab === 'karyawan') loadDataKaryawanOwner();
         }
 
-        // --- SISTEM SINGKRON SAT-SET 1 LOADING POPUP ---
-        async function refreshSemuaDataInitial() {
-            Swal.fire({ title: 'Menyinkronkan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            await fetchAndCacheAll();
-            Swal.close();
-            switchTabOwner('monitoring');
-        }
-
         async function refreshSemuaDataSilent() {
-            await fetchAndCacheAll();
-            if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
-            if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
-            if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
-            Toast.fire({ icon: 'success', title: 'Terupdate!' });
-        }
-
-        async function fetchAndCacheAll() {
+            Swal.fire({ title: 'Menyinkronkan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const response = await fetch(API_URL + "?action=get_riwayat"); const result = await response.json();
                 if (result.status === "success") cacheRiwayatGlobal = result.data;
                 const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
                 if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
-            } catch (e) { console.error(e); }
+                
+                if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
+                if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
+                if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
+                
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Terupdate!' });
+            } catch (e) { Swal.fire('Error', 'Gagal tarik data!', 'error'); }
         }
 
         function renderTabelHarian() {
@@ -294,7 +276,6 @@
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
-            
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
             if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan didaftarkan.</td></tr>`;
 
@@ -362,7 +343,7 @@
                             <span id="karPassText-${idx}">••••••</span>
                             <button onclick="toggleKarView(${idx}, 'pass')" class="ml-1 text-gray-400 focus:outline-none"><i class="fas fa-eye text-[10px]" id="karPassIcon-${idx}"></i></button>
                         </td>
-                        <td class="p-2.5 text-right text-blue-600 font-bold text-[10px]">
+                        <td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">
                             <span id="karGajiText-${idx}">••••••</span>
                             <button onclick="toggleKarView(${idx}, 'gaji')" class="ml-1 text-gray-400 focus:outline-none"><i class="fas fa-eye text-[10px]" id="karGajiIcon-${idx}"></i></button>
                         </td>
@@ -386,7 +367,7 @@
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             } else if (type === 'gaji') {
                 const textEl = document.getElementById(`karGajiText-${idx}`); const iconEl = document.getElementById(`karGajiIcon-${idx}`);
-                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0) + "/hr"; iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
+                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0); iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             }
         };
@@ -401,12 +382,15 @@
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji }) });
                 const res = await response.json();
                 if(res.status === 'success') {
+                    // SINKRONISASI LATAR BELAKANG (SAT-SET 1 POPUP)
+                    const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
+                    if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                    
                     document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = '';
-                    await fetchAndCacheAll(); // Menyedot data di latar belakang
                     Swal.close();
-                    Toast.fire({ icon: 'success', title: 'Tersimpan!' });
-                    switchTabOwner('karyawan');
-                }
+                    Toast.fire({ icon: 'success', title: 'Tersimpan & Sinkron!' });
+                    loadDataKaryawanOwner(); // Render ulang tabel langsung
+                } else { Swal.fire('Error', res.message, 'error'); }
             } catch(e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
         }
 
@@ -419,16 +403,19 @@
             });
 
             if (formValues) {
-                Swal.fire({ title: 'Memproses Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                Swal.fire({ title: 'Menyimpan Perubahan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 try {
                     const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit_karyawan", nama: nama, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }) });
                     const res = await response.json();
                     if (res.status === 'success') {
-                        await fetchAndCacheAll(); 
+                        // SINKRONISASI LATAR BELAKANG
+                        const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
+                        if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                        
                         Swal.close();
                         Toast.fire({ icon: 'success', title: 'Data Diperbarui!' });
-                        switchTabOwner('karyawan');
-                    }
+                        loadDataKaryawanOwner(); 
+                    } else { Swal.fire('Error', res.message, 'error'); }
                 } catch (e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
             }
         }
@@ -436,16 +423,19 @@
         async function hapusKaryawanAPI(nama) {
             Swal.fire({ title: 'Hapus Karyawan?', text: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({ title: 'Memproses Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    Swal.fire({ title: 'Menghapus Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     try {
                         const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) });
                         const res = await response.json();
                         if(res.status === 'success') { 
-                            await fetchAndCacheAll(); 
+                            // SINKRONISASI LATAR BELAKANG
+                            const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
+                            if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                            
                             Swal.close();
                             Toast.fire({ icon: 'success', title: 'Dihapus!' }); 
-                            switchTabOwner('karyawan');
-                        }
+                            loadDataKaryawanOwner();
+                        } else { Swal.fire('Error', res.message, 'error'); }
                     } catch(e) { Swal.fire('Error', 'Gagal', 'error'); }
                 }
             });
