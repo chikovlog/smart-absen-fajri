@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        .scrollbar-thin::-webkit-scrollbar { height: 5px; }
+        .scrollbar-thin::-webkit-scrollbar { height: 6px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
     </style>
@@ -20,7 +20,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem HRD V2.4 (Ultra Fast)</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Payroll V2.5</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -33,15 +33,12 @@
         
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Aktivasi Radar HP</h2>
-            
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
             <select id="inputNama" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 mb-4 text-sm font-black text-gray-700 transition">
                 <option value="" disabled selected>-- Memuat Daftar... --</option>
             </select>
-            
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Masukkan Password Kunci:</label>
             <input type="password" id="inputPassword" placeholder="Sandi dari Owner..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 mb-5 font-mono text-center text-base tracking-widest transition">
-            
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Verifikasi & Kunci HP</button>
         </div>
 
@@ -57,25 +54,19 @@
             <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden shadow-lg border-4 border-gray-300 mb-3">
                 <video id="kamera" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
                 <div class="absolute inset-0 border-[3px] border-emerald-500 rounded-lg m-3 opacity-40 pointer-events-none"></div>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20"><i class="fas fa-crosshairs text-7xl text-emerald-500"></i></div>
                 <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-md text-white p-2.5 rounded-lg text-[10px] flex flex-col gap-1 border border-gray-600/50">
-                    <span id="liveJam" class="font-mono text-emerald-400 font-bold text-xs tracking-wider">Mencari Sinyal Waktu...</span>
+                    <span id="liveJam" class="font-mono text-emerald-400 font-bold text-xs tracking-wider">Mencari Sinyal...</span>
                     <span id="liveGPS" class="font-mono text-gray-300">Menyelaraskan Satelit...</span>
                     <span id="liveJarak" class="font-mono font-bold text-yellow-400">Jarak Radar: - Meter</span>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 w-full mb-3">
-                <button id="btnMasuk" onclick="prosesAbsen('MASUK')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-blue-800">
-                    <i class="fas fa-sign-in-alt text-xl md:text-2xl"></i> <span id="labelMasuk" class="text-xs text-center leading-tight">ABSEN MASUK</span>
-                </button>
-                <button id="btnPulang" onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-red-800">
-                    <i class="fas fa-sign-out-alt text-xl md:text-2xl"></i> <span id="labelPulang" class="text-xs text-center leading-tight">ABSEN PULANG</span>
-                </button>
+                <button id="btnMasuk" onclick="prosesAbsen('MASUK')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-blue-800"><i class="fas fa-sign-in-alt text-xl md:text-2xl"></i> <span id="labelMasuk" class="text-xs text-center leading-tight">ABSEN MASUK</span></button>
+                <button id="btnPulang" onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1.5 active:scale-95 border-b-4 border-red-800"><i class="fas fa-sign-out-alt text-xl md:text-2xl"></i> <span id="labelPulang" class="text-xs text-center leading-tight">ABSEN PULANG</span></button>
             </div>
-            
-            <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm">
-                <i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI
-            </button>
+            <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
         </div>
 
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
@@ -85,56 +76,37 @@
                     <p class="text-[10px] text-emerald-200 font-semibold">Live Monitor (Cached)</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="refreshDataOwner(true)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-blue-400" title="Tarik Data Satelit Baru"><i class="fas fa-sync-alt"></i></button>
+                    <button onclick="refreshSemuaData(true)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-blue-400" title="Tarik Data Baru"><i class="fas fa-sync-alt"></i></button>
                     <button onclick="tutupOwnerView()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-red-400">Tutup</button>
                 </div>
             </div>
 
             <div class="flex bg-gray-200 p-1 rounded-lg gap-1">
                 <button onclick="switchTabOwner('monitoring')" id="tabBtn-monitoring" class="flex-1 py-2 rounded-md text-[11px] font-bold transition shadow-sm bg-white text-emerald-700">🔍 Log Harian</button>
-                <button onclick="switchTabOwner('rekap')" id="tabBtn-rekap" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">📅 Rekap Bulanan</button>
+                <button onclick="switchTabOwner('rekap')" id="tabBtn-rekap" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">📅 Rekap & Gaji</button>
                 <button onclick="switchTabOwner('karyawan')" id="tabBtn-karyawan" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">👥 Kelola Pasukan</button>
             </div>
 
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left min-w-[500px]">
-                        <thead>
-                            <tr class="bg-gray-100 text-[10px] uppercase text-gray-500 whitespace-nowrap border-b">
-                                <th class="p-3 font-bold">Waktu & Nama</th>
-                                <th class="p-3 font-bold text-center">Status</th>
-                                <th class="p-3 font-bold">Jarak</th>
-                                <th class="p-3 font-bold text-center">Intelijen (Bukti)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableRiwayatOwner" class="text-xs divide-y divide-gray-100">
-                            <tr><td colspan="4" class="p-4 text-center text-gray-400 font-semibold"><i class="fas fa-spinner fa-spin mr-1"></i> Sedang menarik data satelit...</td></tr>
-                        </tbody>
+                        <thead><tr class="bg-gray-100 text-[10px] uppercase text-gray-500 whitespace-nowrap border-b"><th class="p-3 font-bold">Waktu & Nama</th><th class="p-3 font-bold text-center">Status</th><th class="p-3 font-bold">Jarak</th><th class="p-3 font-bold text-center">Intelijen (Bukti)</th></tr></thead>
+                        <tbody id="tableRiwayatOwner" class="text-xs divide-y divide-gray-100"><tr><td colspan="4" class="p-4 text-center text-gray-400 font-semibold"><i class="fas fa-spinner fa-spin mr-1"></i> Sedang menarik data satelit...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
-                    <span class="font-bold text-gray-600 text-sm">Buku Matriks Bulanan</span>
+                    <span class="font-bold text-gray-600 text-sm">Buku Matriks & Gaji</span>
                     <div class="flex gap-1 items-center">
-                        <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-xs border rounded font-bold text-gray-700 bg-white outline-none">
-                            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-                        </select>
-                        <select id="rekapTahun" onchange="renderMatriks()" class="p-1.5 text-xs border rounded font-bold text-gray-700 bg-white outline-none">
-                            <option value="2026" selected>2026</option><option value="2027">2027</option>
-                        </select>
+                        <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-xs border rounded font-bold text-gray-700 bg-white outline-none"><option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option></select>
+                        <select id="rekapTahun" onchange="renderMatriks()" class="p-1.5 text-xs border rounded font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
                     </div>
                 </div>
-                
                 <div class="p-2 bg-gray-50 border-b border-gray-100 text-[9px] md:text-[10px] flex gap-2.5 text-gray-500 font-bold flex-wrap shadow-inner">
-                    <span>Simbol:</span>
-                    <span class="text-green-600">✔️ Tepat Waktu</span>
-                    <span class="text-red-500">⚠️ Telat</span>
-                    <span class="text-blue-500">🏍️ Kunjungan</span>
-                    <span class="text-gray-300">. Alpa/Kosong</span>
+                    <span>Simbol:</span> <span class="text-green-600">✔️ Hadir</span> <span class="text-red-500">⚠️ Telat</span> <span class="text-blue-500">🏍️ Kunjungan</span> <span class="text-gray-300">. Alpa</span>
                 </div>
-
                 <div class="overflow-x-auto w-full scrollbar-thin">
                     <table class="w-full text-left border-collapse min-w-max">
                         <thead><tr id="headerRekapBulanan" class="bg-gray-100 text-[10px] text-gray-500 border-b"></tr></thead>
@@ -148,20 +120,16 @@
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
                         <h3 class="font-black text-xs uppercase tracking-wide text-gray-400"><i class="fas fa-user-plus text-emerald-500"></i> Daftarkan Anggota</h3>
                         <input type="text" id="addNama" placeholder="Nama Lengkap..." class="p-2 text-xs border rounded bg-gray-50 outline-none focus:border-emerald-500 font-bold uppercase">
-                        <select id="addTipe" class="p-2 text-xs border rounded bg-gray-50 outline-none focus:border-emerald-500 font-bold text-gray-600">
-                            <option value="TETAP">🏠 Pasukan Toko (TETAP)</option>
-                            <option value="MOBILE">🏍️ Pasukan Lapangan (MOBILE)</option>
-                        </select>
+                        <select id="addTipe" class="p-2 text-xs border rounded bg-gray-50 outline-none focus:border-emerald-500 font-bold text-gray-600"><option value="TETAP">🏠 Pasukan Toko (TETAP)</option><option value="MOBILE">🏍️ Pasukan Lapangan (MOBILE)</option></select>
                         <input type="text" id="addPassword" placeholder="Sandi Rahasia..." class="p-2 text-xs border rounded bg-gray-50 outline-none focus:border-emerald-500 font-mono text-center font-bold">
-                        <button onclick="tambahKaryawanAPI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition shadow"><i class="fas fa-plus"></i> Masukkan Excel</button>
+                        <input type="number" id="addGaji" placeholder="Gaji Per Hari (Rp)..." class="p-2 text-xs border rounded bg-gray-50 outline-none focus:border-emerald-500 font-bold text-blue-600 text-center">
+                        <button onclick="tambahKaryawanAPI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition shadow"><i class="fas fa-plus"></i> Simpan ke Excel</button>
                     </div>
                     <div class="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div class="p-3 border-b bg-gray-50 font-bold text-gray-600 text-xs">Daftar Gembok Sandi Karyawan</div>
+                        <div class="p-3 border-b bg-gray-50 font-bold text-gray-600 text-xs">Daftar Gembok Sandi & Gaji</div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left">
-                                <thead class="bg-gray-100 text-[9px] text-gray-400 uppercase">
-                                    <tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Aksi</th></tr>
-                                </thead>
+                                <thead class="bg-gray-100 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-right">Aksi</th></tr></thead>
                                 <tbody id="tableKaryawanOwner" class="text-xs divide-y divide-gray-100"></tbody>
                             </table>
                         </div>
@@ -177,8 +145,6 @@
 
     <script>
         // =========================================================================
-        // PENGATURAN RADAR UTAMA 
-        // =========================================================================
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
@@ -188,251 +154,154 @@
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
         let deviceID = localStorage.getItem('device_id_fajri');
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
-        
-        // SISTEM CACHE MEMORY (Anti Lag)
         let cacheRiwayatGlobal = null;
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
+        const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
         window.onload = () => {
-            if (!deviceID) {
-                deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase();
-                localStorage.setItem('device_id_fajri', deviceID);
-            }
+            if (!deviceID) { deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase(); localStorage.setItem('device_id_fajri', deviceID); }
             document.getElementById('labelPerangkat').innerText = "Dev: " + deviceID.substring(0,8);
-
-            if (!dataProfil) {
-                document.getElementById('setupView').classList.remove('hidden');
-                loadDropdownKaryawan(); 
-            } else {
-                bukaSistemKaryawan();
-            }
+            if (!dataProfil) { document.getElementById('setupView').classList.remove('hidden'); loadDropdownKaryawan(); } else { bukaSistemKaryawan(); }
             
             setInterval(() => {
-                const now = new Date();
-                document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+                const now = new Date(); document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
                 const jamSekarang = now.getHours();
-                
                 const labelMasuk = document.getElementById('labelMasuk');
-                if(labelMasuk) {
-                    if (jamSekarang >= 8) labelMasuk.innerHTML = '<span class="text-red-300">MASUK<br>(TELAT)</span>';
-                    else labelMasuk.innerHTML = 'ABSEN MASUK';
-                }
-
-                const btnPulang = document.getElementById('btnPulang');
-                const labelPulang = document.getElementById('labelPulang');
-                if(btnPulang && labelPulang) {
-                    if (jamSekarang < 17) {
-                        btnPulang.classList.add('opacity-50', 'grayscale');
-                        labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)';
-                    } else {
-                        btnPulang.classList.remove('opacity-50', 'grayscale');
-                        labelPulang.innerHTML = 'ABSEN PULANG';
-                    }
-                }
+                if(labelMasuk) { if (jamSekarang >= 8) labelMasuk.innerHTML = '<span class="text-red-300">MASUK<br>(TELAT)</span>'; else labelMasuk.innerHTML = 'ABSEN MASUK'; }
+                const btnPulang = document.getElementById('btnPulang'); const labelPulang = document.getElementById('labelPulang');
+                if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'ABSEN PULANG'; } }
             }, 1000);
         };
 
-        // BACA DROPDOWN DARI CACHE BIAR INSTAN (Anti Mutar-Mutar)
         async function loadDropdownKaryawan() {
             const dropdown = document.getElementById('inputNama');
-            
-            // 1. Tampilkan dari memori HP dulu (Instan)
             const cacheNama = localStorage.getItem('cache_nama_karyawan');
-            if (cacheNama) {
-                renderDropdown(JSON.parse(cacheNama));
-            }
-
-            // 2. Cek update terbaru diam-diam dari satelit (Background Sync)
+            if (cacheNama) renderDropdown(JSON.parse(cacheNama));
             try {
-                const response = await fetch(API_URL + "?action=get_karyawan");
-                const result = await response.json();
-                if (result.status === "success") {
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data));
-                    renderDropdown(result.data);
-                }
-            } catch (e) { console.log('Sinkronisasi background gagal.'); }
+                const response = await fetch(API_URL + "?action=get_karyawan"); const result = await response.json();
+                if (result.status === "success") { localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data)); renderDropdown(result.data); }
+            } catch (e) { }
         }
 
         function renderDropdown(dataList) {
-            const dropdown = document.getElementById('inputNama');
-            let html = '<option value="" disabled selected>-- Pilih Nama Anda --</option>';
-            dataList.forEach(k => { html += `<option value="${k.nama}">${k.nama}</option>`; });
-            dropdown.innerHTML = html;
+            const dropdown = document.getElementById('inputNama'); let html = '<option value="" disabled selected>-- Pilih Nama Anda --</option>';
+            dataList.forEach(k => { html += `<option value="${k.nama}">${k.nama}</option>`; }); dropdown.innerHTML = html;
         }
 
         async function simpanProfil() {
-            const nama = document.getElementById('inputNama').value;
-            const password = document.getElementById('inputPassword').value.trim();
-            if (!nama) return Swal.fire('Error', 'Pilih nama Anda!', 'error');
-            if (!password) return Swal.fire('Error', 'Masukkan password gembok!', 'error');
-            
+            const nama = document.getElementById('inputNama').value; const password = document.getElementById('inputPassword').value.trim();
+            if (!nama) return Swal.fire('Error', 'Pilih nama Anda!', 'error'); if (!password) return Swal.fire('Error', 'Masukkan password gembok!', 'error');
             Swal.fire({ title: 'Menghubungkan Satelit...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "verifikasi_karyawan", nama: nama, password: password }) });
                 const result = await response.json();
                 if (result.status === "success") {
-                    dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe };
-                    localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
-                    Swal.fire({ icon: 'success', title: 'HP Berhasil Dikunci!', text: 'Selamat bertugas, ' + dataProfil.nama, showConfirmButton: false, timer: 1500 })
-                    .then(() => { document.getElementById('setupView').classList.add('hidden'); bukaSistemKaryawan(); });
+                    dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe }; localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => { document.getElementById('setupView').classList.add('hidden'); bukaSistemKaryawan(); });
                 } else { Swal.fire('Akses Gagal', result.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Gagal verifikasi internet terputus!', 'error'); }
         }
 
         function bukaSistemKaryawan() {
-            document.getElementById('absenView').classList.remove('hidden');
-            document.getElementById('btnLogout').classList.remove('hidden');
-            document.getElementById('displayNama').innerText = dataProfil.nama;
-            document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
+            document.getElementById('absenView').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
+            document.getElementById('displayNama').innerText = dataProfil.nama; document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
         }
 
-        function logoutKaryawan() {
-            Swal.fire({ title: 'Lepas Gembok HP?', text: 'Hanya lakukan jika HP ini mau ganti orang.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', confirmButtonColor: '#d33' }).then((res) => {
-                if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); }
-            });
-        }
+        function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
 
-        // --- DASHBOARD OWNER DENGAN SISTEM CACHE ---
         function loginOwner() {
-            Swal.fire({ title: 'Akses Mastermind', input: 'password', inputPlaceholder: 'Masukkan sandi...', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Masuk' }).then((res) => {
-                if (res.isConfirmed) {
-                    if (res.value === 'Cidalung') {
-                        document.getElementById('absenView').classList.add('hidden');
-                        document.getElementById('setupView').classList.add('hidden');
-                        if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); }
-                        if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
-                        document.getElementById('ownerView').classList.remove('hidden');
-                        
-                        refreshDataOwner(false); // Ambil data satelit sekali pas buka
-                    } else { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
-                }
+            Swal.fire({ title: 'Akses Mastermind', input: 'password', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Masuk' }).then((res) => {
+                if (res.isConfirmed && res.value === 'Cidalung') {
+                    document.getElementById('absenView').classList.add('hidden'); document.getElementById('setupView').classList.add('hidden');
+                    if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
+                    document.getElementById('ownerView').classList.remove('hidden');
+                    refreshSemuaData(false); 
+                } else if(res.isConfirmed) { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
             });
         }
-
         function tutupOwnerView() { document.getElementById('ownerView').classList.add('hidden'); if (dataProfil) bukaSistemKaryawan(); else window.location.reload(); }
 
         function switchTabOwner(tab) {
-            document.getElementById('panel-monitoring').classList.add('hidden');
-            document.getElementById('panel-karyawan').classList.add('hidden');
-            document.getElementById('panel-rekap').classList.add('hidden');
-            
-            document.getElementById('tabBtn-monitoring').className = "flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300";
-            document.getElementById('tabBtn-karyawan').className = "flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300";
-            document.getElementById('tabBtn-rekap').className = "flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300";
-            
-            document.getElementById('panel-' + tab).classList.remove('hidden');
-            document.getElementById('tabBtn-' + tab).className = "flex-1 py-2 rounded-md text-[11px] font-bold transition shadow-sm bg-white text-emerald-700";
-            
-            // JIKA PINDAH TAB, RENDER PAKAI CACHE SAJA (Instan 0 Detik)
-            if(tab === 'monitoring') renderTabelHarian();
-            if(tab === 'rekap') renderMatriks();
-            if(tab === 'karyawan') loadDataKaryawanOwner();
+            ['monitoring', 'karyawan', 'rekap'].forEach(t => { document.getElementById('panel-'+t).classList.add('hidden'); document.getElementById('tabBtn-'+t).className = "flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300"; });
+            document.getElementById('panel-' + tab).classList.remove('hidden'); document.getElementById('tabBtn-' + tab).className = "flex-1 py-2 rounded-md text-[11px] font-bold transition shadow-sm bg-white text-emerald-700";
+            if(tab === 'monitoring') renderTabelHarian(); if(tab === 'rekap') renderMatriks(); if(tab === 'karyawan') loadDataKaryawanOwner();
         }
 
-        // FUNGSI TARIK DATA DARI SATELIT (CUMA DIPANGGIL PAS KLIK REFRESH)
-        async function refreshDataOwner(isAuto = false) {
-            if (!isAuto) Swal.fire({ title: 'Menyinkronkan Satelit...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            const tbody = document.getElementById('tableRiwayatOwner');
-            if (isAuto && !cacheRiwayatGlobal) tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-gray-400"><i class="fas fa-spinner fa-spin mr-1"></i> Menyedot data satelit...</td></tr>`;
-            
+        async function refreshSemuaData(isManual = false) {
+            if(isManual) Swal.fire({ title: 'Menyinkronkan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const response = await fetch(API_URL + "?action=get_riwayat");
-                const result = await response.json();
+                const response = await fetch(API_URL + "?action=get_riwayat"); const result = await response.json();
                 if (result.status === "success") {
-                    cacheRiwayatGlobal = result.data; // SIMPAN DI RAM
-                    
-                    if (!isAuto) Toast.fire({ icon: 'success', title: 'Data Terupdate!' });
-                    
-                    // Render ulang tab yang sedang aktif
-                    if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
-                    if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
+                    cacheRiwayatGlobal = result.data;
+                    const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
+                    if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                    if(isManual) Toast.fire({ icon: 'success', title: 'Terupdate!' });
+                    switchTabOwner('monitoring');
                 }
-            } catch (e) { 
-                if (!isAuto) Swal.fire('Error', 'Gagal tarik data dari satelit!', 'error'); 
-            }
+            } catch (e) { if(isManual) Swal.fire('Error', 'Gagal tarik data!', 'error'); }
         }
 
-        // RENDER LOG HARIAN (MURNI DARI CACHE)
         function renderTabelHarian() {
-            const tbody = document.getElementById('tableRiwayatOwner');
-            if (!cacheRiwayatGlobal) return;
-            
-            if (cacheRiwayatGlobal.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 text-xs italic">Belum ada data absensi.</td></tr>`;
-                return;
-            }
-
+            const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
+            if (cacheRiwayatGlobal.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 text-xs italic">Belum ada absen.</td></tr>`;
             let html = "";
             cacheRiwayatGlobal.forEach(t => {
                 let colorStatus = t.status.includes("MASUK") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
                 if (t.status.includes("TELAT")) colorStatus = "text-red-600 bg-red-100 border-red-300";
                 let colorJarak = t.jarak <= RADIUS_MAKSIMAL ? "text-green-600 font-bold" : "text-red-500 font-bold";
                 if (t.tipe === 'MOBILE') colorJarak = "text-gray-600 font-semibold";
-                let tgl = new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-                if (tgl === "Invalid Date") tgl = t.waktu;
-                
+                let tgl = new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }); if (tgl === "Invalid Date") tgl = t.waktu;
                 html += `<tr class="hover:bg-gray-50 border-b transition"><td class="p-3"><div class="font-bold text-gray-800">${t.nama}</div><div class="text-[9px] text-gray-400"><i class="fas fa-clock text-emerald-500"></i> ${tgl}</div><div class="text-[8px] bg-gray-200 text-gray-600 px-1 py-0.5 rounded inline-block mt-0.5">${t.tipe}</div></td><td class="p-3 text-center"><span class="${colorStatus} px-2 py-1 rounded-md text-[10px] font-black border tracking-wider">${t.status}</span></td><td class="p-3 text-xs ${colorJarak}">${t.jarak} M</td><td class="p-3 text-center space-x-1"><button onclick="bukaFoto('${t.foto}')" class="bg-emerald-100 text-emerald-700 px-2 py-1.5 rounded text-xs"><i class="fas fa-camera"></i></button> <a href="${t.maps}" target="_blank" class="bg-blue-100 text-blue-700 px-2 py-1.5 rounded text-xs inline-block"><i class="fas fa-map-marker-alt"></i></a></td></tr>`;
-            });
-            tbody.innerHTML = html;
+            }); tbody.innerHTML = html;
         }
 
-        // RENDER MATRIKS BULANAN (MURNI DARI CACHE)
+        // ===============================================================
+        // FUNGSI MATRIKS + PENGHITUNGAN GAJI
+        // ===============================================================
         function renderMatriks() {
             if (!cacheRiwayatGlobal) return;
-            
             const selectBulan = parseInt(document.getElementById('rekapBulan').value);
             const selectTahun = parseInt(document.getElementById('rekapTahun').value);
             const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate(); 
             
             const theadRow = document.getElementById('headerRekapBulanan');
             let headerHtml = `<th class="p-3 font-black bg-gray-100 border-r text-gray-700 sticky left-0 z-20 text-xs min-w-[90px]">Nama</th>`;
-            for (let i = 1; i <= jumlahHari; i++) {
-                headerHtml += `<th class="p-1.5 text-center font-bold text-[10px] border-r min-w-[32px]">${i}</th>`;
-            }
+            for (let i = 1; i <= jumlahHari; i++) { headerHtml += `<th class="p-1.5 text-center font-bold text-[10px] border-r min-w-[32px]">${i}</th>`; }
+            // TAMBAHAN HEADER TOTAL GAJI
+            headerHtml += `<th class="p-3 font-black bg-gray-100 border-l text-gray-700 text-xs min-w-[100px] text-right">Estimasi Gaji</th>`;
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
+            
+            // Tarik data gaji dari cache dropdown
+            let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
+            let gajiDict = {};
+            cacheKaryawan.forEach(k => { gajiDict[k.nama.toUpperCase()] = parseInt(k.gaji) || 0; });
+
             let karyawanSet = new Set();
             cacheRiwayatGlobal.forEach(t => {
                 let dateSplit = t.waktu.split(' ')[0].split('/');
-                if (dateSplit.length === 3) {
-                    if (parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
-                        karyawanSet.add(t.nama.toUpperCase());
-                    }
-                }
+                if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) { karyawanSet.add(t.nama.toUpperCase()); }
             });
 
-            if (karyawanSet.size === 0) {
-                tbody.innerHTML = `<tr><td colspan="${jumlahHari + 1}" class="p-5 text-center text-gray-400 italic text-xs">Tidak ada absensi di bulan ini.</td></tr>`;
-                return;
-            }
+            if (karyawanSet.size === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Tidak ada data.</td></tr>`;
 
             let matriks = {};
-            karyawanSet.forEach(nama => {
-                matriks[nama] = {};
-                for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = "."; }
-            });
+            karyawanSet.forEach(nama => { matriks[nama] = {}; for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = "."; } });
 
             cacheRiwayatGlobal.slice().reverse().forEach(t => {
                 let dateSplit = t.waktu.split(' ')[0].split('/');
-                if (dateSplit.length === 3) {
-                    let dTgl = parseInt(dateSplit[0]);
-                    let dBlon = parseInt(dateSplit[1]);
-                    let dThn = parseInt(dateSplit[2]);
-                    
-                    if (dBlon === selectBulan && dThn === selectTahun) {
-                        let nama = t.nama.toUpperCase();
-                        if (matriks[nama]) {
-                            if (t.status === "MASUK") matriks[nama][dTgl] = "✔️";
-                            if (t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️";
-                            if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️";
-                        }
+                if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
+                    let dTgl = parseInt(dateSplit[0]); let nama = t.nama.toUpperCase();
+                    if (matriks[nama] && t.status !== "PULANG") { // Pulang ga diitung nambah hari, cuma Masuk/Kunjungan yg diitung
+                        if (t.status === "MASUK") matriks[nama][dTgl] = "✔️";
+                        if (t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️";
+                        if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️";
                     }
                 }
             });
@@ -441,61 +310,64 @@
             karyawanSet.forEach(nama => {
                 bodyHtml += `<tr class="hover:bg-gray-50 border-b border-gray-100 transition">`;
                 bodyHtml += `<td class="p-2.5 font-black text-gray-800 text-left sticky left-0 bg-white border-r shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-xs z-10">${nama}</td>`;
+                
+                let totalHadir = 0;
                 for (let i = 1; i <= jumlahHari; i++) {
                     let simbol = matriks[nama][i];
                     let styleWarna = "text-gray-300 font-normal";
+                    if (simbol !== ".") totalHadir++; // Hitung kehadiran
+
                     if (simbol === "✔️") styleWarna = "text-green-600 font-bold bg-green-50/50";
                     if (simbol === "⚠️") styleWarna = "text-red-500 font-bold bg-red-50";
                     if (simbol === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
                     bodyHtml += `<td class="p-2 border-r text-xs text-center ${styleWarna}">${simbol}</td>`;
                 }
+                
+                // KALKULASI GAJI
+                let gajiHarian = gajiDict[nama] || 0;
+                let totalGaji = totalHadir * gajiHarian;
+                bodyHtml += `<td class="p-2 border-l text-right bg-blue-50/30">
+                    <div class="text-[10px] text-gray-500 font-bold">${totalHadir} Hari x ${formatRupiah(gajiHarian)}</div>
+                    <div class="text-sm font-black text-blue-600">${formatRupiah(totalGaji)}</div>
+                </td>`;
                 bodyHtml += `</tr>`;
             });
             tbody.innerHTML = bodyHtml;
         }
 
         // --- MANAJEMEN KARYAWAN ---
-        async function loadDataKaryawanOwner() {
+        function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner');
-            tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-gray-400">Menarik data dari Excel...</td></tr>';
-            try {
-                const response = await fetch(API_URL + "?action=get_karyawan");
-                const result = await response.json();
-                if (result.status === "success") {
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data)); // Update dropdown cache
-                    let html = "";
-                    result.data.forEach(k => {
-                        html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">${k.password}</td><td class="p-2.5 text-right"><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-1 rounded text-xs transition"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-                    });
-                    tbody.innerHTML = html || '<tr><td colspan="3" class="p-4 text-center text-gray-400 text-xs">Belum ada karyawan</td></tr>';
-                }
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-red-500 text-xs">Gagal sync data</td></tr>'; }
+            const cacheNama = localStorage.getItem('cache_nama_karyawan');
+            if (cacheNama) {
+                let data = JSON.parse(cacheNama); let html = "";
+                data.forEach(k => { html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">${k.password}</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px]">${formatRupiah(k.gaji || 0)}/hr</td><td class="p-2.5 text-right"><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-1 rounded text-xs transition"><i class="fas fa-trash-alt"></i></button></td></tr>`; });
+                tbody.innerHTML = html || '<tr><td colspan="4" class="p-4 text-center text-gray-400 text-xs">Belum ada karyawan</td></tr>';
+            }
         }
 
         async function tambahKaryawanAPI() {
-            const nama = document.getElementById('addNama').value.trim();
-            const tipe = document.getElementById('addTipe').value;
-            const password = document.getElementById('addPassword').value.trim();
-            if(!nama || !password) return Swal.fire('Error', 'Lengkapi Form Isian!', 'error');
+            const nama = document.getElementById('addNama').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0;
+            if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error');
             Swal.fire({ title: 'Menyuntik Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password }) });
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji }) });
                 const res = await response.json();
                 if(res.status === 'success') {
-                    document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = '';
-                    Toast.fire({ icon: 'success', title: 'Karyawan Ditambahkan!' }); loadDataKaryawanOwner();
+                    document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = '';
+                    Toast.fire({ icon: 'success', title: 'Tersimpan!' }); refreshSemuaData(true);
                 }
-            } catch(e) { Swal.fire('Error', 'Gagal', 'error'); }
+            } catch(e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
         }
 
         async function hapusKaryawanAPI(nama) {
-            Swal.fire({ title: 'Hapus Karyawan?', text: 'Hapus ' + nama + ' dari Excel?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => {
+            Swal.fire({ title: 'Hapus Karyawan?', text: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     try {
                         const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) });
                         const res = await response.json();
-                        if(res.status === 'success') { Toast.fire({ icon: 'success', title: 'Dihapus!' }); loadDataKaryawanOwner(); }
+                        if(res.status === 'success') { Toast.fire({ icon: 'success', title: 'Dihapus!' }); refreshSemuaData(true); }
                     } catch(e) { Swal.fire('Error', 'Gagal', 'error'); }
                 }
             });
@@ -503,24 +375,7 @@
 
         function bukaFoto(url) { if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error'); Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Selfie', confirmButtonColor: '#10b981' }); }
         async function nyalakanKamera() { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); video.srcObject = stream; } catch (err) { Swal.fire('Camera Error', 'Izinkan kamera!', 'error'); } }
-        
-        function nyalakanRadarGPS() {
-            if (navigator.geolocation) {
-                gpsWatcher = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        currentLat = pos.coords.latitude; currentLng = pos.coords.longitude;
-                        document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`;
-                        currentJarak = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
-                        const labelJarak = document.getElementById('liveJarak');
-                        if (dataProfil.tipe === 'TETAP') {
-                            if (currentJarak <= RADIUS_MAKSIMAL) { labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN)`; labelJarak.className = "font-mono text-green-400 font-bold"; }
-                            else { labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`; labelJarak.className = "font-mono text-red-500 font-bold animate-pulse"; }
-                        } else { labelJarak.innerText = `Jarak dari Pusat: ${currentJarak} Meter`; labelJarak.className = "font-mono text-blue-400"; }
-                    }, (e) => { }, { enableHighAccuracy: true }
-                );
-            }
-        }
-
+        function nyalakanRadarGPS() { if (navigator.geolocation) { gpsWatcher = navigator.geolocation.watchPosition( (pos) => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`; currentJarak = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG); const labelJarak = document.getElementById('liveJarak'); if (dataProfil.tipe === 'TETAP') { if (currentJarak <= RADIUS_MAKSIMAL) { labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN)`; labelJarak.className = "font-mono text-green-400 font-bold"; } else { labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`; labelJarak.className = "font-mono text-red-500 font-bold animate-pulse"; } } else { labelJarak.innerText = `Jarak dari Pusat: ${currentJarak} Meter`; labelJarak.className = "font-mono text-blue-400"; } }, (e) => { }, { enableHighAccuracy: true } ); } }
         function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180; const dP = (lat2-lat1) * Math.PI/180; const dL = (lon2-lon1) * Math.PI/180; const a = Math.sin(dP/2) * Math.sin(dP/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL/2) * Math.sin(dL/2); return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))); }
 
         async function prosesAbsen(statusAbsen) {
@@ -532,21 +387,17 @@
 
             Swal.fire({ title: 'Memproses Absen...', html: 'Mengompresi data sat-set...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // KOMPRESI EKSTRIM: Ukuran kanvas dikecilkan jadi 300px saja
-            const MAX_WIDTH = 300; 
-            const scale = MAX_WIDTH / video.videoWidth;
+            const MAX_WIDTH = 300; const scale = MAX_WIDTH / video.videoWidth;
             kanvas.width = MAX_WIDTH; kanvas.height = video.videoHeight * scale;
             ctx.translate(kanvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height); ctx.translate(kanvas.width, 0); ctx.scale(-1, 1);
             
             const waktuSekarang = now.toLocaleString('id-ID');
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, kanvas.height - 70, kanvas.width, 70);
-            ctx.font = "bold 10px monospace";
-            ctx.fillStyle = "#10b981"; ctx.fillText(`KARYAWAN: ${dataProfil.nama} (${dataProfil.tipe})`, 8, kanvas.height - 50);
+            ctx.font = "bold 10px monospace"; ctx.fillStyle = "#10b981"; ctx.fillText(`KARYAWAN: ${dataProfil.nama} (${dataProfil.tipe})`, 8, kanvas.height - 50);
             ctx.fillStyle = statusAbsen.includes("TELAT") ? "#ef4444" : "#ffffff"; ctx.fillText(`STATUS  : ABSEN ${statusAbsen}`, 8, kanvas.height - 35);
             ctx.fillStyle = "#ffffff"; ctx.fillText(`WAKTU   : ${waktuSekarang}`, 8, kanvas.height - 20);
             ctx.fillStyle = "#facc15"; ctx.fillText(`GPS LOC : ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
 
-            // KOMPRESI EKSTRIM: Kualitas JPEG diturunkan jadi 0.5 (~15 KB doang)
             const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.5);
             const payloadData = { waktu: waktuSekarang, nama: dataProfil.nama, tipe: dataProfil.tipe, status: statusAbsen, jarak: currentJarak, lat: currentLat, lng: currentLng, fotoBase64: fotoBase64, perangkat: deviceID };
 
