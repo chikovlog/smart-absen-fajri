@@ -1,10 +1,293 @@
 <!DOCTYPE html>
-<html>
+<html lang="id" class="bg-gray-100">
 <head>
-    <title>Radar Absensi Mastermind</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Radar Absensi - Fajri Toys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body style="text-align: center; margin-top: 20%; font-family: sans-serif; background-color: #f3f4f6;">
-    <h1 style="color: #10b981;">🚀 Sistem Absensi Sedang Dibangun...</h1>
-    <p>Tunggu instruksi selanjutnya dari Mastermind!</p>
+<body class="text-gray-800 flex flex-col min-h-screen">
+
+    <!-- HEADER -->
+    <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
+        <div>
+            <h1 class="font-black text-lg tracking-wide"><i class="fas fa-satellite-dish mr-1"></i> RADAR ABSENSI</h1>
+            <p class="text-[10px] font-bold text-emerald-200">Sistem Keamanan V1.0</p>
+        </div>
+        <div class="text-right">
+            <span id="labelPerangkat" class="text-[10px] bg-emerald-800 px-2 py-1 rounded-lg border border-emerald-500 font-mono">Device: -</span>
+        </div>
+    </header>
+
+    <!-- KONTEN UTAMA -->
+    <main class="flex-grow flex flex-col items-center p-4 w-full max-w-md mx-auto relative">
+        
+        <!-- FORM SETUP (Hanya muncul saat pertama kali pakai) -->
+        <div id="setupView" class="bg-white w-full p-6 rounded-2xl shadow-lg border border-gray-200 mb-4 hidden">
+            <h2 class="text-center font-bold text-gray-700 mb-4">Pendaftaran Perangkat Karyawan</h2>
+            <input type="text" id="inputNama" placeholder="Nama Lengkap Karyawan..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-3 font-bold text-sm">
+            <select id="inputTipe" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-4 text-sm font-bold text-gray-600">
+                <option value="TETAP">🏠 Pasukan Toko (TETAP) - Wajib di Lokasi</option>
+                <option value="MOBILE">🏍️ Pasukan Lapangan (MOBILE) - Bebas Lokasi</option>
+            </select>
+            <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition shadow-md">Simpan & Kunci Perangkat</button>
+        </div>
+
+        <!-- TAMPILAN ABSENSI (Muncul kalau sudah setup) -->
+        <div id="absenView" class="w-full flex flex-col items-center hidden">
+            
+            <div class="bg-white w-full p-4 rounded-2xl shadow-sm border border-gray-200 mb-4 flex justify-between items-center">
+                <div>
+                    <div class="text-[10px] text-gray-400 font-bold uppercase">Identitas Profil</div>
+                    <div id="displayNama" class="font-black text-emerald-700 text-lg">NAMA</div>
+                </div>
+                <div id="displayTipe" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-bold border border-blue-200">TIPE</div>
+            </div>
+
+            <!-- JENDELA KAMERA -->
+            <div class="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-lg border-4 border-gray-300 mb-4">
+                <video id="kamera" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                <div class="absolute inset-0 border-2 border-emerald-500 rounded-xl m-2 opacity-50 pointer-events-none"></div>
+                <!-- Indikator GPS Overlay -->
+                <div class="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-sm text-white p-2 rounded-lg text-[10px] flex flex-col gap-0.5">
+                    <span id="liveJam" class="font-mono text-emerald-400 font-bold text-xs">Mencari Sinyal Waktu...</span>
+                    <span id="liveGPS" class="font-mono">Menyelaraskan Satelit...</span>
+                    <span id="liveJarak" class="font-mono text-yellow-400">Jarak: - Meter</span>
+                </div>
+            </div>
+
+            <!-- TOMBOL AKSI -->
+            <div class="grid grid-cols-2 gap-3 w-full mb-3">
+                <button onclick="prosesAbsen('MASUK')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95">
+                    <i class="fas fa-sign-in-alt text-xl"></i> <span>ABSEN MASUK</span>
+                </button>
+                <button onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95">
+                    <i class="fas fa-sign-out-alt text-xl"></i> <span>ABSEN PULANG</span>
+                </button>
+            </div>
+            
+            <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-black py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 hidden">
+                <i class="fas fa-map-marker-alt"></i> ABSEN KUNJUNGAN (LAPANGAN)
+            </button>
+
+        </div>
+
+    </main>
+
+    <!-- KANVAS TERSEMBUNYI UNTUK WATERMARK FOTO -->
+    <canvas id="kanvasFoto" class="hidden"></canvas>
+
+    <script>
+        // =========================================================================
+        // PENGATURAN RADAR UTAMA (WAJIB DIISI OLEH OWNER!)
+        // =========================================================================
+        
+        // 1. GANTI DENGAN KOORDINAT LATITUDE & LONGITUDE TOKO KING!
+        const TOKO_LAT = -6.699192;  // <-- Ganti angka ini
+        const TOKO_LNG = 107.481993; // <-- Ganti angka ini
+        
+        // 2. JARAK MAKSIMAL ABSEN UNTUK KARYAWAN TOKO (Dalam Meter)
+        const RADIUS_MAKSIMAL = 50; 
+        
+        // 3. URL GOOGLE APPS SCRIPT
+        const API_URL = "https://script.google.com/macros/s/AKfycbx2iy3JGtqLTbzDS5QlIkOj03Sls5UVe5f4fZyo_xnaZ4B8DE836F5ur39EMtNWLxEb/exec";
+
+        // =========================================================================
+
+        let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
+        let deviceID = localStorage.getItem('device_id_fajri');
+        let currentLat = null;
+        let currentLng = null;
+        let currentJarak = null;
+        
+        const video = document.getElementById('kamera');
+        const kanvas = document.getElementById('kanvasFoto');
+        const ctx = kanvas.getContext('2d');
+
+        // Saat Halaman Dibuka
+        window.onload = () => {
+            if (!deviceID) {
+                // Buat Device ID Unik (Anti-Titip Absen HP)
+                deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase();
+                localStorage.setItem('device_id_fajri', deviceID);
+            }
+            document.getElementById('labelPerangkat').innerText = deviceID;
+
+            if (!dataProfil) {
+                document.getElementById('setupView').classList.remove('hidden');
+            } else {
+                bukaSistem();
+            }
+            
+            // Jalankan Jam Realtime
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+            }, 1000);
+        };
+
+        // Fungsi Simpan Profil Awal
+        function simpanProfil() {
+            const nama = document.getElementById('inputNama').value.trim();
+            const tipe = document.getElementById('inputTipe').value;
+            if (!nama) return Swal.fire('Error', 'Nama wajib diisi!', 'error');
+            
+            dataProfil = { nama: nama.toUpperCase(), tipe: tipe };
+            localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
+            
+            Swal.fire({ icon: 'success', title: 'Perangkat Dikunci!', text: 'Sistem mengenali HP ini sebagai milik ' + dataProfil.nama, showConfirmButton: false, timer: 1500 })
+            .then(() => {
+                document.getElementById('setupView').classList.add('hidden');
+                bukaSistem();
+            });
+        }
+
+        function bukaSistem() {
+            document.getElementById('absenView').classList.remove('hidden');
+            document.getElementById('displayNama').innerText = dataProfil.nama;
+            document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
+            
+            if (dataProfil.tipe === 'MOBILE') {
+                document.getElementById('btnKunjungan').classList.remove('hidden');
+            }
+
+            nyalakanKamera();
+            nyalakanRadarGPS();
+        }
+
+        // --- SISTEM KAMERA ---
+        async function nyalakanKamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                video.srcObject = stream;
+            } catch (err) {
+                Swal.fire('Kamera Error', 'Mohon izinkan akses kamera di browser Anda!', 'error');
+            }
+        }
+
+        // --- SISTEM RADAR GPS & HAVERSINE (PENGHITUNG JARAK) ---
+        function nyalakanRadarGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        currentLat = position.coords.latitude;
+                        currentLng = position.coords.longitude;
+                        document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`;
+                        
+                        // Hitung Jarak ke Toko
+                        currentJarak = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
+                        const labelJarak = document.getElementById('liveJarak');
+                        
+                        if (dataProfil.tipe === 'TETAP') {
+                            if (currentJarak <= RADIUS_MAKSIMAL) {
+                                labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN)`;
+                                labelJarak.className = "font-mono text-green-400 font-bold";
+                            } else {
+                                labelJarak.innerText = `Jarak: ${currentJarak} M (DI LUAR ZONA!)`;
+                                labelJarak.className = "font-mono text-red-500 font-bold animate-pulse";
+                            }
+                        } else {
+                            labelJarak.innerText = `Jarak dari Pusat: ${currentJarak} Meter`;
+                            labelJarak.className = "font-mono text-blue-400";
+                        }
+                    },
+                    (error) => {
+                        document.getElementById('liveGPS').innerText = "GPS DIMATIKAN / DITOLAK!";
+                        document.getElementById('liveGPS').className = "font-mono text-red-500 font-bold animate-pulse";
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                Swal.fire('Error', 'Browser tidak mendukung GPS!', 'error');
+            }
+        }
+
+        // Rumus Matematika Haversine (Penghitung Jarak Lengkung Bumi)
+        function hitungJarak(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Radius bumi dalam meter
+            const p1 = lat1 * Math.PI/180;
+            const p2 = lat2 * Math.PI/180;
+            const deltaP = (lat2-lat1) * Math.PI/180;
+            const deltaLon = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(deltaP/2) * Math.sin(deltaP/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return Math.round(R * c); // Hasil dalam meter bulat
+        }
+
+        // --- PROSES ABSEN & WATERMARK ---
+        async function prosesAbsen(statusAbsen) {
+            if (!currentLat || !currentLng) {
+                return Swal.fire('Tunggu Sebentar!', 'Sistem sedang melacak lokasi satelit Anda. Pastikan GPS menyala.', 'warning');
+            }
+
+            // Validasi Karyawan Tetap (Harus di dalam radius)
+            if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) {
+                return Swal.fire('Akses Ditolak!', `Anda berada ${currentJarak} meter dari toko! Maksimal radius adalah ${RADIUS_MAKSIMAL} meter. Silakan mendekat ke toko.`, 'error');
+            }
+
+            Swal.fire({ title: 'Memproses Absen...', html: 'Mengambil foto dan menyegel data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // 1. Ambil Foto dari Video
+            kanvas.width = video.videoWidth;
+            kanvas.height = video.videoHeight;
+            
+            // Balikkan gambar agar tidak seperti cermin (mirror)
+            ctx.translate(kanvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height);
+            
+            // 2. Beri Stempel Watermark (Anti-Titip Absen)
+            ctx.translate(kanvas.width, 0); // Kembalikan koordinat normal untuk teks
+            ctx.scale(-1, 1);
+            
+            const waktuSekarang = new Date().toLocaleString('id-ID');
+            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            ctx.fillRect(0, kanvas.height - 90, kanvas.width, 90); // Blok hitam transparan di bawah
+
+            ctx.font = "bold 16px monospace";
+            ctx.fillStyle = "#10b981"; // Hijau Emerald
+            ctx.fillText(`KARYAWAN : ${dataProfil.nama} (${dataProfil.tipe})`, 10, kanvas.height - 65);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(`STATUS   : ABSEN ${statusAbsen}`, 10, kanvas.height - 45);
+            ctx.fillText(`WAKTU    : ${waktuSekarang}`, 10, kanvas.height - 25);
+            ctx.fillStyle = "#facc15"; // Kuning
+            ctx.fillText(`GPS LOC  : ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 10, kanvas.height - 5);
+
+            // 3. Ubah kanvas jadi file gambar Base64
+            const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.8);
+
+            // 4. Bungkus Data dan Kirim ke Cloud!
+            const payloadData = {
+                waktu: waktuSekarang,
+                nama: dataProfil.nama,
+                tipe: dataProfil.tipe,
+                status: statusAbsen,
+                jarak: currentJarak,
+                lat: currentLat,
+                lng: currentLng,
+                fotoBase64: fotoBase64,
+                perangkat: deviceID
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "simpan_absen", data: payloadData })
+                });
+                
+                const result = await response.json();
+                if (result.status === "success") {
+                    Swal.fire({ icon: 'success', title: 'Absen Berhasil!', text: `Anda tercatat ${statusAbsen} pada ${waktuSekarang}. Bukti telah dikirim ke Owner.` });
+                } else {
+                    Swal.fire('Gagal Menyimpan', result.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Koneksi Error', 'Gagal mengirim data ke server. Pastikan internet stabil.', 'error');
+            }
+        }
+    </script>
 </body>
 </html>
