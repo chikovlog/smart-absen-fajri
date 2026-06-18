@@ -20,7 +20,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Payroll V2.5</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Payroll V2.6</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -32,14 +32,17 @@
     <main class="flex-grow flex flex-col items-center p-3 md:p-4 w-full max-w-2xl mx-auto relative">
         
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
-            <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Aktivasi Radar HP</h2>
+            <!-- TEKS SUDAH DIGANTI SESUAI REQUEST -->
+            <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
             <select id="inputNama" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 mb-4 text-sm font-black text-gray-700 transition">
                 <option value="" disabled selected>-- Memuat Daftar... --</option>
             </select>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Masukkan Password Kunci:</label>
             <input type="password" id="inputPassword" placeholder="Sandi dari Owner..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 mb-5 font-mono text-center text-base tracking-widest transition">
-            <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Verifikasi & Kunci HP</button>
+            
+            <!-- TEKS TOMBOL SUDAH DIGANTI SESUAI REQUEST -->
+            <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
@@ -69,11 +72,15 @@
             <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
         </div>
 
+        <!-- ========================================== -->
+        <!-- DASHBOARD OWNER (CACHED + PAYROLL) -->
+        <!-- ========================================== -->
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
-                    <h2 class="font-black text-lg"><i class="fas fa-bolt text-yellow-400 mr-1"></i> Mastermind Turbo</h2>
-                    <p class="text-[10px] text-emerald-200 font-semibold">Live Monitor (Cached)</p>
+                    <!-- TEKS SUDAH DIGANTI SESUAI REQUEST -->
+                    <h2 class="font-black text-lg"><i class="fas fa-users text-yellow-400 mr-1"></i> Karyawan Fajri Mandiri</h2>
+                    <p class="text-[10px] text-emerald-200 font-semibold">monitoring siapa saja yang masuk</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="refreshSemuaData(true)" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-blue-400" title="Tarik Data Baru"><i class="fas fa-sync-alt"></i></button>
@@ -87,6 +94,7 @@
                 <button onclick="switchTabOwner('karyawan')" id="tabBtn-karyawan" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">👥 Kelola Pasukan</button>
             </div>
 
+            <!-- PANEL 1: LOG -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left min-w-[500px]">
@@ -96,6 +104,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 2: MATRIKS & PAYROLL -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm">Buku Matriks & Gaji</span>
@@ -115,6 +124,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -239,9 +249,14 @@
                 if (result.status === "success") {
                     cacheRiwayatGlobal = result.data;
                     const resKar = await fetch(API_URL + "?action=get_karyawan"); const resK = await resKar.json();
-                    if(resK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                    if(resK.status === "success") {
+                        localStorage.setItem('cache_nama_karyawan', JSON.stringify(resK.data));
+                        // JIKA REFRESH DATA BERHASIL, LOAD ULANG TAMPILAN SESUAI TAB AKTIF
+                        if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
+                        if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
+                        if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
+                    }
                     if(isManual) Toast.fire({ icon: 'success', title: 'Terupdate!' });
-                    switchTabOwner('monitoring');
                 }
             } catch (e) { if(isManual) Swal.fire('Error', 'Gagal tarik data!', 'error'); }
         }
@@ -261,10 +276,9 @@
         }
 
         // ===============================================================
-        // FUNGSI MATRIKS + PENGHITUNGAN GAJI
+        // FUNGSI MATRIKS + PENGHITUNGAN GAJI (MENAMPILKAN SEMUA NAMA WALAUPUN KOSONG)
         // ===============================================================
         function renderMatriks() {
-            if (!cacheRiwayatGlobal) return;
             const selectBulan = parseInt(document.getElementById('rekapBulan').value);
             const selectTahun = parseInt(document.getElementById('rekapTahun').value);
             const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate(); 
@@ -272,40 +286,42 @@
             const theadRow = document.getElementById('headerRekapBulanan');
             let headerHtml = `<th class="p-3 font-black bg-gray-100 border-r text-gray-700 sticky left-0 z-20 text-xs min-w-[90px]">Nama</th>`;
             for (let i = 1; i <= jumlahHari; i++) { headerHtml += `<th class="p-1.5 text-center font-bold text-[10px] border-r min-w-[32px]">${i}</th>`; }
-            // TAMBAHAN HEADER TOTAL GAJI
             headerHtml += `<th class="p-3 font-black bg-gray-100 border-l text-gray-700 text-xs min-w-[100px] text-right">Estimasi Gaji</th>`;
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
             
-            // Tarik data gaji dari cache dropdown
+            // TARIK SEMUA NAMA KARYAWAN DARI CACHE (Bukan dari riwayat absen)
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
-            let gajiDict = {};
-            cacheKaryawan.forEach(k => { gajiDict[k.nama.toUpperCase()] = parseInt(k.gaji) || 0; });
+            if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan didaftarkan.</td></tr>`;
 
             let karyawanSet = new Set();
-            cacheRiwayatGlobal.forEach(t => {
-                let dateSplit = t.waktu.split(' ')[0].split('/');
-                if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) { karyawanSet.add(t.nama.toUpperCase()); }
+            let gajiDict = {};
+            cacheKaryawan.forEach(k => { 
+                karyawanSet.add(k.nama.toUpperCase());
+                gajiDict[k.nama.toUpperCase()] = parseInt(k.gaji) || 0; 
             });
 
-            if (karyawanSet.size === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Tidak ada data.</td></tr>`;
-
+            // Siapkan matriks kosong titik "."
             let matriks = {};
             karyawanSet.forEach(nama => { matriks[nama] = {}; for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = "."; } });
 
-            cacheRiwayatGlobal.slice().reverse().forEach(t => {
-                let dateSplit = t.waktu.split(' ')[0].split('/');
-                if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
-                    let dTgl = parseInt(dateSplit[0]); let nama = t.nama.toUpperCase();
-                    if (matriks[nama] && t.status !== "PULANG") { // Pulang ga diitung nambah hari, cuma Masuk/Kunjungan yg diitung
-                        if (t.status === "MASUK") matriks[nama][dTgl] = "✔️";
-                        if (t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️";
-                        if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️";
+            // Isi matriks kalau ada riwayat absennya
+            if (cacheRiwayatGlobal) {
+                cacheRiwayatGlobal.slice().reverse().forEach(t => {
+                    let dateSplit = t.waktu.split(' ')[0].split('/');
+                    if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
+                        let dTgl = parseInt(dateSplit[0]); let nama = t.nama.toUpperCase();
+                        if (matriks[nama] && t.status !== "PULANG") { 
+                            if (t.status === "MASUK") matriks[nama][dTgl] = "✔️";
+                            if (t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️";
+                            if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️";
+                        }
                     }
-                }
-            });
+                });
+            }
 
+            // GULUNG MATRIKS JADI HTML
             let bodyHtml = "";
             karyawanSet.forEach(nama => {
                 bodyHtml += `<tr class="hover:bg-gray-50 border-b border-gray-100 transition">`;
@@ -315,7 +331,7 @@
                 for (let i = 1; i <= jumlahHari; i++) {
                     let simbol = matriks[nama][i];
                     let styleWarna = "text-gray-300 font-normal";
-                    if (simbol !== ".") totalHadir++; // Hitung kehadiran
+                    if (simbol !== ".") totalHadir++; 
 
                     if (simbol === "✔️") styleWarna = "text-green-600 font-bold bg-green-50/50";
                     if (simbol === "⚠️") styleWarna = "text-red-500 font-bold bg-red-50";
@@ -323,25 +339,26 @@
                     bodyHtml += `<td class="p-2 border-r text-xs text-center ${styleWarna}">${simbol}</td>`;
                 }
                 
-                // KALKULASI GAJI
                 let gajiHarian = gajiDict[nama] || 0;
                 let totalGaji = totalHadir * gajiHarian;
                 bodyHtml += `<td class="p-2 border-l text-right bg-blue-50/30">
                     <div class="text-[10px] text-gray-500 font-bold">${totalHadir} Hari x ${formatRupiah(gajiHarian)}</div>
                     <div class="text-sm font-black text-blue-600">${formatRupiah(totalGaji)}</div>
-                </td>`;
-                bodyHtml += `</tr>`;
+                </td></tr>`;
             });
             tbody.innerHTML = bodyHtml;
         }
 
-        // --- MANAJEMEN KARYAWAN ---
+        // --- MANAJEMEN KARYAWAN TERMASUK TOMBOL EDIT ---
         function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner');
             const cacheNama = localStorage.getItem('cache_nama_karyawan');
             if (cacheNama) {
                 let data = JSON.parse(cacheNama); let html = "";
-                data.forEach(k => { html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">${k.password}</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px]">${formatRupiah(k.gaji || 0)}/hr</td><td class="p-2.5 text-right"><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-1 rounded text-xs transition"><i class="fas fa-trash-alt"></i></button></td></tr>`; });
+                data.forEach(k => { 
+                    // Tombol Edit dan Hapus disatukan di kolom kanan (Aksi)
+                    html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">${k.password}</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px]">${formatRupiah(k.gaji || 0)}/hr</td><td class="p-2.5 text-right whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}')" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-2 py-1 rounded text-xs transition mr-1" title="Edit Data"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-2 py-1 rounded text-xs transition" title="Hapus"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
+                });
                 tbody.innerHTML = html || '<tr><td colspan="4" class="p-4 text-center text-gray-400 text-xs">Belum ada karyawan</td></tr>';
             }
         }
@@ -358,6 +375,55 @@
                     Toast.fire({ icon: 'success', title: 'Tersimpan!' }); refreshSemuaData(true);
                 }
             } catch(e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
+        }
+
+        // FUNGSI POP-UP EDIT KARYAWAN
+        async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama) {
+            const { value: formValues } = await Swal.fire({
+                title: 'Edit Data: ' + nama,
+                html:
+                    `<div class="text-left text-xs font-bold text-gray-500 mb-1 mt-2">Tipe Pasukan:</div>` +
+                    `<select id="swal-tipe" class="swal2-input mt-0 w-full text-sm font-bold"><option value="TETAP" ${tipeLama==='TETAP'?'selected':''}>TETAP (Toko)</option><option value="MOBILE" ${tipeLama==='MOBILE'?'selected':''}>MOBILE (Lapangan)</option></select>` +
+                    `<div class="text-left text-xs font-bold text-gray-500 mb-1 mt-4">Password Gembok:</div>` +
+                    `<input id="swal-pass" class="swal2-input mt-0 w-full font-mono text-center" placeholder="Password" value="${passLama}">` +
+                    `<div class="text-left text-xs font-bold text-gray-500 mb-1 mt-4">Gaji Harian (Rp):</div>` +
+                    `<input id="swal-gaji" type="number" class="swal2-input mt-0 w-full font-bold text-blue-600 text-center" placeholder="Gaji" value="${gajiLama}">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Simpan Perubahan',
+                confirmButtonColor: '#10b981',
+                preConfirm: () => {
+                    return {
+                        tipe: document.getElementById('swal-tipe').value,
+                        password: document.getElementById('swal-pass').value,
+                        gaji: document.getElementById('swal-gaji').value || 0
+                    }
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'Menyimpan Perubahan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            action: "edit_karyawan",
+                            nama: nama,
+                            tipe: formValues.tipe,
+                            password: formValues.password,
+                            gaji: formValues.gaji
+                        })
+                    });
+                    const res = await response.json();
+                    if (res.status === 'success') {
+                        Toast.fire({ icon: 'success', title: 'Data Diperbarui!' });
+                        refreshSemuaData(true); // Langsung sedot ulang dari excel
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                } catch (e) { Swal.fire('Error', 'Gagal koneksi internet!', 'error'); }
+            }
         }
 
         async function hapusKaryawanAPI(nama) {
