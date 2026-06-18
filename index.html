@@ -15,6 +15,7 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
+    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
@@ -31,6 +32,7 @@
 
     <main class="flex-grow flex flex-col items-center p-3 md:p-4 w-full max-w-2xl mx-auto relative">
         
+        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -43,6 +45,7 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
+        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 md:p-4 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -70,6 +73,9 @@
             <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
         </div>
 
+        <!-- ========================================== -->
+        <!-- DASHBOARD OWNER -->
+        <!-- ========================================== -->
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -88,6 +94,7 @@
                 <button onclick="switchTabOwner('karyawan')" id="tabBtn-karyawan" class="flex-1 py-2 rounded-md text-[11px] font-bold transition text-gray-500 hover:bg-gray-300">👥 Kelola Pasukan</button>
             </div>
 
+            <!-- PANEL 1: LOG -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left min-w-[500px]">
@@ -97,6 +104,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 2: MATRIKS & PAYROLL -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm">Buku Matriks & Gaji</span>
@@ -116,6 +124,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -149,7 +158,8 @@
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
-        const API_URL = "https://script.google.com/macros/s/AKfycbx2iy3JGtqLTbzDS5QlIkOj03Sls5UVe5f4fZyo_xnaZ4B8DE836F5ur39EMtNWLxEb/exec";
+        // LINK API TERBARU DARI KING SUDAH DITANAM PERMANEN DI SINI!
+        const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
         // =========================================================================
 
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
@@ -284,6 +294,7 @@
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
+            
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
             if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan didaftarkan.</td></tr>`;
 
@@ -375,7 +386,7 @@
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             } else if (type === 'gaji') {
                 const textEl = document.getElementById(`karGajiText-${idx}`); const iconEl = document.getElementById(`karGajiIcon-${idx}`);
-                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0); iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
+                if (textEl.innerText === "••••••") { textEl.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0) + "/hr"; iconEl.classList.replace("fa-eye", "fa-eye-slash"); } 
                 else { textEl.innerText = "••••••"; iconEl.classList.replace("fa-eye-slash", "fa-eye"); }
             }
         };
