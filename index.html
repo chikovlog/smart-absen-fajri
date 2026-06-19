@@ -351,7 +351,7 @@
         // ===============================================================
         // FUNGSI MATRIKS + PENGHITUNGAN GAJI (DIKURANGI KASBON)
         // ===============================================================
-        function renderMatriks() {
+       function renderMatriks() {
             const selectBulan = parseInt(document.getElementById('rekapBulan').value);
             const selectTahun = parseInt(document.getElementById('rekapTahun').value);
             const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate(); 
@@ -387,6 +387,12 @@
                 });
             }
 
+            // VARIABEL GRAND TOTAL UNTUK MASTERMIND
+            let grandTotalHadir = 0;
+            let grandTotalGajiKotor = 0;
+            let grandTotalKasbon = 0;
+            let grandTotalBersih = 0;
+
             let bodyHtml = "";
             karyawanSet.forEach(nama => {
                 bodyHtml += `<tr class="hover:bg-gray-50 border-b border-gray-100 transition">`;
@@ -395,7 +401,6 @@
                 let totalHadir = 0;
                 for (let i = 1; i <= jumlahHari; i++) {
                     let simbol = matriks[nama][i]; let styleWarna = "text-gray-300 font-normal";
-                    // Izin (🪪) tidak menambah hitungan hadir
                     if (simbol !== "." && simbol !== "🪪") totalHadir++; 
 
                     if (simbol === "✔️") styleWarna = "text-green-600 font-bold bg-green-50/50";
@@ -405,7 +410,6 @@
                     bodyHtml += `<td class="p-2 border-r text-xs text-center ${styleWarna}">${simbol}</td>`;
                 }
                 
-                // MENGHITUNG TOTAL KASBON BULAN INI UNTUK SI NAMA
                 let totalKasbonBulanIni = 0;
                 cacheKasbonGlobal.forEach(kb => {
                     if (kb.nama.toUpperCase() === nama) {
@@ -420,15 +424,32 @@
                 let totalGajiKotor = totalHadir * gajiHarian;
                 let sisaBersih = totalGajiKotor - totalKasbonBulanIni;
 
+                // Tumpuk nilai ke Grand Total
+                grandTotalHadir += totalHadir;
+                grandTotalGajiKotor += totalGajiKotor;
+                grandTotalKasbon += totalKasbonBulanIni;
+                grandTotalBersih += sisaBersih;
+
                 bodyHtml += `<td class="p-2 border-l bg-emerald-50/20 whitespace-nowrap min-w-[130px]">
                     <div class="flex justify-between text-[9px] text-gray-500 font-bold mb-0.5"><span>Hadir ${totalHadir}x:</span> <span>${formatRupiah(totalGajiKotor)}</span></div>
                     <div class="flex justify-between text-[9px] text-red-500 font-bold border-b border-gray-200 pb-1 mb-1"><span>Kasbon:</span> <span>-${formatRupiah(totalKasbonBulanIni)}</span></div>
                     <div class="text-right text-xs font-black text-emerald-600">${formatRupiah(sisaBersih)}</div>
                 </td></tr>`;
             });
+
+            // --- TAMBAHAN BARIS GRAND TOTAL ---
+            bodyHtml += `<tr class="bg-gray-800 text-white font-bold border-t-4 border-emerald-500 shadow-inner">`;
+            bodyHtml += `<td class="p-3 sticky left-0 z-10 bg-gray-800 border-r border-gray-700 uppercase tracking-widest text-xs">GRAND TOTAL</td>`;
+            bodyHtml += `<td colspan="${jumlahHari}" class="p-3 border-r border-gray-700 text-center text-xs text-emerald-300 uppercase tracking-widest">Akumulasi Seluruh Pasukan</td>`;
+            bodyHtml += `<td class="p-3 border-l border-gray-700 whitespace-nowrap min-w-[130px]">
+                            <div class="flex justify-between text-[10px] text-gray-300 font-bold mb-1"><span>Total Hadir (${grandTotalHadir}x):</span> <span class="text-white">${formatRupiah(grandTotalGajiKotor)}</span></div>
+                            <div class="flex justify-between text-[10px] text-red-400 font-bold border-b border-gray-600 pb-1.5 mb-1.5"><span>Total Kasbon:</span> <span>-${formatRupiah(grandTotalKasbon)}</span></div>
+                            <div class="flex justify-between text-xs font-black text-emerald-400 uppercase"><span>Gaji Bersih:</span> <span>${formatRupiah(grandTotalBersih)}</span></div>
+                        </td>`;
+            bodyHtml += `</tr>`;
+
             tbody.innerHTML = bodyHtml;
         }
-
         // --- MANAJEMEN KARYAWAN (TOMBOL EDIT + SENSOR MATA) ---
         function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner'); const cacheNama = localStorage.getItem('cache_nama_karyawan');
