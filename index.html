@@ -11,18 +11,17 @@
         .scrollbar-thin::-webkit-scrollbar { height: 5px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-        .tab-btn { flex-shrink: 0; min-width: 90px; } /* Biar tab owner bisa digeser kalau layarnya kecil */
+        .tab-btn { flex-shrink: 0; min-width: 90px; } 
     </style>
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
-    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Ultimate V2.9</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">Sistem Sat-Set V3.0</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -33,7 +32,6 @@
 
     <main class="flex-grow flex flex-col items-center p-3 md:p-4 w-full max-w-2xl mx-auto relative overflow-hidden">
         
-        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -45,7 +43,6 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
-        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 md:p-4 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -73,13 +70,9 @@
             
             <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm mb-3"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
             
-            <!-- TOMBOL IZIN / SAKIT BARU -->
             <button id="btnIzin" onclick="prosesIzinSakit()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-purple-800 text-sm"><i class="fas fa-notes-medical text-lg"></i> AJUKAN IZIN / SAKIT</button>
         </div>
 
-        <!-- ========================================== -->
-        <!-- DASHBOARD OWNER (ULTIMATE + PAYROLL) -->
-        <!-- ========================================== -->
         <div id="ownerView" class="w-full hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -92,7 +85,6 @@
                 </div>
             </div>
 
-            <!-- TABS MENGGUNAKAN SCROLL BIAR FITUR BANYAK TETAP MUAT -->
             <div class="flex overflow-x-auto bg-gray-200 p-1 rounded-lg gap-1 scrollbar-thin">
                 <button onclick="switchTabOwner('monitoring')" id="tabBtn-monitoring" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition shadow-sm bg-white text-emerald-700">🔍 Log</button>
                 <button onclick="switchTabOwner('rekap')" id="tabBtn-rekap" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">📅 Gaji</button>
@@ -100,7 +92,6 @@
                 <button onclick="switchTabOwner('kasbon')" id="tabBtn-kasbon" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">💰 Kasbon</button>
             </div>
 
-            <!-- PANEL 1: LOG HARIAN & CATATAN -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="overflow-x-auto w-full scrollbar-thin">
                     <table class="w-full text-left min-w-[500px]">
@@ -110,7 +101,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS & PAYROLL BERSIH (DIPOTONG KASBON) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm">Matriks Gaji Bersih</span>
@@ -130,7 +120,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -153,9 +142,7 @@
                 </div>
             </div>
 
-            <!-- PANEL 4: PENGUMUMAN & KASBON -->
             <div id="panel-kasbon" class="w-full hidden flex flex-col md:flex-row gap-3">
-                <!-- FORM PENGUMUMAN -->
                 <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm flex-1 flex flex-col gap-2">
                     <h3 class="font-black text-xs uppercase text-yellow-700"><i class="fas fa-bullhorn"></i> Broadcast Memo</h3>
                     <p class="text-[9px] text-yellow-600 mb-1">Pesan ini akan muncul saat karyawan buka aplikasi.</p>
@@ -163,7 +150,6 @@
                     <button onclick="kirimMemoAPI()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded text-xs transition shadow mt-1"><i class="fas fa-paper-plane"></i> Kirim ke Semua HP</button>
                 </div>
                 
-                <!-- FORM KASBON -->
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col gap-2">
                     <h3 class="font-black text-xs uppercase text-gray-500"><i class="fas fa-hand-holding-usd text-red-500"></i> Berikan Kasbon</h3>
                     <p class="text-[9px] text-gray-400 mb-1">Kasbon otomatis memotong gaji akhir bulan.</p>
@@ -192,8 +178,9 @@
         let deviceID = localStorage.getItem('device_id_fajri');
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
         
-        let cacheRiwayatGlobal = null;
-        let cacheKasbonGlobal = []; // Menyimpan Data Kasbon Bulanan
+        // JURUS CACHE SAT-SET: Simpan dan baca memori dari HP biar gak nunggu loading!
+        let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
+        let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
@@ -221,7 +208,6 @@
             try {
                 const res = await fetch(API_URL + "?action=get_pengumuman"); const data = await res.json();
                 if (data.pesan && data.pesan.trim() !== "") {
-                    // Cek biar gak muncul terus menerus tiap detik, muncul 1x per sesi
                     const lastRead = sessionStorage.getItem('baca_pengumuman');
                     if (lastRead !== data.pesan) {
                         Swal.fire({
@@ -275,7 +261,7 @@
             document.getElementById('displayNama').innerText = dataProfil.nama; document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
-            cekPengumumanOwner(); // Tarik pengumuman kalau ada
+            cekPengumumanOwner();
         }
 
         function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
@@ -286,7 +272,9 @@
                     document.getElementById('absenView').classList.add('hidden'); document.getElementById('setupView').classList.add('hidden');
                     if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                     document.getElementById('ownerView').classList.remove('hidden');
-                    loadDropdownKaryawan(); // Refresh nama buat dropdown kasbon
+                    loadDropdownKaryawan(); 
+                    
+                    // LANGSUNG BUKA DENGAN JURUS CACHE SAT-SET
                     refreshSemuaDataInitial(); 
                 } else if(res.isConfirmed) { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
             });
@@ -306,26 +294,61 @@
             if(tab === 'karyawan') loadDataKaryawanOwner();
         }
 
+        // =========================================================================
+        // MESIN SINKRONISASI SAT-SET (PARALLEL & LOCAL CACHE)
+        // =========================================================================
         async function refreshSemuaDataInitial() {
-            Swal.fire({ title: 'Menyinkronkan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            await fetchAndCacheAll(); Swal.close(); switchTabOwner('monitoring');
+            // 1. Tampilkan Instan dari Memori Lokal HP (0 Detik)
+            switchTabOwner('monitoring');
+
+            // 2. Lakukan Sinkronisasi Siluman ke Google Sheets di Background
+            Toast.fire({ icon: 'info', title: 'Sinkronisasi berjalan di background...' });
+            await fetchAndCacheAll(true);
+            Toast.fire({ icon: 'success', title: 'Sinkronisasi Selesai!' });
         }
 
         async function refreshSemuaDataSilent() {
-            await fetchAndCacheAll();
-            if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
-            if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
-            if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
-            Toast.fire({ icon: 'success', title: 'Terupdate!' });
+            Swal.fire({ title: 'Menarik Data...', html: 'Menggunakan turbo sinkronisasi...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            await fetchAndCacheAll(true);
+            Swal.close();
+            Toast.fire({ icon: 'success', title: 'Data Terupdate!' });
         }
 
-        async function fetchAndCacheAll() {
+        async function fetchAndCacheAll(isBackground = false) {
             try {
-                // Tarik 3 Data Utama sekaligus (Riwayat, Karyawan, Kasbon)
-                const resR = await fetch(API_URL + "?action=get_riwayat"); const jR = await resR.json(); if (jR.status === "success") cacheRiwayatGlobal = jR.data;
-                const resK = await fetch(API_URL + "?action=get_karyawan"); const jK = await resK.json(); if(jK.status === "success") localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data));
-                const resKB = await fetch(API_URL + "?action=get_kasbon"); const jKB = await resKB.json(); if(jKB.status === "success") cacheKasbonGlobal = jKB.data;
-            } catch (e) { console.error(e); }
+                // Tarik 3 Data Utama sekaligus (PARALEL) biar 3x lipat lebih cepat
+                const [resR, resK, resKB] = await Promise.all([
+                    fetch(API_URL + "?action=get_riwayat"),
+                    fetch(API_URL + "?action=get_karyawan"),
+                    fetch(API_URL + "?action=get_kasbon")
+                ]);
+
+                const jR = await resR.json(); 
+                if (jR.status === "success") {
+                    cacheRiwayatGlobal = jR.data;
+                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                }
+
+                const jK = await resK.json(); 
+                if (jK.status === "success") {
+                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data));
+                }
+
+                const jKB = await resKB.json(); 
+                if (jKB.status === "success") {
+                    cacheKasbonGlobal = jKB.data;
+                    localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                }
+
+                // Jika jalan di latar belakang, update layarnya secara diam-diam
+                if(isBackground) {
+                    if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
+                    if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
+                    if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
+                }
+            } catch (e) { 
+                console.error(e); 
+            }
         }
 
         function renderTabelHarian() {
@@ -349,9 +372,9 @@
         }
 
         // ===============================================================
-        // FUNGSI MATRIKS + PENGHITUNGAN GAJI (DIKURANGI KASBON)
+        // FUNGSI MATRIKS + PENGHITUNGAN GAJI (+ GRAND TOTAL V3.0)
         // ===============================================================
-       function renderMatriks() {
+        function renderMatriks() {
             const selectBulan = parseInt(document.getElementById('rekapBulan').value);
             const selectTahun = parseInt(document.getElementById('rekapTahun').value);
             const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate(); 
@@ -401,6 +424,7 @@
                 let totalHadir = 0;
                 for (let i = 1; i <= jumlahHari; i++) {
                     let simbol = matriks[nama][i]; let styleWarna = "text-gray-300 font-normal";
+                    // Izin (🪪) tidak menambah hitungan hadir
                     if (simbol !== "." && simbol !== "🪪") totalHadir++; 
 
                     if (simbol === "✔️") styleWarna = "text-green-600 font-bold bg-green-50/50";
@@ -450,6 +474,7 @@
 
             tbody.innerHTML = bodyHtml;
         }
+
         // --- MANAJEMEN KARYAWAN (TOMBOL EDIT + SENSOR MATA) ---
         function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner'); const cacheNama = localStorage.getItem('cache_nama_karyawan');
@@ -468,7 +493,7 @@
             else if (type === 'gaji') { const t = document.getElementById(`karGajiText-${idx}`); const i = document.getElementById(`karGajiIcon-${idx}`); if (t.innerText === "••••••") { t.innerText = formatRupiah(cacheKaryawan[idx].gaji || 0); i.classList.replace("fa-eye", "fa-eye-slash"); } else { t.innerText = "••••••"; i.classList.replace("fa-eye-slash", "fa-eye"); } }
         };
 
-        // --- FUNGSI API KARYAWAN (NGEBUT) ---
+        // --- FUNGSI API KARYAWAN (MEMANGGIL SYNC BACKGROUND) ---
         async function tambahKaryawanAPI() {
             const nama = document.getElementById('addNama').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0;
             if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error');
@@ -477,7 +502,7 @@
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji }) }); const res = await response.json();
                 if(res.status === 'success') {
                     document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = '';
-                    await fetchAndCacheAll(); Swal.close(); Toast.fire({ icon: 'success', title: 'Tersimpan & Sinkron!' }); switchTabOwner('karyawan');
+                    await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Tersimpan & Sinkron!' }); switchTabOwner('karyawan');
                 } else Swal.fire('Error', res.message, 'error');
             } catch(e) { Swal.fire('Error', 'Gagal koneksi', 'error'); }
         }
@@ -492,7 +517,7 @@
                 Swal.fire({ title: 'Memperbarui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 try {
                     const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit_karyawan", nama: nama, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }) }); const res = await response.json();
-                    if (res.status === 'success') { await fetchAndCacheAll(); Swal.close(); Toast.fire({ icon: 'success', title: 'Diperbarui!' }); switchTabOwner('karyawan'); }
+                    if (res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Diperbarui!' }); switchTabOwner('karyawan'); }
                 } catch (e) { Swal.fire('Error', 'Gagal', 'error'); }
             }
         }
@@ -503,7 +528,7 @@
                     Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     try {
                         const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) }); const res = await response.json();
-                        if(res.status === 'success') { await fetchAndCacheAll(); Swal.close(); Toast.fire({ icon: 'success', title: 'Dihapus!' }); switchTabOwner('karyawan'); }
+                        if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Dihapus!' }); switchTabOwner('karyawan'); }
                     } catch(e) { }
                 }
             });
@@ -520,7 +545,7 @@
                 const res = await response.json();
                 if(res.status === 'success') {
                     document.getElementById('kasbonNominal').value = ''; document.getElementById('kasbonKeterangan').value = '';
-                    await fetchAndCacheAll(); Swal.close(); Swal.fire('Tersimpan!', `Kasbon ${nama} sejumlah Rp ${nominal} berhasil dicatat & akan memotong gajinya.`, 'success');
+                    await fetchAndCacheAll(true); Swal.close(); Swal.fire('Tersimpan!', `Kasbon ${nama} sejumlah Rp ${nominal} berhasil dicatat & akan memotong gajinya.`, 'success');
                 }
             } catch(e) { Swal.fire('Error', 'Koneksi gagal', 'error'); }
         }
