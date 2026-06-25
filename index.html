@@ -24,13 +24,12 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
-    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative no-print">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V6.0 - Clean Grid</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V6.1 - Super Grid</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -41,7 +40,6 @@
 
     <main class="flex-grow flex flex-col items-center p-3 w-full mx-auto relative overflow-hidden no-print">
         
-        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -53,7 +51,6 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
-        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -74,7 +71,6 @@
                 </div>
             </div>
 
-            <!-- TOMBOL ABSEN 3 PILIHAN -->
             <div class="grid grid-cols-3 gap-2 w-full mb-3">
                 <button id="btnPagi" onclick="prosesAbsen('PAGI')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-blue-800">
                     <i class="fas fa-sun text-lg"></i> <span id="labelPagi" class="text-[10px] text-center leading-tight">PAGI</span>
@@ -91,8 +87,7 @@
             <button id="btnIzin" onclick="prosesIzinSakit()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-purple-800 text-sm"><i class="fas fa-notes-medical text-lg"></i> AJUKAN IZIN / SAKIT</button>
         </div>
 
-        <!-- DASHBOARD OWNER -->
-        <div id="ownerView" class="w-full max-w-4xl mx-auto hidden flex flex-col gap-3">
+        <div id="ownerView" class="w-full max-w-5xl mx-auto hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
                     <h2 class="font-black text-lg"><i class="fas fa-users text-yellow-400 mr-1"></i> Dashboard HRD</h2>
@@ -112,7 +107,6 @@
                 <button onclick="switchTabOwner('pengaturan')" id="tabBtn-pengaturan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">⚙️ Seting</button>
             </div>
 
-            <!-- PANEL 1: LOG KHUSUS HARI INI SAJA -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="p-2 border-b border-gray-100 bg-gray-50 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fas fa-calendar-day text-emerald-500 mr-1"></i> Data Kehadiran Khusus Hari Ini</div>
                 <div class="overflow-x-auto w-full scrollbar-thin">
@@ -123,19 +117,21 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK 1:1) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
-                <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
-                    <span class="font-bold text-gray-600 text-sm">Matriks Gaji (Grid 1:1)</span>
-                    <div class="flex gap-1 items-center">
-                        <select id="rekapBulan" onchange="renderMatriks()" class="p-1 text-[10px] border border-gray-400 rounded font-bold text-gray-700 bg-white outline-none"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
-                        <select id="rekapTahun" onchange="renderMatriks()" class="p-1 text-[10px] border border-gray-400 rounded font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
+                <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
+                    <span class="font-bold text-gray-600 text-sm"><i class="fas fa-table text-emerald-500 mr-1"></i> Matriks Gaji</span>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <button onclick="toggleEditPintas()" id="btnEditPintas" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600"><i class="fas fa-bolt"></i> Edit Pintas: OFF</button>
+                        <button onclick="cetakRekapGlobal()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-blue-800"><i class="fas fa-file-pdf"></i> Download Rekap PDF</button>
+                        <div class="flex border border-gray-400 rounded-lg overflow-hidden shadow-sm">
+                            <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none border-r border-gray-400"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
+                            <select id="rekapTahun" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
+                        </div>
                     </div>
                 </div>
                 <div class="p-2 bg-white border-b border-gray-300 text-[8px] flex gap-2 text-gray-600 font-bold flex-wrap shadow-sm">
                     <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span> <span class="text-white bg-red-500 px-1 rounded">🟥 Libur/Alpa</span>
                 </div>
-                <!-- BAGIAN GRID EXCEL -->
                 <div class="overflow-x-auto w-full scrollbar-thin">
                     <table class="w-full text-left border-collapse border border-gray-400 min-w-max">
                         <thead><tr id="headerRekapBulanan"></tr></thead>
@@ -144,7 +140,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -166,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 4: KEUANGAN -->
             <div id="panel-kasbon" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2">
@@ -191,7 +185,6 @@
                 </div>
             </div>
 
-            <!-- PANEL 5: PENGATURAN HRD CLOUD -->
             <div id="panel-pengaturan" class="w-full hidden flex flex-col gap-3">
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
                     <h3 class="font-black text-xs uppercase text-gray-500 border-b border-gray-100 pb-2"><i class="fas fa-cloud text-emerald-500"></i> Pengaturan Cloud (Tersinkron Semua HP)</h3>
@@ -210,48 +203,7 @@
 
     <canvas id="kanvasFoto" class="hidden no-print"></canvas>
 
-    <!-- AREA CETAK AMPLOP SLIP GAJI A4 -->
-    <div id="printArea" class="hidden font-sans text-black">
-        <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col items-center justify-center" style="transform: rotate(180deg);">
-            <h1 class="text-4xl font-black mb-2 tracking-widest text-gray-800">FAJRI TOYS</h1>
-            <h2 class="text-xl font-bold border-b-2 border-black pb-2 text-gray-600">DOKUMEN RAHASIA GAJI</h2>
-            <p class="mt-8 text-lg font-semibold">Kepada Yth:</p>
-            <p class="text-3xl font-black uppercase mt-2 tracking-wider" id="print-nama-cover">-</p>
-        </div>
-        
-        <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col justify-center px-12">
-            <h3 class="text-lg font-black mb-4 border-b-2 border-gray-300 pb-2 flex justify-between">
-                <span>RINCIAN PAYROLL</span>
-                <span class="text-gray-500 text-sm font-normal pt-1">Periode: <span id="print-periode" class="font-bold text-black">-</span></span>
-            </h3>
-            <table class="w-full text-base mb-6 font-semibold text-gray-700">
-                <tr><td class="py-2 border-b border-gray-200">Gaji Kehadiran Penuh (<span id="print-hadir">0</span>x)</td><td class="text-right font-mono border-b border-gray-200" id="print-uang-pokok">Rp 0</td></tr>
-                <tr><td class="py-2 border-b border-gray-200">Gaji Setengah Hari (<span id="print-setengah">0</span>x)</td><td class="text-right font-mono border-b border-gray-200" id="print-uang-setengah">Rp 0</td></tr>
-                <tr><td class="py-2 border-b border-gray-200">Tambahan Lembur (<span id="print-jam-lembur">0</span> Jam)</td><td class="text-right font-mono text-green-600 border-b border-gray-200" id="print-uang-lembur">Rp 0</td></tr>
-                <tr><td class="py-2 border-b border-black">Potongan Kasbon</td><td class="text-right font-mono text-red-600 border-b border-black" id="print-uang-kasbon">Rp 0</td></tr>
-            </table>
-            <div class="flex justify-between font-black text-2xl items-center mt-2">
-                <span class="uppercase">Total Diterima:</span>
-                <span id="print-bersih" class="border-2 border-black px-4 py-2 bg-gray-100 shadow-[4px_4px_0_rgba(0,0,0,1)]">Rp 0</span>
-            </div>
-        </div>
-
-        <div class="flex-1 p-8 flex flex-col justify-between px-12">
-            <div class="text-center italic text-sm text-gray-500 mt-6 font-medium">
-                "Terima kasih atas kerja keras dan dedikasinya. Terus semangat dan pantang menyerah!"
-            </div>
-            <div class="flex justify-between mt-auto mb-10 text-lg">
-                <div class="text-center w-48">
-                    <p class="mb-24 font-bold text-gray-600">Penerima,</p>
-                    <p class="border-b border-black font-black uppercase pb-1" id="print-nama-ttd">-</p>
-                </div>
-                <div class="text-center w-48">
-                    <p class="mb-24 font-bold text-gray-600">Mastermind,</p>
-                    <p class="border-b border-black font-black uppercase pb-1">Owner Fajri Toys</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="printArea" class="hidden"></div>
 
     <script>
         // =========================================================================
@@ -271,32 +223,22 @@
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
         let databaseCetakSlip = {}; 
+        let isEditPintasActive = false; // Mode Edit Pintas
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
-        // ===============================================================
-        // FUNGSI TANGGAL SAKTI (ANTI KOMA & ANTI US FORMAT)
-        // ===============================================================
         function parseTanggalSakti(waktuAsli) {
             if(!waktuAsli) return null;
             let textDate = String(waktuAsli).split(' ')[0].replace(',', '').trim();
             let parts = textDate.split(/[/\-]/);
             if(parts.length !== 3) return null;
-            
-            let a = parseInt(parts[0]);
-            let b = parseInt(parts[1]);
-            let c = parseInt(parts[2]);
-            
+            let a = parseInt(parts[0]); let b = parseInt(parts[1]); let c = parseInt(parts[2]);
             let y = c > 2000 ? c : c + 2000;
             let m, d;
-            
-            if (a > 12) { d = a; m = b; }
-            else if (b > 12) { d = b; m = a; }
-            else { d = a; m = b; } 
-            
+            if (a > 12) { d = a; m = b; } else if (b > 12) { d = b; m = a; } else { d = a; m = b; } 
             return { tgl: d, bln: m, thn: y };
         }
 
@@ -375,7 +317,6 @@
         }
         function tutupOwnerView() { document.getElementById('ownerView').classList.add('hidden'); if (dataProfil) bukaSistemKaryawan(); else window.location.reload(); }
 
-        // FUNGSI PINDAH TAB
         function switchTabOwner(tab) {
             ['monitoring', 'karyawan', 'rekap', 'kasbon', 'pengaturan'].forEach(t => { 
                 document.getElementById('panel-'+t).classList.add('hidden'); document.getElementById('tabBtn-'+t).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300"; 
@@ -420,32 +361,84 @@
 
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
-            
-            let tHariIni = new Date();
-            let blnSkg = tHariIni.getMonth() + 1;
-            let thnSkg = tHariIni.getFullYear();
-            let tglSkg = tHariIni.getDate();
+            let tHariIni = new Date(); let blnSkg = tHariIni.getMonth() + 1; let thnSkg = tHariIni.getFullYear(); let tglSkg = tHariIni.getDate();
 
-            const dataHariIni = cacheRiwayatGlobal.filter(t => {
-                let dPars = parseTanggalSakti(t.waktu);
-                return dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg;
-            });
-
+            const dataHariIni = cacheRiwayatGlobal.filter(t => { let dPars = parseTanggalSakti(t.waktu); return dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg; });
             if (dataHariIni.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-4 border border-gray-200 text-center text-gray-400 text-[10px] italic">Sistem kosong. Belum ada absen HARI INI.</td></tr>`;
             
             let html = "";
             dataHariIni.forEach(t => {
                 let colorStatus = t.status.includes("PAGI") || t.status.includes("MASUK") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
-                if (t.status.includes("TELAT")) colorStatus = "text-red-600 bg-red-100"; 
-                if (t.status.includes("SETENGAH")) colorStatus = "text-orange-600 bg-orange-100"; 
-                if (t.status.includes("IZIN") || t.status.includes("SAKIT")) colorStatus = "text-purple-700 bg-purple-100";
-                
+                if (t.status.includes("TELAT")) colorStatus = "text-red-600 bg-red-100"; if (t.status.includes("SETENGAH")) colorStatus = "text-orange-600 bg-orange-100"; if (t.status.includes("IZIN") || t.status.includes("SAKIT")) colorStatus = "text-purple-700 bg-purple-100";
                 let colorJarak = t.jarak <= RADIUS_MAKSIMAL ? "text-green-600 font-bold" : "text-red-500 font-bold"; if (t.tipe === 'MOBILE' || t.status.includes("IZIN")) colorJarak = "text-gray-600 font-semibold";
                 let tgl = new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }); if (tgl === "Invalid Date") tgl = t.waktu;
                 let divCatatan = t.catatan && t.catatan !== "-" ? `<div class="text-[8px] text-gray-500 mt-1 text-center font-semibold w-[80px] truncate cursor-pointer mx-auto" onclick="Swal.fire('Laporan/Catatan', '${t.catatan}', 'info')">📝 ${t.catatan}</div>` : "";
                 
                 html += `<tr class="border-b border-gray-200 hover:bg-gray-50"><td class="p-2"><div class="font-bold text-gray-800 text-[10px]">${t.nama}</div><div class="text-[8px] text-gray-400"><i class="fas fa-clock text-emerald-500"></i> ${tgl}</div></td><td class="p-2 text-center flex flex-col items-center pt-2"><span class="${colorStatus} px-1.5 py-0.5 rounded text-[8px] font-black border tracking-wider">${t.status}</span>${divCatatan}</td><td class="p-2 text-[9px] ${colorJarak} text-center">${t.status.includes("IZIN") ? '-' : t.jarak + 'M'}</td><td class="p-2 text-center"><button onclick="bukaFoto('${t.foto}')" class="bg-emerald-100 text-emerald-700 px-1.5 py-1 rounded text-[10px]"><i class="fas fa-camera"></i></button> <a href="${t.maps}" target="_blank" class="bg-blue-100 text-blue-700 px-1.5 py-1 rounded text-[10px] inline-block"><i class="fas fa-map-marker-alt"></i></a></td></tr>`;
             }); tbody.innerHTML = html;
+        }
+
+        // ===============================================================
+        // TOMBOL EDIT PINTAS / QUICK EDIT
+        // ===============================================================
+        function toggleEditPintas() {
+            isEditPintasActive = !isEditPintasActive;
+            const btn = document.getElementById('btnEditPintas');
+            if(isEditPintasActive) {
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Pintas: ON';
+                btn.className = "bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-red-700 animate-pulse";
+                Toast.fire({icon:'info', title:'Klik logo ✔️ untuk potong 1/2 hari!'});
+            } else {
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Pintas: OFF';
+                btn.className = "bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600";
+            }
+            renderMatriks(); // Refresh tampilan biar kliknya aktif
+        }
+
+        function handleCellClick(nama, tgl, sim) {
+            if(!isEditPintasActive) return;
+            if(sim === "✔️") {
+                Swal.fire({
+                    title: 'Potong Setengah Hari?',
+                    text: `Ubah kehadiran ${nama} (Tgl ${tgl}) menjadi 1/2 Hari?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f97316',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Potong 50%!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        eksekusiSetengahHariPintas(nama, tgl);
+                    }
+                })
+            } else if (sim === "🌗") {
+                 Swal.fire('Info Sistem', 'Ini sudah setengah hari. Untuk mengembalikannya jadi hadir penuh, Bos harus menghapus recordnya di tab Kasbon Google Sheets secara manual.', 'info');
+            }
+        }
+
+        async function eksekusiSetengahHariPintas(nama, tgl) {
+            let selectBulan = document.getElementById('rekapBulan').value;
+            let selectTahun = document.getElementById('rekapTahun').value;
+            let formatTgl = `${tgl}/${selectBulan}/${selectTahun}`;
+            
+            let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+            let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
+            if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); 
+            
+            let nom = parseInt(kar.gaji) / 2; 
+            Swal.fire({ title: 'Memotong Gaji 50%...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
+            try { 
+                let waktu = new Date().toLocaleString('id-ID'); 
+                let ket = `SETENGAH HARI: ${formatTgl}`; 
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); 
+                const res = await response.json(); 
+                if(res.status === 'success') { 
+                    await fetchAndCacheAll(true); 
+                    Swal.close(); 
+                    Toast.fire({ icon: 'success', title: 'Berhasil diubah ke 🌗' }); 
+                } 
+            } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
         }
 
         // ===============================================================
@@ -458,7 +451,6 @@
             const theadRow = document.getElementById('headerRekapBulanan');
             let headerHtml = `<th class="p-1 border border-gray-400 bg-gray-200 text-gray-700 sticky left-0 z-20 text-[9px] min-w-[70px]">NAMA</th>`;
             for (let i = 1; i <= jumlahHari; i++) { 
-                // GRID 1:1 SEMPURNA
                 headerHtml += `<th class="p-0 border border-gray-400 bg-gray-200 text-center font-black text-[9px] min-w-[26px] w-[26px] h-[26px]">${i}</th>`; 
             }
             headerHtml += `<th class="p-1 border border-gray-400 bg-emerald-200 text-emerald-800 text-[9px] min-w-[70px] text-center uppercase">PAYROLL</th>`;
@@ -530,8 +522,9 @@
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
                     else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
                     
-                    // GRID 1:1 SEMPURNA
-                    bodyHtml += `<td class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna}">${sim}</td>`;
+                    let cursorStyle = (isEditPintasActive && (sim === "✔️" || sim === "🌗")) ? "cursor-pointer hover:bg-orange-200 transition ring-inset ring-1 ring-orange-400" : "";
+                    
+                    bodyHtml += `<td onclick="handleCellClick('${nama}', ${i}, '${sim}')" class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna} ${cursorStyle}">${sim}</td>`;
                 }
                 
                 let gajiHarian = gajiDict[nama] || 0;
@@ -549,9 +542,8 @@
                     periode: document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text + " " + selectTahun
                 };
 
-                // TOMBOL BUKA GAJI POPUP (HEMAT LAYAR)
                 bodyHtml += `<td class="p-1 border border-gray-400 bg-emerald-50/30 text-center">
-                    <button onclick="bukaTotalGaji('${nama}')" class="bg-emerald-600 text-white text-[8px] font-bold py-1 px-2 rounded shadow hover:bg-emerald-700 transition active:scale-95"><i class="fas fa-eye"></i> CEK GAJI</button>
+                    <button onclick="bukaTotalGaji('${nama}')" class="bg-emerald-600 text-white text-[8px] font-bold py-1 px-2 rounded shadow hover:bg-emerald-700 transition active:scale-95"><i class="fas fa-eye"></i> BUKA GAJI</button>
                 </td></tr>`;
             });
 
@@ -559,7 +551,9 @@
             tbody.innerHTML = bodyHtml;
         }
 
-        // FUNGSI POPUP BUKA GAJI
+        // ===============================================================
+        // FUNGSI POPUP BUKA GAJI & CETAK
+        // ===============================================================
         function bukaTotalGaji(nama) {
             const data = databaseCetakSlip[nama];
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
@@ -590,12 +584,104 @@
 
         function cetakSlipGaji(nama) {
             const data = databaseCetakSlip[nama]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
-            document.getElementById('print-nama-cover').innerText = nama; document.getElementById('print-nama-ttd').innerText = nama;
-            document.getElementById('print-periode').innerText = data.periode; document.getElementById('print-hadir').innerText = data.hadir;
-            document.getElementById('print-uang-pokok').innerText = formatRupiah(data.uangPokok); document.getElementById('print-setengah').innerText = data.setHari;
-            document.getElementById('print-uang-setengah').innerText = formatRupiah(data.uangSetHari); document.getElementById('print-jam-lembur').innerText = data.lemburJam;
-            document.getElementById('print-uang-lembur').innerText = formatRupiah(data.uangLembur); document.getElementById('print-uang-kasbon').innerText = formatRupiah(data.kasbon);
-            document.getElementById('print-bersih').innerText = formatRupiah(data.bersih); window.print();
+            
+            // Menyuntikkan template Amplop Gaji ke area print
+            document.getElementById('printArea').innerHTML = `
+                <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col items-center justify-center font-sans text-black bg-white" style="transform: rotate(180deg);">
+                    <h1 class="text-4xl font-black mb-2 tracking-widest text-gray-800">FAJRI TOYS</h1>
+                    <h2 class="text-xl font-bold border-b-2 border-black pb-2 text-gray-600">DOKUMEN RAHASIA GAJI</h2>
+                    <p class="mt-8 text-lg font-semibold">Kepada Yth:</p>
+                    <p class="text-3xl font-black uppercase mt-2 tracking-wider">${nama}</p>
+                </div>
+                <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col justify-center px-12 font-sans text-black bg-white">
+                    <h3 class="text-lg font-black mb-4 border-b-2 border-gray-300 pb-2 flex justify-between">
+                        <span>RINCIAN PAYROLL</span>
+                        <span class="text-gray-500 text-sm font-normal pt-1">Periode: <span class="font-bold text-black">${data.periode}</span></span>
+                    </h3>
+                    <table class="w-full text-base mb-6 font-semibold text-gray-700">
+                        <tr><td class="py-2 border-b border-gray-200">Gaji Kehadiran Penuh (${data.hadir}x)</td><td class="text-right font-mono border-b border-gray-200">${formatRupiah(data.uangPokok)}</td></tr>
+                        <tr><td class="py-2 border-b border-gray-200">Gaji Setengah Hari (${data.setHari}x)</td><td class="text-right font-mono border-b border-gray-200">${formatRupiah(data.uangSetHari)}</td></tr>
+                        <tr><td class="py-2 border-b border-gray-200">Tambahan Lembur (${data.lemburJam} Jam)</td><td class="text-right font-mono text-green-600 border-b border-gray-200">${formatRupiah(data.uangLembur)}</td></tr>
+                        <tr><td class="py-2 border-b border-black">Potongan Kasbon</td><td class="text-right font-mono text-red-600 border-b border-black">${formatRupiah(data.kasbon)}</td></tr>
+                    </table>
+                    <div class="flex justify-between font-black text-2xl items-center mt-2">
+                        <span class="uppercase">Total Diterima:</span>
+                        <span class="border-2 border-black px-4 py-2 bg-gray-100 shadow-[4px_4px_0_rgba(0,0,0,1)]">${formatRupiah(data.bersih)}</span>
+                    </div>
+                </div>
+                <div class="flex-1 p-8 flex flex-col justify-between px-12 font-sans text-black bg-white">
+                    <div class="text-center italic text-sm text-gray-500 mt-6 font-medium">"Terima kasih atas kerja keras dan dedikasinya. Terus semangat dan pantang menyerah!"</div>
+                    <div class="flex justify-between mt-auto mb-10 text-lg">
+                        <div class="text-center w-48"><p class="mb-24 font-bold text-gray-600">Penerima,</p><p class="border-b border-black font-black uppercase pb-1">${nama}</p></div>
+                        <div class="text-center w-48"><p class="mb-24 font-bold text-gray-600">Mastermind,</p><p class="border-b border-black font-black uppercase pb-1">Owner Fajri Toys</p></div>
+                    </div>
+                </div>
+            `;
+            window.print();
+        }
+
+        // FUNGSI DOWNLOAD REKAP KESELURUHAN
+        function cetakRekapGlobal() {
+            let selectBulan = document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text;
+            let selectTahun = document.getElementById('rekapTahun').value;
+            let periode = `${selectBulan} ${selectTahun}`;
+
+            let htmlRekap = `
+                <div class="p-8 font-sans text-black bg-white w-full min-h-screen">
+                    <h1 class="text-3xl font-black text-center mb-1 tracking-widest text-gray-800">FAJRI TOYS</h1>
+                    <h2 class="text-xl font-bold text-center border-b-2 border-black pb-2 text-gray-600 mb-6">REKAPITULASI GAJI KESELURUHAN</h2>
+                    <p class="font-bold mb-4">Periode: ${periode}</p>
+                    <table class="w-full border-collapse border border-black text-sm text-left">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border border-black p-2">NAMA</th>
+                                <th class="border border-black p-2 text-center">HADIR</th>
+                                <th class="border border-black p-2 text-center">1/2 HARI</th>
+                                <th class="border border-black p-2 text-center">LEMBUR</th>
+                                <th class="border border-black p-2 text-right">KASBON</th>
+                                <th class="border border-black p-2 text-right">GAJI BERSIH</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let grandTotal = 0;
+            for(let nama in databaseCetakSlip) {
+                let d = databaseCetakSlip[nama];
+                htmlRekap += `
+                    <tr>
+                        <td class="border border-black p-2 font-bold uppercase">${nama}</td>
+                        <td class="border border-black p-2 text-center">${d.hadir}x</td>
+                        <td class="border border-black p-2 text-center">${d.setHari}x</td>
+                        <td class="border border-black p-2 text-center">${d.lemburJam} Jam</td>
+                        <td class="border border-black p-2 text-right text-red-600">${formatRupiah(d.kasbon)}</td>
+                        <td class="border border-black p-2 text-right font-black text-green-700">${formatRupiah(d.bersih)}</td>
+                    </tr>
+                `;
+                grandTotal += d.bersih;
+            }
+
+            htmlRekap += `
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-gray-200 font-black text-base">
+                                <td colspan="5" class="border border-black p-2 text-right">GRAND TOTAL PENGELUARAN GAJI:</td>
+                                <td class="border border-black p-2 text-right">${formatRupiah(grandTotal)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="mt-12 flex justify-end pr-12">
+                        <div class="text-center w-48">
+                            <p class="mb-24 font-bold text-gray-600">Mengetahui,</p>
+                            <p class="border-b border-black font-black uppercase pb-1">Owner Fajri Toys</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Menyuntikkan template Rekap Global ke area print
+            document.getElementById('printArea').innerHTML = htmlRekap;
+            window.print();
         }
 
         // --- MANAJEMEN KARYAWAN ---
