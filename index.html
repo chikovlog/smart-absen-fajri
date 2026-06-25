@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.2 - Ultimate</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.3 - Ultimate</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -132,8 +132,9 @@
                         <select id="rekapTahun" onchange="renderMatriks()" class="p-1 text-[10px] border border-gray-400 rounded font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
                     </div>
                 </div>
+                <!-- UPDATE LEGEND KETERANGAN WARNA -->
                 <div class="p-2 bg-white border-b border-gray-300 text-[8px] flex gap-2 text-gray-600 font-bold flex-wrap shadow-sm">
-                    <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span>
+                    <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span> <span class="text-white bg-red-500 px-1 rounded">🟥 Libur/Alpa</span>
                 </div>
                 <!-- BAGIAN GRID EXCEL -->
                 <div class="overflow-x-auto w-full scrollbar-thin">
@@ -293,10 +294,9 @@
             let y = c > 2000 ? c : c + 2000;
             let m, d;
             
-            // Cek gaya US (Bulan di depan) vs Indo (Tanggal di depan)
             if (a > 12) { d = a; m = b; }
             else if (b > 12) { d = b; m = a; }
-            else { d = a; m = b; } // Default Indo: DD/MM/YYYY
+            else { d = a; m = b; } 
             
             return { tgl: d, bln: m, thn: y };
         }
@@ -422,7 +422,7 @@
         }
 
         // ===============================================================
-        // TABEL LOG YANG HANYA MENAMPILKAN HARI INI (ANTI-GAGAL KOMA)
+        // TABEL LOG YANG HANYA MENAMPILKAN HARI INI
         // ===============================================================
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
@@ -529,10 +529,15 @@
                     if (sim === "✔️" || sim === "⚠️" || sim === "🏍️") hadirPenuh++; 
 
                     if (sim === "✔️") styleWarna = "text-green-600 font-bold bg-green-50";
-                    if (sim === "⚠️") styleWarna = "text-red-500 font-bold bg-red-50";
-                    if (sim === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
-                    if (sim === "🪪") styleWarna = "text-purple-600 font-bold bg-purple-50";
-                    if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
+                    else if (sim === "⚠️") styleWarna = "text-red-500 font-bold bg-red-50";
+                    else if (sim === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
+                    else if (sim === "🪪") styleWarna = "text-purple-600 font-bold bg-purple-50";
+                    else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
+                    else if (sim === "") { 
+                        // INI PERUBAHANNYA: KOTAK KOSONG DIBLOK MERAH
+                        styleWarna = "bg-red-500 text-white font-bold"; 
+                    }
+                    
                     bodyHtml += `<td class="p-0.5 border border-gray-400 text-center text-[9px] ${styleWarna}">${sim}</td>`;
                 }
                 
