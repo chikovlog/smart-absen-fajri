@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.3 - Ultimate</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V6.0 - Clean Grid</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -123,16 +123,15 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK) -->
+            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK 1:1) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
-                    <span class="font-bold text-gray-600 text-sm">Matriks Gaji (Tampilan Excel)</span>
+                    <span class="font-bold text-gray-600 text-sm">Matriks Gaji (Grid 1:1)</span>
                     <div class="flex gap-1 items-center">
                         <select id="rekapBulan" onchange="renderMatriks()" class="p-1 text-[10px] border border-gray-400 rounded font-bold text-gray-700 bg-white outline-none"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
                         <select id="rekapTahun" onchange="renderMatriks()" class="p-1 text-[10px] border border-gray-400 rounded font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
                     </div>
                 </div>
-                <!-- UPDATE LEGEND KETERANGAN WARNA -->
                 <div class="p-2 bg-white border-b border-gray-300 text-[8px] flex gap-2 text-gray-600 font-bold flex-wrap shadow-sm">
                     <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span> <span class="text-white bg-red-500 px-1 rounded">🟥 Libur/Alpa</span>
                 </div>
@@ -316,7 +315,6 @@
                 if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
             }, 1000);
 
-            // Fetch Data Setting Global Cloud
             fetch(API_URL + "?action=get_config_hrd").then(res => res.json()).then(res => {
                 if(res.status === 'success') { configHRD.tarifLembur = parseInt(res.data.tarifLembur) || 8000; }
             }).catch(e => {});
@@ -389,7 +387,6 @@
             if(tab === 'pengaturan') { document.getElementById('cfgTarifLembur').value = configHRD.tarifLembur; }
         }
 
-        // SIMPAN PENGATURAN LEMBUR KE SERVER GOOGLE GLOBAL
         async function simpanConfigHRD() {
             const tarif = parseInt(document.getElementById('cfgTarifLembur').value) || 0;
             Swal.fire({ title: 'Upload ke Server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -421,9 +418,6 @@
             } catch (e) { }
         }
 
-        // ===============================================================
-        // TABEL LOG YANG HANYA MENAMPILKAN HARI INI
-        // ===============================================================
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
             
@@ -455,7 +449,7 @@
         }
 
         // ===============================================================
-        // LOGIKA MATRIKS GRID KOTAK-KOTAK EXCEL
+        // LOGIKA MATRIKS GRID KOTAK-KOTAK 1:1
         // ===============================================================
         function renderMatriks() {
             const selectBulan = parseInt(document.getElementById('rekapBulan').value); const selectTahun = parseInt(document.getElementById('rekapTahun').value);
@@ -463,8 +457,11 @@
             
             const theadRow = document.getElementById('headerRekapBulanan');
             let headerHtml = `<th class="p-1 border border-gray-400 bg-gray-200 text-gray-700 sticky left-0 z-20 text-[9px] min-w-[70px]">NAMA</th>`;
-            for (let i = 1; i <= jumlahHari; i++) { headerHtml += `<th class="p-0.5 border border-gray-400 bg-gray-200 text-center font-black text-[9px] min-w-[18px] w-[18px]">${i}</th>`; }
-            headerHtml += `<th class="p-1 border border-gray-400 bg-emerald-200 text-emerald-800 text-[9px] min-w-[120px] text-right uppercase">PAYROLL (RP)</th>`;
+            for (let i = 1; i <= jumlahHari; i++) { 
+                // GRID 1:1 SEMPURNA
+                headerHtml += `<th class="p-0 border border-gray-400 bg-gray-200 text-center font-black text-[9px] min-w-[26px] w-[26px] h-[26px]">${i}</th>`; 
+            }
+            headerHtml += `<th class="p-1 border border-gray-400 bg-emerald-200 text-emerald-800 text-[9px] min-w-[70px] text-center uppercase">PAYROLL</th>`;
             theadRow.innerHTML = headerHtml;
 
             const tbody = document.getElementById('tableRekapBulanan');
@@ -477,7 +474,6 @@
             let matriks = {}; let rekapFinansial = {};
             karyawanSet.forEach(nama => { matriks[nama] = {}; rekapFinansial[nama] = { kasbon: 0, lemburRp: 0, jmlLembur: 0, jmlSetHari: 0 }; for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = ""; } });
 
-            // 1. Baca Kehadiran Standar
             if (cacheRiwayatGlobal) {
                 cacheRiwayatGlobal.slice().reverse().forEach(t => {
                     let dPars = parseTanggalSakti(t.waktu);
@@ -494,7 +490,6 @@
                 });
             }
 
-            // 2. Baca Kasbon, Lembur, dan Setengah Hari
             cacheKasbonGlobal.forEach(kb => {
                 let nama = kb.nama.toUpperCase(); if(!rekapFinansial[nama]) return;
                 let dPars = parseTanggalSakti(kb.waktu);
@@ -533,12 +528,10 @@
                     else if (sim === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
                     else if (sim === "🪪") styleWarna = "text-purple-600 font-bold bg-purple-50";
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
-                    else if (sim === "") { 
-                        // INI PERUBAHANNYA: KOTAK KOSONG DIBLOK MERAH
-                        styleWarna = "bg-red-500 text-white font-bold"; 
-                    }
+                    else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
                     
-                    bodyHtml += `<td class="p-0.5 border border-gray-400 text-center text-[9px] ${styleWarna}">${sim}</td>`;
+                    // GRID 1:1 SEMPURNA
+                    bodyHtml += `<td class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna}">${sim}</td>`;
                 }
                 
                 let gajiHarian = gajiDict[nama] || 0;
@@ -556,20 +549,43 @@
                     periode: document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text + " " + selectTahun
                 };
 
-                bodyHtml += `<td class="p-1 border border-gray-400 bg-emerald-50/30 whitespace-nowrap min-w-[130px] flex items-center justify-end">
-                    <div class="flex-grow pr-1 border-r border-gray-300 mr-1">
-                        <div class="flex justify-between text-[8px] text-gray-500 font-bold leading-tight"><span>Hadir Penuh:</span> <span>${formatRupiah(uangHadirPenuh)}</span></div>
-                        <div class="flex justify-between text-[8px] text-orange-500 font-bold leading-tight"><span>Setengah:</span> <span>${formatRupiah(uangSetHari)}</span></div>
-                        <div class="flex justify-between text-[8px] text-green-600 font-bold leading-tight"><span>Lembur:</span> <span>+${formatRupiah(totalLembur)}</span></div>
-                        <div class="flex justify-between text-[8px] text-red-500 font-bold leading-tight border-b border-gray-300 pb-0.5 mb-0.5"><span>Kasbon:</span> <span>-${formatRupiah(totalPotongan)}</span></div>
-                        <div class="text-right text-[10px] font-black text-emerald-700">${formatRupiah(sisaBersih)}</div>
-                    </div>
-                    <button onclick="cetakSlipGaji('${nama}')" class="bg-gray-800 text-white w-6 h-6 rounded hover:bg-emerald-500 transition shadow text-[9px] flex items-center justify-center" title="Print A4"><i class="fas fa-print"></i></button>
+                // TOMBOL BUKA GAJI POPUP (HEMAT LAYAR)
+                bodyHtml += `<td class="p-1 border border-gray-400 bg-emerald-50/30 text-center">
+                    <button onclick="bukaTotalGaji('${nama}')" class="bg-emerald-600 text-white text-[8px] font-bold py-1 px-2 rounded shadow hover:bg-emerald-700 transition active:scale-95"><i class="fas fa-eye"></i> CEK GAJI</button>
                 </td></tr>`;
             });
 
-            bodyHtml += `<tr class="bg-gray-800 text-white font-bold border-t border-black"><td class="p-1.5 sticky left-0 z-10 bg-gray-800 border-r border-gray-600 text-[10px]">TOTAL</td><td colspan="${jumlahHari}" class="p-1 border-r border-gray-600 text-center text-[9px] text-emerald-300">Pengeluaran Keseluruhan Gaji Bulan Ini</td><td class="p-1.5 border border-gray-600 text-right text-[11px] font-black text-emerald-400">${formatRupiah(grandTotalBersih)}</td></tr>`;
+            bodyHtml += `<tr class="bg-gray-800 text-white font-bold border-t border-black"><td class="p-1.5 sticky left-0 z-10 bg-gray-800 border-r border-gray-600 text-[10px]">TOTAL</td><td colspan="${jumlahHari}" class="p-1 border-r border-gray-600 text-center text-[9px] text-emerald-300">Pengeluaran Keseluruhan Gaji Bulan Ini</td><td class="p-1.5 border border-gray-600 text-center text-[11px] font-black text-emerald-400">${formatRupiah(grandTotalBersih)}</td></tr>`;
             tbody.innerHTML = bodyHtml;
+        }
+
+        // FUNGSI POPUP BUKA GAJI
+        function bukaTotalGaji(nama) {
+            const data = databaseCetakSlip[nama];
+            if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
+
+            let htmlGaji = `
+                <div class="text-left text-xs font-bold text-gray-600 mb-3 border-b pb-2">Periode: ${data.periode}</div>
+                <div class="flex justify-between text-sm mb-1"><span>Hadir Penuh (${data.hadir}x):</span> <span>${formatRupiah(data.uangPokok)}</span></div>
+                <div class="flex justify-between text-sm text-orange-500 mb-1"><span>Setengah Hari (${data.setHari}x):</span> <span>${formatRupiah(data.uangSetHari)}</span></div>
+                <div class="flex justify-between text-sm text-green-600 mb-1"><span>Lembur (${data.lemburJam} Jam):</span> <span>+${formatRupiah(data.uangLembur)}</span></div>
+                <div class="flex justify-between text-sm text-red-500 mb-2 border-b pb-2"><span>Kasbon:</span> <span>-${formatRupiah(data.kasbon)}</span></div>
+                <div class="flex justify-between font-black text-xl text-emerald-700 mt-3 bg-gray-100 p-2 border-2 border-emerald-500 shadow-inner rounded"><span>TOTAL:</span> <span>${formatRupiah(data.bersih)}</span></div>
+            `;
+
+            Swal.fire({
+                title: nama,
+                html: htmlGaji,
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-print"></i> Cetak Amplop',
+                cancelButtonText: 'Tutup'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    cetakSlipGaji(nama);
+                }
+            });
         }
 
         function cetakSlipGaji(nama) {
@@ -646,10 +662,10 @@
                     const jamSistem = new Date().getHours();
                     const menitSistem = new Date().getMinutes();
 
-                    // RUMUS PEMBULATAN LEMBUR AKURAT (Mendekati jam selanjutnya)
+                    // RUMUS PEMBULATAN LEMBUR AKURAT
                     if (statusAbsen === 'PULANG' && jamSistem >= 17) {
                         let totalMenitKelebihan = (jamSistem * 60 + menitSistem) - (17 * 60);
-                        let totalJamLembur = Math.round(totalMenitKelebihan / 60); // 18.15 = 1 Jam, 18.35 = 2 Jam
+                        let totalJamLembur = Math.round(totalMenitKelebihan / 60); 
                         
                         if (totalJamLembur > 0) {
                             setTimeout(() => { triggerLemburOtomatis(waktuSekarang, dataProfil.nama, totalJamLembur); }, 1500);
