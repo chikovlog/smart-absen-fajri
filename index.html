@@ -24,12 +24,13 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
+    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative no-print">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.1 - Ultimate</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.2 - Ultimate</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -40,6 +41,7 @@
 
     <main class="flex-grow flex flex-col items-center p-3 w-full mx-auto relative overflow-hidden no-print">
         
+        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -51,6 +53,7 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
+        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -71,6 +74,7 @@
                 </div>
             </div>
 
+            <!-- TOMBOL ABSEN 3 PILIHAN -->
             <div class="grid grid-cols-3 gap-2 w-full mb-3">
                 <button id="btnPagi" onclick="prosesAbsen('PAGI')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-blue-800">
                     <i class="fas fa-sun text-lg"></i> <span id="labelPagi" class="text-[10px] text-center leading-tight">PAGI</span>
@@ -87,6 +91,7 @@
             <button id="btnIzin" onclick="prosesIzinSakit()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-purple-800 text-sm"><i class="fas fa-notes-medical text-lg"></i> AJUKAN IZIN / SAKIT</button>
         </div>
 
+        <!-- DASHBOARD OWNER -->
         <div id="ownerView" class="w-full max-w-4xl mx-auto hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -107,6 +112,7 @@
                 <button onclick="switchTabOwner('pengaturan')" id="tabBtn-pengaturan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">⚙️ Seting</button>
             </div>
 
+            <!-- PANEL 1: LOG KHUSUS HARI INI SAJA -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="p-2 border-b border-gray-100 bg-gray-50 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fas fa-calendar-day text-emerald-500 mr-1"></i> Data Kehadiran Khusus Hari Ini</div>
                 <div class="overflow-x-auto w-full scrollbar-thin">
@@ -117,6 +123,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-2 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm">Matriks Gaji (Tampilan Excel)</span>
@@ -128,6 +135,7 @@
                 <div class="p-2 bg-white border-b border-gray-300 text-[8px] flex gap-2 text-gray-600 font-bold flex-wrap shadow-sm">
                     <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span>
                 </div>
+                <!-- BAGIAN GRID EXCEL -->
                 <div class="overflow-x-auto w-full scrollbar-thin">
                     <table class="w-full text-left border-collapse border border-gray-400 min-w-max">
                         <thead><tr id="headerRekapBulanan"></tr></thead>
@@ -136,6 +144,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -157,6 +166,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 4: KEUANGAN -->
             <div id="panel-kasbon" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2">
@@ -181,6 +191,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 5: PENGATURAN HRD CLOUD -->
             <div id="panel-pengaturan" class="w-full hidden flex flex-col gap-3">
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
                     <h3 class="font-black text-xs uppercase text-gray-500 border-b border-gray-100 pb-2"><i class="fas fa-cloud text-emerald-500"></i> Pengaturan Cloud (Tersinkron Semua HP)</h3>
@@ -199,6 +210,7 @@
 
     <canvas id="kanvasFoto" class="hidden no-print"></canvas>
 
+    <!-- AREA CETAK AMPLOP SLIP GAJI A4 -->
     <div id="printArea" class="hidden font-sans text-black">
         <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col items-center justify-center" style="transform: rotate(180deg);">
             <h1 class="text-4xl font-black mb-2 tracking-widest text-gray-800">FAJRI TOYS</h1>
@@ -246,6 +258,7 @@
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
+        // GANTI API_URL DI BAWAH INI DENGAN LINK APPS SCRIPT BOS YANG TERBARU:
         const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
         
         let configHRD = { tarifLembur: 8000 };
@@ -264,6 +277,30 @@
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
+        // ===============================================================
+        // FUNGSI TANGGAL SAKTI (ANTI KOMA & ANTI US FORMAT)
+        // ===============================================================
+        function parseTanggalSakti(waktuAsli) {
+            if(!waktuAsli) return null;
+            let textDate = String(waktuAsli).split(' ')[0].replace(',', '').trim();
+            let parts = textDate.split(/[/\-]/);
+            if(parts.length !== 3) return null;
+            
+            let a = parseInt(parts[0]);
+            let b = parseInt(parts[1]);
+            let c = parseInt(parts[2]);
+            
+            let y = c > 2000 ? c : c + 2000;
+            let m, d;
+            
+            // Cek gaya US (Bulan di depan) vs Indo (Tanggal di depan)
+            if (a > 12) { d = a; m = b; }
+            else if (b > 12) { d = b; m = a; }
+            else { d = a; m = b; } // Default Indo: DD/MM/YYYY
+            
+            return { tgl: d, bln: m, thn: y };
+        }
+
         window.onload = () => {
             if (!deviceID) { deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase(); localStorage.setItem('device_id_fajri', deviceID); }
             document.getElementById('labelPerangkat').innerText = "Dev: " + deviceID.substring(0,8);
@@ -279,7 +316,7 @@
                 if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
             }, 1000);
 
-            // Fetch Data Setting Global Cloud secara otomatis di latar belakang
+            // Fetch Data Setting Global Cloud
             fetch(API_URL + "?action=get_config_hrd").then(res => res.json()).then(res => {
                 if(res.status === 'success') { configHRD.tarifLembur = parseInt(res.data.tarifLembur) || 8000; }
             }).catch(e => {});
@@ -357,7 +394,7 @@
             const tarif = parseInt(document.getElementById('cfgTarifLembur').value) || 0;
             Swal.fire({ title: 'Upload ke Server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "simpan_config_hrd", tarifLembur: tarif }) });
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_config_hrd", tarifLembur: tarif }) });
                 const res = await response.json();
                 if(res.status === 'success') {
                     configHRD.tarifLembur = tarif;
@@ -390,32 +427,21 @@
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
             
-            // Format Tanggal Hari Ini yang Kebal di Berbagai HP
             let tHariIni = new Date();
-            let d = tHariIni.getDate();
-            let m = tHariIni.getMonth() + 1;
-            let y = tHariIni.getFullYear();
-            
-            let f1 = `${d}/${m}/${y}`;
-            let f2 = `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
-            let f3 = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            let f4 = `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; // US Format
-            let f5 = `${m}/${d}/${y}`; // US Singkat
+            let blnSkg = tHariIni.getMonth() + 1;
+            let thnSkg = tHariIni.getFullYear();
+            let tglSkg = tHariIni.getDate();
 
             const dataHariIni = cacheRiwayatGlobal.filter(t => {
-                if(!t.waktu) return false;
-                
-                // KUNCI UTAMA: Hapus KOMA dari teks tanggal jika HP menempelkan koma secara otomatis
-                let dTanggal = String(t.waktu).split(' ')[0].replace(',', '').trim(); 
-                
-                return dTanggal === f1 || dTanggal === f2 || dTanggal === f3 || dTanggal === f4 || dTanggal === f5; 
+                let dPars = parseTanggalSakti(t.waktu);
+                return dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg;
             });
 
             if (dataHariIni.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-4 border border-gray-200 text-center text-gray-400 text-[10px] italic">Sistem kosong. Belum ada absen HARI INI.</td></tr>`;
             
             let html = "";
             dataHariIni.forEach(t => {
-                let colorStatus = t.status.includes("PAGI") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
+                let colorStatus = t.status.includes("PAGI") || t.status.includes("MASUK") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
                 if (t.status.includes("TELAT")) colorStatus = "text-red-600 bg-red-100"; 
                 if (t.status.includes("SETENGAH")) colorStatus = "text-orange-600 bg-orange-100"; 
                 if (t.status.includes("IZIN") || t.status.includes("SAKIT")) colorStatus = "text-purple-700 bg-purple-100";
@@ -454,16 +480,15 @@
             // 1. Baca Kehadiran Standar
             if (cacheRiwayatGlobal) {
                 cacheRiwayatGlobal.slice().reverse().forEach(t => {
-                    // Hapus koma di sini juga untuk Matriks agar tidak bentrok
-                    let cleanWaktu = String(t.waktu).replace(',', '');
-                    let dateSplit = cleanWaktu.split(' ')[0].split('/');
-                    if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
-                        let dTgl = parseInt(dateSplit[0]); let nama = t.nama.toUpperCase();
-                        if (matriks[nama] && t.status !== "PULANG") { 
-                            if (t.status === "PAGI") matriks[nama][dTgl] = "✔️"; 
-                            else if (t.status === "PAGI (TELAT)") matriks[nama][dTgl] = "⚠️"; 
+                    let dPars = parseTanggalSakti(t.waktu);
+                    if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
+                        let dTgl = dPars.tgl; let nama = t.nama.toUpperCase();
+                        if (matriks[nama] && !t.status.includes("PULANG")) { 
+                            if (t.status === "PAGI" || t.status === "MASUK") matriks[nama][dTgl] = "✔️"; 
+                            else if (t.status === "PAGI (TELAT)" || t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️"; 
                             else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️"; 
                             else if (t.status.includes("IZIN") || t.status.includes("SAKIT")) matriks[nama][dTgl] = "🪪";
+                            else if (t.status === "SETENGAH HARI") matriks[nama][dTgl] = "🌗";
                         }
                     }
                 });
@@ -472,10 +497,8 @@
             // 2. Baca Kasbon, Lembur, dan Setengah Hari
             cacheKasbonGlobal.forEach(kb => {
                 let nama = kb.nama.toUpperCase(); if(!rekapFinansial[nama]) return;
-                let dateParts = String(kb.waktu).replace(',', '').split(' ')[0].split('/');
-                let blnKb = parseInt(dateParts[1]); let thnKb = parseInt(dateParts[2]);
-                
-                if (blnKb === selectBulan && thnKb === selectTahun) {
+                let dPars = parseTanggalSakti(kb.waktu);
+                if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                     let nom = parseInt(kb.nominal) || 0;
                     if (kb.keterangan.includes("LEMBUR")) {
                         rekapFinansial[nama].lemburRp += Math.abs(nom);
@@ -484,8 +507,10 @@
                         rekapFinansial[nama].jmlSetHari += 1;
                         let match = kb.keterangan.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
                         if (match) {
-                            let dTgl = parseInt(match[1]); let dBln = parseInt(match[2]); let dThn = parseInt(match[3]);
-                            if (dBln === selectBulan && dThn === selectTahun && matriks[nama]) { matriks[nama][dTgl] = "🌗"; }
+                            let matchTgl = parseInt(match[1]); let matchBln = parseInt(match[2]); let matchThn = parseInt(match[3]);
+                            if (matchBln === selectBulan && matchThn === selectTahun && matriks[nama]) { matriks[nama][matchTgl] = "🌗"; }
+                        } else {
+                            if (matriks[nama]) matriks[nama][dPars.tgl] = "🌗";
                         }
                     } else {
                         rekapFinansial[nama].kasbon += nom; 
@@ -562,14 +587,14 @@
             }
         }
 
-        async function tambahKaryawanAPI() { const nama = document.getElementById('addNama').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0; if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error'); Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch(e) { } }
-        async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama) { const { value: formValues } = await Swal.fire({ title: 'Edit: ' + nama, html: `<select id="swal-tipe" class="swal2-input mt-2 w-full font-bold"><option value="TETAP" ${tipeLama==='TETAP'?'selected':''}>TETAP</option><option value="MOBILE" ${tipeLama==='MOBILE'?'selected':''}>MOBILE</option></select><input id="swal-pass" class="swal2-input mt-3 w-full font-mono text-center" placeholder="Password" value="${passLama}"><input id="swal-gaji" type="number" class="swal2-input mt-3 w-full font-bold text-blue-600 text-center" placeholder="Gaji/Hari" value="${gajiLama}">`, focusConfirm: false, showCancelButton: true, confirmButtonText: 'Simpan', preConfirm: () => { return { tipe: document.getElementById('swal-tipe').value, password: document.getElementById('swal-pass').value, gaji: document.getElementById('swal-gaji').value || 0 } } }); if (formValues) { Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "edit_karyawan", nama: nama, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }) }); const res = await response.json(); if (res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch (e) { } } }
-        async function hapusKaryawanAPI(nama) { Swal.fire({ title: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => { if (result.isConfirmed) { Swal.fire({ title: 'Menghapus...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch(e) { } } }); }
+        async function tambahKaryawanAPI() { const nama = document.getElementById('addNama').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0; if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error'); Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('addNama').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch(e) { } }
+        async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama) { const { value: formValues } = await Swal.fire({ title: 'Edit: ' + nama, html: `<select id="swal-tipe" class="swal2-input mt-2 w-full font-bold"><option value="TETAP" ${tipeLama==='TETAP'?'selected':''}>TETAP</option><option value="MOBILE" ${tipeLama==='MOBILE'?'selected':''}>MOBILE</option></select><input id="swal-pass" class="swal2-input mt-3 w-full font-mono text-center" placeholder="Password" value="${passLama}"><input id="swal-gaji" type="number" class="swal2-input mt-3 w-full font-bold text-blue-600 text-center" placeholder="Gaji/Hari" value="${gajiLama}">`, focusConfirm: false, showCancelButton: true, confirmButtonText: 'Simpan', preConfirm: () => { return { tipe: document.getElementById('swal-tipe').value, password: document.getElementById('swal-pass').value, gaji: document.getElementById('swal-gaji').value || 0 } } }); if (formValues) { Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit_karyawan", nama: nama, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }) }); const res = await response.json(); if (res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch (e) { } } }
+        async function hapusKaryawanAPI(nama) { Swal.fire({ title: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => { if (result.isConfirmed) { Swal.fire({ title: 'Menghapus...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch(e) { } } }); }
 
         // --- FUNGSI KEUANGAN ---
-        async function tambahKasbonAPI() { const nama = document.getElementById('kasbonNama').value; const nominal = document.getElementById('kasbonNominal').value; const ket = document.getElementById('kasbonKeterangan').value || "-"; if(!nama || !nominal) return Swal.fire('Error', 'Isi Form!', 'error'); Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('kasbonNominal').value = ''; document.getElementById('kasbonKeterangan').value = ''; await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Kasbon memotong gaji ${nama}`, 'success'); } } catch(e) { } }
-        async function tambahSetengahHariAPI() { const nama = document.getElementById('setengahNama').value; const tgl = document.getElementById('setengahTgl').value; if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal!', 'error'); const p = tgl.split('-'); const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`; let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase()); if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); let nom = parseInt(kar.gaji) / 2; Swal.fire({ title: 'Memotong Gaji 50%...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `SETENGAH HARI: ${formatTgl}`; const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Tgl ${formatTgl} menjadi 🌗`, 'success'); } } catch(e) { } }
-        async function tambahLemburAPI() { const nama = document.getElementById('lemburNama').value; const jam = document.getElementById('lemburJam').value; if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam!', 'error'); let nom = -(parseInt(jam) * configHRD.tarifLembur); Swal.fire({ title: 'Menambah Lembur...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `LEMBUR MANUAL: ${jam}x`; const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('lemburJam').value = ''; await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' }); } } catch(e) { } }
+        async function tambahKasbonAPI() { const nama = document.getElementById('kasbonNama').value; const nominal = document.getElementById('kasbonNominal').value; const ket = document.getElementById('kasbonKeterangan').value || "-"; if(!nama || !nominal) return Swal.fire('Error', 'Isi Form!', 'error'); Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('kasbonNominal').value = ''; document.getElementById('kasbonKeterangan').value = ''; await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Kasbon memotong gaji ${nama}`, 'success'); } } catch(e) { } }
+        async function tambahSetengahHariAPI() { const nama = document.getElementById('setengahNama').value; const tgl = document.getElementById('setengahTgl').value; if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal!', 'error'); const p = tgl.split('-'); const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`; let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase()); if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); let nom = parseInt(kar.gaji) / 2; Swal.fire({ title: 'Memotong Gaji 50%...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `SETENGAH HARI: ${formatTgl}`; const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Tgl ${formatTgl} menjadi 🌗`, 'success'); } } catch(e) { } }
+        async function tambahLemburAPI() { const nama = document.getElementById('lemburNama').value; const jam = document.getElementById('lemburJam').value; if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam!', 'error'); let nom = -(parseInt(jam) * configHRD.tarifLembur); Swal.fire({ title: 'Menambah Lembur...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `LEMBUR MANUAL: ${jam}x`; const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('lemburJam').value = ''; await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' }); } } catch(e) { } }
 
         // --- KAMERA & GPS & ABSEN ---
         function bukaFoto(url) { if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error'); Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Bukti', confirmButtonColor: '#10b981' }); }
@@ -640,7 +665,7 @@
             try {
                 let nom = -(jamLembur * configHRD.tarifLembur); 
                 let ket = `LEMBUR OTOMATIS: ${jamLembur}x`;
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
+                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
                 localStorage.setItem(`lembur_${nama}_${tgl}`, 'true');
                 Toast.fire({ icon: 'success', title: `Lembur Rp ${Math.abs(nom).toLocaleString('id-ID')} ditambahkan!` });
             } catch(e){}
@@ -656,7 +681,7 @@
                 if(!kar) return;
                 let nom = parseInt(kar.gaji) / 2; 
                 let ket = `SETENGAH HARI: ${tgl}`; 
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
+                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
                 localStorage.setItem(`sethari_${nama}_${tgl}`, 'true');
             } catch(e){}
         }
