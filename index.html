@@ -29,7 +29,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5 - Ultimate</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V5.1 - Ultimate</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -384,18 +384,31 @@
             } catch (e) { }
         }
 
-        // TABEL LOG YANG HANYA MENAMPILKAN HARI INI
+        // ===============================================================
+        // TABEL LOG YANG HANYA MENAMPILKAN HARI INI (ANTI-GAGAL KOMA)
+        // ===============================================================
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
             
-            // Logika Format Tanggal Anti-Gagal (Membaca format HP apapun)
+            // Format Tanggal Hari Ini yang Kebal di Berbagai HP
             let tHariIni = new Date();
-            let format1 = `${tHariIni.getDate()}/${tHariIni.getMonth()+1}/${tHariIni.getFullYear()}`;
-            let format2 = `${String(tHariIni.getDate()).padStart(2,'0')}/${String(tHariIni.getMonth()+1).padStart(2,'0')}/${tHariIni.getFullYear()}`;
+            let d = tHariIni.getDate();
+            let m = tHariIni.getMonth() + 1;
+            let y = tHariIni.getFullYear();
             
+            let f1 = `${d}/${m}/${y}`;
+            let f2 = `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+            let f3 = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            let f4 = `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`; // US Format
+            let f5 = `${m}/${d}/${y}`; // US Singkat
+
             const dataHariIni = cacheRiwayatGlobal.filter(t => {
-                let dTanggal = t.waktu.split(' ')[0]; // Ekstrak "25/6/2026"
-                return dTanggal === format1 || dTanggal === format2; 
+                if(!t.waktu) return false;
+                
+                // KUNCI UTAMA: Hapus KOMA dari teks tanggal jika HP menempelkan koma secara otomatis
+                let dTanggal = String(t.waktu).split(' ')[0].replace(',', '').trim(); 
+                
+                return dTanggal === f1 || dTanggal === f2 || dTanggal === f3 || dTanggal === f4 || dTanggal === f5; 
             });
 
             if (dataHariIni.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-4 border border-gray-200 text-center text-gray-400 text-[10px] italic">Sistem kosong. Belum ada absen HARI INI.</td></tr>`;
@@ -441,7 +454,9 @@
             // 1. Baca Kehadiran Standar
             if (cacheRiwayatGlobal) {
                 cacheRiwayatGlobal.slice().reverse().forEach(t => {
-                    let dateSplit = t.waktu.split(' ')[0].split('/');
+                    // Hapus koma di sini juga untuk Matriks agar tidak bentrok
+                    let cleanWaktu = String(t.waktu).replace(',', '');
+                    let dateSplit = cleanWaktu.split(' ')[0].split('/');
                     if (dateSplit.length === 3 && parseInt(dateSplit[1]) === selectBulan && parseInt(dateSplit[2]) === selectTahun) {
                         let dTgl = parseInt(dateSplit[0]); let nama = t.nama.toUpperCase();
                         if (matriks[nama] && t.status !== "PULANG") { 
@@ -457,7 +472,7 @@
             // 2. Baca Kasbon, Lembur, dan Setengah Hari
             cacheKasbonGlobal.forEach(kb => {
                 let nama = kb.nama.toUpperCase(); if(!rekapFinansial[nama]) return;
-                let dateParts = kb.waktu.split(' ')[0].split('/');
+                let dateParts = String(kb.waktu).replace(',', '').split(' ')[0].split('/');
                 let blnKb = parseInt(dateParts[1]); let thnKb = parseInt(dateParts[2]);
                 
                 if (blnKb === selectBulan && thnKb === selectTahun) {
