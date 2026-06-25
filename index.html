@@ -102,6 +102,7 @@
                 <button onclick="switchTabOwner('rekap')" id="tabBtn-rekap" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">📅 Gaji</button>
                 <button onclick="switchTabOwner('karyawan')" id="tabBtn-karyawan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">👥 Data</button>
                 <button onclick="switchTabOwner('kasbon')" id="tabBtn-kasbon" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">💸 Keuangan</button>
+                <button onclick="switchTabOwner('pengaturan')" id="tabBtn-pengaturan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">⚙️ Seting</button>
             </div>
 
             <!-- PANEL 1: LOG HARIAN & CATATAN -->
@@ -180,7 +181,7 @@
                         <h3 class="font-black text-xs uppercase text-gray-500"><i class="fas fa-clock text-green-500"></i> Bonus Lembur</h3>
                         <select id="lemburNama" class="p-2 text-xs border rounded bg-gray-50 outline-none font-bold uppercase"></select>
                         <input type="number" id="lemburJam" placeholder="Jumlah Jam (Misal: 2)..." class="p-2 text-xs border rounded bg-gray-50 text-green-600 font-bold outline-none">
-                        <button onclick="tambahLemburAPI()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded text-xs transition mt-auto"><i class="fas fa-plus-circle"></i> Tambah Rp 8.000 / Jam</button>
+                        <button onclick="tambahLemburAPI()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded text-xs transition mt-auto"><i class="fas fa-plus-circle"></i> Tambah Bonus Lembur</button>
                     </div>
                 </div>
                 
@@ -188,6 +189,26 @@
                     <h3 class="font-black text-xs uppercase text-yellow-700"><i class="fas fa-bullhorn"></i> Broadcast Memo</h3>
                     <textarea id="inputMemo" class="w-full p-2 text-xs border border-yellow-300 rounded outline-none bg-white font-bold" rows="2" placeholder="Pengumuman untuk semua karyawan..."></textarea>
                     <button onclick="kirimMemoAPI()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded text-xs transition"><i class="fas fa-paper-plane"></i> Kirim Pop-up</button>
+                </div>
+            </div>
+
+            <!-- PANEL 5: PENGATURAN HRD -->
+            <div id="panel-pengaturan" class="w-full hidden flex flex-col gap-3">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
+                    <h3 class="font-black text-xs uppercase text-gray-500 border-b border-gray-100 pb-2"><i class="fas fa-cogs text-emerald-500"></i> Pengaturan Sistem Absen & Lembur</h3>
+                    
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Tarif Lembur per Jam (Rp)</label>
+                        <input type="number" id="cfgTarifLembur" class="w-full p-2 text-xs border border-gray-300 rounded bg-gray-50 font-bold text-green-600 outline-none focus:border-emerald-500">
+                    </div>
+                    
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Batas Jam Pulang Normal (Pemicu Lembur Otomatis)</label>
+                        <input type="number" id="cfgBatasLembur" class="w-full p-2 text-xs border border-gray-300 rounded bg-gray-50 font-bold text-red-500 outline-none focus:border-emerald-500" placeholder="Misal: 18 untuk jam 18:00">
+                        <p class="text-[9px] text-gray-400 mt-1 italic">*Jika karyawan absen pulang melewati jam ini, sistem akan otomatis memberikannya bonus lembur 1 jam.</p>
+                    </div>
+                    
+                    <button onclick="simpanConfigHRD()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition shadow mt-2"><i class="fas fa-save"></i> Terapkan Pengaturan</button>
                 </div>
             </div>
         </div>
@@ -247,6 +268,9 @@
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
         const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
+        
+        // VARIABEL KONFIGURASI HRD DINAMIS (LEMBUR)
+        let configHRD = JSON.parse(localStorage.getItem('config_hrd_fajri')) || { tarifLembur: 8000, batasLembur: 18 };
         // =========================================================================
 
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
@@ -345,12 +369,28 @@
         }
         function tutupOwnerView() { document.getElementById('ownerView').classList.add('hidden'); if (dataProfil) bukaSistemKaryawan(); else window.location.reload(); }
 
+        // FUNGSI PINDAH TAB & MEMUAT SETTING
         function switchTabOwner(tab) {
-            ['monitoring', 'karyawan', 'rekap', 'kasbon'].forEach(t => { 
+            ['monitoring', 'karyawan', 'rekap', 'kasbon', 'pengaturan'].forEach(t => { 
                 document.getElementById('panel-'+t).classList.add('hidden'); document.getElementById('tabBtn-'+t).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300"; 
             });
             document.getElementById('panel-' + tab).classList.remove('hidden'); document.getElementById('tabBtn-' + tab).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition shadow-sm bg-white text-emerald-700";
-            if(tab === 'monitoring') renderTabelHarian(); if(tab === 'rekap') renderMatriks(); if(tab === 'karyawan') loadDataKaryawanOwner();
+            if(tab === 'monitoring') renderTabelHarian(); 
+            if(tab === 'rekap') renderMatriks(); 
+            if(tab === 'karyawan') loadDataKaryawanOwner();
+            if(tab === 'pengaturan') {
+                document.getElementById('cfgTarifLembur').value = configHRD.tarifLembur;
+                document.getElementById('cfgBatasLembur').value = configHRD.batasLembur;
+            }
+        }
+
+        // FUNGSI SIMPAN SETTING HRD
+        function simpanConfigHRD() {
+            const tarif = parseInt(document.getElementById('cfgTarifLembur').value) || 0;
+            const batas = parseInt(document.getElementById('cfgBatasLembur').value) || 18;
+            configHRD = { tarifLembur: tarif, batasLembur: batas };
+            localStorage.setItem('config_hrd_fajri', JSON.stringify(configHRD));
+            Swal.fire('Tersimpan!', 'Pengaturan Jam Lembur dan Tarif berhasil diupdate.', 'success');
         }
 
         async function refreshSemuaDataSilent() {
@@ -427,7 +467,7 @@
                     let nom = parseInt(kb.nominal) || 0;
                     if (kb.keterangan.includes("LEMBUR")) {
                         rekapFinansial[nama].lemburRp += Math.abs(nom);
-                        rekapFinansial[nama].jmlLembur += (Math.abs(nom) / 8000);
+                        rekapFinansial[nama].jmlLembur += (Math.abs(nom) / configHRD.tarifLembur);
                     } else if (kb.keterangan.includes("SETENGAH HARI")) {
                         rekapFinansial[nama].jmlSetHari += 1;
                         let match = kb.keterangan.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -530,10 +570,10 @@
         async function tambahSetengahHariAPI() {
             const nama = document.getElementById('setengahNama').value; const tgl = document.getElementById('setengahTgl').value; 
             if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal absen!', 'error');
-            const p = tgl.split('-'); const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`; // Convert YYYY-MM-DD to D/M/YYYY
+            const p = tgl.split('-'); const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`; 
             let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
             if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error');
-            let nom = parseInt(kar.gaji) / 2; // Potong separuh
+            let nom = parseInt(kar.gaji) / 2; 
             Swal.fire({ title: 'Memotong Gaji 50%...', didOpen: () => Swal.showLoading() });
             try { let waktu = new Date().toLocaleString('id-ID'); let ket = `SETENGAH HARI: ${formatTgl}`; const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Status matriks tgl ${formatTgl} menjadi 🌗`, 'success'); } } catch(e) { }
         }
@@ -541,7 +581,10 @@
         async function tambahLemburAPI() {
             const nama = document.getElementById('lemburNama').value; const jam = document.getElementById('lemburJam').value;
             if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam dengan benar!', 'error');
-            let nom = -(parseInt(jam) * 8000); // NEGATIF (Jadi Bonus yang menambah gaji)
+            
+            // PANGGIL TARIF DINAMIS DARI PENGATURAN
+            let nom = -(parseInt(jam) * configHRD.tarifLembur); 
+            
             Swal.fire({ title: 'Menambah Bonus Lembur...', didOpen: () => Swal.showLoading() });
             try { let waktu = new Date().toLocaleString('id-ID'); let ket = `LEMBUR MANUAL: ${jam}x`; const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('lemburJam').value = ''; await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' }); } } catch(e) { }
         }
@@ -584,9 +627,9 @@
                 if (result.status === "success") { 
                     Swal.fire({ icon: 'success', title: 'Data Terkirim!', text: `Terima kasih, ${dataProfil.nama}!` }); 
                     
-                    // PENGECEKAN LEMBUR OTOMATIS (JIKA PULANG DI ATAS JAM 18:00)
+                    // PENGECEKAN LEMBUR OTOMATIS BERDASARKAN SETTING HRD
                     const jamSistem = new Date().getHours();
-                    if (statusAbsen === 'PULANG' && jamSistem >= 18) {
+                    if (statusAbsen === 'PULANG' && jamSistem >= configHRD.batasLembur) {
                         setTimeout(() => { triggerLemburOtomatis(waktuSekarang, dataProfil.nama); }, 1500);
                     }
                 } else { Swal.fire('Gagal', result.message, 'error'); }
@@ -597,12 +640,12 @@
         async function triggerLemburOtomatis(waktu, nama) {
             let tgl = waktu.split(' ')[0]; let cekCacheLembur = localStorage.getItem(`lembur_${nama}_${tgl}`);
             if (cekCacheLembur) return; // Mencegah spam jika klik tombol berulang kali
-            Toast.fire({ icon: 'info', title: 'Terdeteksi pulang malam, memproses bonus lembur...' });
+            Toast.fire({ icon: 'info', title: 'Terdeteksi pulang malam, memproses bonus lembur otomatis...' });
             try {
-                let nom = -8000; let ket = `LEMBUR OTOMATIS: ${tgl}`;
+                let nom = -configHRD.tarifLembur; let ket = `LEMBUR OTOMATIS: ${tgl}`;
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
                 localStorage.setItem(`lembur_${nama}_${tgl}`, 'true');
-                Toast.fire({ icon: 'success', title: `Sistem mencatat lembur Rp 8.000 untuk ${nama}!` });
+                Toast.fire({ icon: 'success', title: `Sistem mencatat lembur Rp ${configHRD.tarifLembur.toLocaleString('id-ID')} untuk ${nama}!` });
             } catch(e){}
         }
 
