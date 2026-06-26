@@ -16,7 +16,7 @@
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex !important; flex-direction: column; background: white;}
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white;}
             .no-print { display: none !important; }
             @page { size: A4 portrait; margin: 0; }
         }
@@ -24,12 +24,13 @@
 </head>
 <body class="text-gray-800 flex flex-col min-h-screen">
 
+    <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative no-print">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V6.1 - Super Grid</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V6.3 - Mass Print</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -40,6 +41,7 @@
 
     <main class="flex-grow flex flex-col items-center p-3 w-full mx-auto relative overflow-hidden no-print">
         
+        <!-- INITIAL SETUP VIEW -->
         <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
             <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -51,6 +53,7 @@
             <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
         </div>
 
+        <!-- ABSEN VIEW -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -71,6 +74,7 @@
                 </div>
             </div>
 
+            <!-- TOMBOL ABSEN 3 PILIHAN -->
             <div class="grid grid-cols-3 gap-2 w-full mb-3">
                 <button id="btnPagi" onclick="prosesAbsen('PAGI')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-blue-800">
                     <i class="fas fa-sun text-lg"></i> <span id="labelPagi" class="text-[10px] text-center leading-tight">PAGI</span>
@@ -87,6 +91,7 @@
             <button id="btnIzin" onclick="prosesIzinSakit()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-purple-800 text-sm"><i class="fas fa-notes-medical text-lg"></i> AJUKAN IZIN / SAKIT</button>
         </div>
 
+        <!-- DASHBOARD OWNER -->
         <div id="ownerView" class="w-full max-w-5xl mx-auto hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
@@ -107,6 +112,7 @@
                 <button onclick="switchTabOwner('pengaturan')" id="tabBtn-pengaturan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">⚙️ Seting</button>
             </div>
 
+            <!-- PANEL 1: LOG KHUSUS HARI INI SAJA -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="p-2 border-b border-gray-100 bg-gray-50 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fas fa-calendar-day text-emerald-500 mr-1"></i> Data Kehadiran Khusus Hari Ini</div>
                 <div class="overflow-x-auto w-full scrollbar-thin">
@@ -117,11 +123,16 @@
                 </div>
             </div>
 
+            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK 1:1) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm"><i class="fas fa-table text-emerald-500 mr-1"></i> Matriks Gaji</span>
                     <div class="flex gap-2 items-center flex-wrap">
                         <button onclick="toggleEditPintas()" id="btnEditPintas" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600"><i class="fas fa-bolt"></i> Edit Pintas: OFF</button>
+                        
+                        <!-- TOMBOL CETAK SEMUA SLIP GAJI -->
+                        <button onclick="cetakSemuaSlipGaji()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-purple-800"><i class="fas fa-print"></i> Cetak Semua Slip</button>
+                        
                         <button onclick="cetakRekapGlobal()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-blue-800"><i class="fas fa-file-pdf"></i> Download Rekap PDF</button>
                         <div class="flex border border-gray-400 rounded-lg overflow-hidden shadow-sm">
                             <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none border-r border-gray-400"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
@@ -132,6 +143,7 @@
                 <div class="p-2 bg-white border-b border-gray-300 text-[8px] flex gap-2 text-gray-600 font-bold flex-wrap shadow-sm">
                     <span>✔️: Hadir</span> <span>⚠️: Telat</span> <span>🏍️: Luar</span> <span>🪪: Izin</span> <span>🌗: 1/2 Hari</span> <span class="text-white bg-red-500 px-1 rounded">🟥 Libur/Alpa</span>
                 </div>
+                <!-- BAGIAN GRID EXCEL -->
                 <div class="overflow-x-auto w-full scrollbar-thin">
                     <table class="w-full text-left border-collapse border border-gray-400 min-w-max">
                         <thead><tr id="headerRekapBulanan"></tr></thead>
@@ -140,6 +152,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
@@ -161,6 +174,7 @@
                 </div>
             </div>
 
+            <!-- PANEL 4: KEUANGAN -->
             <div id="panel-kasbon" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2">
@@ -185,16 +199,14 @@
                 </div>
             </div>
 
+            <!-- PANEL 5: PENGATURAN -->
             <div id="panel-pengaturan" class="w-full hidden flex flex-col gap-3">
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
-                    <h3 class="font-black text-xs uppercase text-gray-500 border-b border-gray-100 pb-2"><i class="fas fa-cloud text-emerald-500"></i> Pengaturan Cloud (Tersinkron Semua HP)</h3>
-                    
+                    <h3 class="font-black text-xs uppercase text-gray-500 border-b border-gray-100 pb-2"><i class="fas fa-cloud text-emerald-500"></i> Pengaturan Cloud</h3>
                     <div>
                         <label class="text-[10px] font-bold text-gray-400 uppercase">Tarif Lembur per Jam (Rp)</label>
                         <input type="number" id="cfgTarifLembur" class="w-full p-2 text-xs border border-gray-300 rounded bg-gray-50 font-bold text-green-600 outline-none focus:border-emerald-500" placeholder="Misal: 10000">
-                        <p class="text-[9px] text-gray-400 mt-1 italic">*Tersimpan di Google Sheets. Jika Bos ubah angka ini, otomatis hitungan lembur di semua perangkat HP/Laptop akan menyesuaikan.</p>
                     </div>
-                    
                     <button onclick="simpanConfigHRD()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition shadow mt-2"><i class="fas fa-save"></i> Upload & Terapkan Global</button>
                 </div>
             </div>
@@ -202,7 +214,8 @@
     </main>
 
     <canvas id="kanvasFoto" class="hidden no-print"></canvas>
-
+    
+    <!-- AREA CETAK DINAMIS -->
     <div id="printArea" class="hidden"></div>
 
     <script>
@@ -223,7 +236,7 @@
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
         let databaseCetakSlip = {}; 
-        let isEditPintasActive = false; // Mode Edit Pintas
+        let isEditPintasActive = false; 
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
@@ -264,14 +277,13 @@
 
         async function loadDropdownKaryawan() {
             const dropdown = document.getElementById('inputNama'); 
-            const kasbonDrop = document.getElementById('kasbonNama'); const setDrop = document.getElementById('setengahNama'); const lemburDrop = document.getElementById('lemburNama');
             const cacheNama = localStorage.getItem('cache_nama_karyawan');
-            if (cacheNama) { let data = JSON.parse(cacheNama); renderDropdown(data, dropdown); if(kasbonDrop) { renderDropdown(data, kasbonDrop); renderDropdown(data, setDrop); renderDropdown(data, lemburDrop); } }
+            if (cacheNama) { let data = JSON.parse(cacheNama); renderDropdown(data, dropdown); }
             try {
                 const response = await fetch(API_URL + "?action=get_karyawan"); const result = await response.json();
                 if (result.status === "success") { 
                     localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data)); 
-                    renderDropdown(result.data, dropdown); if(kasbonDrop) { renderDropdown(result.data, kasbonDrop); renderDropdown(result.data, setDrop); renderDropdown(result.data, lemburDrop); } 
+                    renderDropdown(result.data, dropdown); 
                 }
             } catch (e) { }
         }
@@ -311,7 +323,12 @@
                     document.getElementById('absenView').classList.add('hidden'); document.getElementById('setupView').classList.add('hidden');
                     if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                     document.getElementById('ownerView').classList.remove('hidden');
-                    loadDropdownKaryawan(); switchTabOwner('monitoring'); fetchAndCacheAll(true);
+                    
+                    const dropdowns = ['addNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
+                    const cacheNama = localStorage.getItem('cache_nama_karyawan');
+                    if (cacheNama) { let data = JSON.parse(cacheNama); dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(data, el); }); }
+                    
+                    switchTabOwner('monitoring'); fetchAndCacheAll(true);
                 } else if(res.isConfirmed) { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
             });
         }
@@ -336,7 +353,7 @@
                 const res = await response.json();
                 if(res.status === 'success') {
                     configHRD.tarifLembur = tarif;
-                    Swal.fire('Tersimpan di Cloud!', 'Pengaturan berhasil diperbarui ke seluruh HP.', 'success');
+                    Swal.fire('Tersimpan di Cloud!', 'Pengaturan berhasil diperbarui.', 'success');
                 }
             } catch(e) { Swal.fire('Error', 'Gagal memproses ke server Google.', 'error'); }
         }
@@ -351,7 +368,11 @@
                     fetch(API_URL + "?action=get_riwayat"), fetch(API_URL + "?action=get_karyawan"), fetch(API_URL + "?action=get_kasbon"), fetch(API_URL + "?action=get_config_hrd")
                 ]);
                 const jR = await resR.json(); if (jR.status === "success") { cacheRiwayatGlobal = jR.data; localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); }
-                const jK = await resK.json(); if (jK.status === "success") { localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data)); }
+                const jK = await resK.json(); if (jK.status === "success") { 
+                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data)); 
+                    const dropdowns = ['kasbonNama', 'setengahNama', 'lemburNama'];
+                    dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data, el); });
+                }
                 const jKB = await resKB.json(); if (jKB.status === "success") { cacheKasbonGlobal = jKB.data; localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); }
                 const jCfg = await resCfg.json(); if(jCfg.status === "success") { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; }
 
@@ -392,7 +413,7 @@
                 btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Pintas: OFF';
                 btn.className = "bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600";
             }
-            renderMatriks(); // Refresh tampilan biar kliknya aktif
+            renderMatriks(); 
         }
 
         function handleCellClick(nama, tgl, sim) {
@@ -522,7 +543,7 @@
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
                     else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
                     
-                    let cursorStyle = (isEditPintasActive && (sim === "✔️" || sim === "🌗")) ? "cursor-pointer hover:bg-orange-200 transition ring-inset ring-1 ring-orange-400" : "";
+                    let cursorStyle = (isEditPintasActive && (sim === "✔️" || sim === "🌗")) ? "cursor-pointer hover:bg-orange-200 transition ring-inset ring-2 ring-orange-500 z-20 relative shadow-lg" : "";
                     
                     bodyHtml += `<td onclick="handleCellClick('${nama}', ${i}, '${sim}')" class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna} ${cursorStyle}">${sim}</td>`;
                 }
@@ -584,8 +605,6 @@
 
         function cetakSlipGaji(nama) {
             const data = databaseCetakSlip[nama]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
-            
-            // Menyuntikkan template Amplop Gaji ke area print
             document.getElementById('printArea').innerHTML = `
                 <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col items-center justify-center font-sans text-black bg-white" style="transform: rotate(180deg);">
                     <h1 class="text-4xl font-black mb-2 tracking-widest text-gray-800">FAJRI TOYS</h1>
@@ -620,7 +639,54 @@
             window.print();
         }
 
-        // FUNGSI DOWNLOAD REKAP KESELURUHAN
+        // FUNGSI BARU: CETAK SEMUA SLIP GAJI SEKALIGUS
+        function cetakSemuaSlipGaji() {
+            if(Object.keys(databaseCetakSlip).length === 0) return Swal.fire('Kosong', 'Belum ada data gaji untuk dicetak', 'error');
+
+            let htmlAllSlips = "";
+            for(let nama in databaseCetakSlip) {
+                let data = databaseCetakSlip[nama];
+                
+                // Tambahkan 'page-break-after: always;' supaya tiap orang beda halaman pas di print/PDF
+                htmlAllSlips += `
+                    <div style="page-break-after: always; width: 100%; height: 100vh; display: flex; flex-direction: column; background: white;">
+                        <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col items-center justify-center font-sans text-black" style="transform: rotate(180deg);">
+                            <h1 class="text-4xl font-black mb-2 tracking-widest text-gray-800">FAJRI TOYS</h1>
+                            <h2 class="text-xl font-bold border-b-2 border-black pb-2 text-gray-600">DOKUMEN RAHASIA GAJI</h2>
+                            <p class="mt-8 text-lg font-semibold">Kepada Yth:</p>
+                            <p class="text-3xl font-black uppercase mt-2 tracking-wider">${nama}</p>
+                        </div>
+                        <div class="flex-1 border-b border-dashed border-gray-400 p-8 flex flex-col justify-center px-12 font-sans text-black">
+                            <h3 class="text-lg font-black mb-4 border-b-2 border-gray-300 pb-2 flex justify-between">
+                                <span>RINCIAN PAYROLL</span>
+                                <span class="text-gray-500 text-sm font-normal pt-1">Periode: <span class="font-bold text-black">${data.periode}</span></span>
+                            </h3>
+                            <table class="w-full text-base mb-6 font-semibold text-gray-700">
+                                <tr><td class="py-2 border-b border-gray-200">Gaji Kehadiran Penuh (${data.hadir}x)</td><td class="text-right font-mono border-b border-gray-200">${formatRupiah(data.uangPokok)}</td></tr>
+                                <tr><td class="py-2 border-b border-gray-200">Gaji Setengah Hari (${data.setHari}x)</td><td class="text-right font-mono border-b border-gray-200">${formatRupiah(data.uangSetHari)}</td></tr>
+                                <tr><td class="py-2 border-b border-gray-200">Tambahan Lembur (${data.lemburJam} Jam)</td><td class="text-right font-mono text-green-600 border-b border-gray-200">${formatRupiah(data.uangLembur)}</td></tr>
+                                <tr><td class="py-2 border-b border-black">Potongan Kasbon</td><td class="text-right font-mono text-red-600 border-b border-black">${formatRupiah(data.kasbon)}</td></tr>
+                            </table>
+                            <div class="flex justify-between font-black text-2xl items-center mt-2">
+                                <span class="uppercase">Total Diterima:</span>
+                                <span class="border-2 border-black px-4 py-2 bg-gray-100 shadow-[4px_4px_0_rgba(0,0,0,1)]">${formatRupiah(data.bersih)}</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-8 flex flex-col justify-between px-12 font-sans text-black">
+                            <div class="text-center italic text-sm text-gray-500 mt-6 font-medium">"Terima kasih atas kerja keras dan dedikasinya. Terus semangat dan pantang menyerah!"</div>
+                            <div class="flex justify-between mt-auto mb-10 text-lg">
+                                <div class="text-center w-48"><p class="mb-24 font-bold text-gray-600">Penerima,</p><p class="border-b border-black font-black uppercase pb-1">${nama}</p></div>
+                                <div class="text-center w-48"><p class="mb-24 font-bold text-gray-600">Mastermind,</p><p class="border-b border-black font-black uppercase pb-1">Owner Fajri Toys</p></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('printArea').innerHTML = htmlAllSlips;
+            window.print();
+        }
+
         function cetakRekapGlobal() {
             let selectBulan = document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text;
             let selectTahun = document.getElementById('rekapTahun').value;
@@ -678,8 +744,6 @@
                     </div>
                 </div>
             `;
-
-            // Menyuntikkan template Rekap Global ke area print
             document.getElementById('printArea').innerHTML = htmlRekap;
             window.print();
         }
