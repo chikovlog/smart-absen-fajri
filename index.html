@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.3 - Mode Darurat</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.4 - Multi Cabang</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -236,6 +236,11 @@
         // =========================================================================
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
+        
+        // KOORDINAT GUDANG (SILAKAN BOS GANTI DENGAN KOORDINAT GUDANG YANG ASLI DARI GOOGLE MAPS)
+        const GUDANG_LAT = -6.699500; 
+        const GUDANG_LNG = -6.705640, 107.482488; 
+        
         const RADIUS_MAKSIMAL = 50; 
         const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
         
@@ -245,6 +250,7 @@
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
         let deviceID = localStorage.getItem('device_id_fajri');
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
+        let namaLokasiAman = ""; // Menyimpan info apakah dia di TOKO atau di GUDANG
         
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
@@ -560,7 +566,6 @@
             })
         }
 
-        // FUNGSI KHUSUS UNTUK INJEKSI HADIR / BOLOS SECARA MANUAL KE SHEET "RIWAYAT"
         async function eksekusiEditDarurat(nama, formatTgl, statusBaru) {
             Swal.fire({ title: 'Memperbarui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
@@ -641,7 +646,7 @@
                             else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️"; 
                             else if (t.status.includes("IZIN") || t.status.includes("SAKIT")) matriks[nama][dTgl] = "🪪";
                             else if (t.status === "SETENGAH HARI") matriks[nama][dTgl] = "🌗";
-                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = ""; // KOSONGKAN JIKA ALPA/BOLOS
+                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = ""; 
                         }
                     }
                 });
@@ -747,7 +752,6 @@
             });
         }
 
-        // FUNGSI KIRIM RINCIAN GAJI VIA WA
         function kirimWA(nama) {
             let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
             let kar = cacheKaryawan.find(k => k.nama.toUpperCase() === nama.toUpperCase());
@@ -776,7 +780,6 @@
             window.open(url, '_blank');
         }
 
-        // CETAK PDF 1 ORANG (DOKUMEN RESMI A4)
         function cetakSlipGaji(nama) {
             const data = databaseCetakSlip[nama]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
             
@@ -827,7 +830,6 @@
             window.print();
         }
 
-        // CETAK SEMUA SLIP GAJI SEKALIGUS (DOKUMEN RESMI A4)
         function cetakSemuaSlipGaji() {
             if(Object.keys(databaseCetakSlip).length === 0) return Swal.fire('Kosong', 'Belum ada data gaji untuk dicetak', 'error');
 
@@ -965,12 +967,10 @@
             if (cacheNama) {
                 let data = JSON.parse(cacheNama); let html = "";
                 data.forEach((k, idx) => { 
-                    // Logika Sensor WA
                     let waText = k.wa && k.wa !== '-' ? k.wa.toString().replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim() : '-';
                     let displayWa = isDataSensitifVisible ? waText : waText.replace(/\d/g, '*').replace(/\*/, '0').replace(/\*/, '8'); 
                     if(!isDataSensitifVisible && displayWa.length > 5 && waText !== '-') displayWa = displayWa.substring(0,4) + ' **** ****';
                     
-                    // Logika Sensor Gaji
                     let displayGaji = isDataSensitifVisible ? formatRupiah(k.gaji || 0) : '<span class="text-gray-400">Rp ••••••</span>';
 
                     html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 text-xs text-green-600 font-semibold whitespace-nowrap">${displayWa}</td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">••••••</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">${displayGaji}</td><td class="p-2.5 text-center whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}', '${k.wa || ''}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-1"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
@@ -1022,7 +1022,36 @@
         // --- KAMERA & GPS & ABSEN ---
         function bukaFoto(url) { if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error'); Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Bukti', confirmButtonColor: '#10b981' }); }
         async function nyalakanKamera() { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); video.srcObject = stream; } catch (err) { } }
-        function nyalakanRadarGPS() { if (navigator.geolocation) { gpsWatcher = navigator.geolocation.watchPosition( (pos) => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`; currentJarak = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG); const labelJarak = document.getElementById('liveJarak'); if (dataProfil.tipe === 'TETAP') { if (currentJarak <= RADIUS_MAKSIMAL) { labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN)`; labelJarak.className = "font-mono text-green-400 font-bold"; } else { labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`; labelJarak.className = "font-mono text-red-500 font-bold animate-pulse"; } } else { labelJarak.innerText = `Jarak dari Pusat: ${currentJarak} Meter`; labelJarak.className = "font-mono text-blue-400"; } }, (e) => { }, { enableHighAccuracy: true } ); } }
+        
+        function nyalakanRadarGPS() { 
+            if (navigator.geolocation) { 
+                gpsWatcher = navigator.geolocation.watchPosition( (pos) => { 
+                    currentLat = pos.coords.latitude; 
+                    currentLng = pos.coords.longitude; 
+                    document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`; 
+                    
+                    let jarakToko = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
+                    let jarakGudang = hitungJarak(currentLat, currentLng, GUDANG_LAT, GUDANG_LNG);
+                    currentJarak = Math.min(jarakToko, jarakGudang);
+                    let namaLokasiAman = jarakToko <= jarakGudang ? "TOKO" : "GUDANG";
+
+                    const labelJarak = document.getElementById('liveJarak'); 
+                    if (dataProfil.tipe === 'TETAP') { 
+                        if (currentJarak <= RADIUS_MAKSIMAL) { 
+                            labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN ${namaLokasiAman})`; 
+                            labelJarak.className = "font-mono text-green-400 font-bold"; 
+                        } else { 
+                            labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`; 
+                            labelJarak.className = "font-mono text-red-500 font-bold animate-pulse"; 
+                        } 
+                    } else { 
+                        labelJarak.innerText = `Jarak dari ${namaLokasiAman}: ${currentJarak} Meter`; 
+                        labelJarak.className = "font-mono text-blue-400"; 
+                    } 
+                }, (e) => { }, { enableHighAccuracy: true } ); 
+            } 
+        }
+
         function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180; const dP = (lat2-lat1) * Math.PI/180; const dL = (lon2-lon1) * Math.PI/180; const a = Math.sin(dP/2) * Math.sin(dP/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL/2) * Math.sin(dL/2); return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))); }
 
         async function prosesIzinSakit() { const { value: alasan } = await Swal.fire({ title: 'Form Izin / Sakit', input: 'text', inputPlaceholder: 'Misal: Sakit lambung...', showCancelButton: true, confirmButtonColor: '#9333ea', confirmButtonText: 'Lanjut Foto', inputValidator: (v) => !v && 'Keterangan wajib diisi!' }); if (alasan) { Swal.fire({ title: 'Ambil Bukti', text: 'Siapkan Surat Dokter/Kondisi Saat Ini.', icon: 'info', confirmButtonText: 'Cekrek!', confirmButtonColor: '#10b981' }).then((res) => { if (res.isConfirmed) { eksekusiKirimData('IZIN / SAKIT', alasan); } }); } }
@@ -1030,12 +1059,10 @@
         async function prosesAbsen(statusAbsen) {
             const now = new Date(); const jamSekarang = now.getHours();
             
-            // Tentukan kategori proteksi
             let kategori = statusAbsen;
             if (statusAbsen === 'PAGI' && jamSekarang >= 8) statusAbsen = 'PAGI (TELAT)';
             if (statusAbsen.includes('PAGI') || statusAbsen.includes('MASUK')) kategori = 'PAGI';
 
-            // CEK ANTI DOUBLE ABSEN
             let jamSudah = getJamAbsenHariIni(kategori);
             if (jamSudah) {
                 return Swal.fire({ icon: 'error', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
