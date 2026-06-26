@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.2 - Super Shield</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.3 - Mode Darurat</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -65,7 +65,6 @@
                     <div class="text-center text-xs text-gray-400 mt-6 italic"><i class="fas fa-spinner fa-spin mr-1"></i> Menghubungkan satelit...</div>
                 </div>
             </div>
-
         </div>
 
         <!-- ABSEN VIEW (SETELAH LOGIN) -->
@@ -137,12 +136,12 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK 1:1) -->
+            <!-- PANEL 2: MATRIKS GAJI BERSIH -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm"><i class="fas fa-table text-emerald-500 mr-1"></i> Matriks Gaji</span>
                     <div class="flex gap-2 items-center flex-wrap">
-                        <button onclick="toggleEditPintas()" id="btnEditPintas" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600"><i class="fas fa-bolt"></i> Edit Pintas: OFF</button>
+                        <button onclick="toggleEditPintas()" id="btnEditPintas" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600"><i class="fas fa-bolt"></i> Edit Darurat: OFF</button>
                         <button onclick="cetakSemuaSlipGaji()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-purple-800"><i class="fas fa-print"></i> Cetak Semua Slip</button>
                         <button onclick="cetakRekapGlobal()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-blue-800"><i class="fas fa-file-pdf"></i> Download Rekap PDF</button>
                         <div class="flex border border-gray-400 rounded-lg overflow-hidden shadow-sm">
@@ -176,7 +175,6 @@
                     </div>
                     <div class="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                         
-                        <!-- HEADER PANEL DENGAN TOMBOL MATA -->
                         <div class="flex justify-between items-center bg-gray-100 p-2.5 border-b border-gray-200">
                             <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="fas fa-database text-emerald-500 mr-1"></i> Database Pusat</span>
                             <button onclick="toggleSensitiveData()" id="btnToggleEye" class="bg-white border border-gray-300 text-gray-600 px-3 py-1 rounded text-[9px] font-bold hover:bg-gray-50 transition shadow-sm"><i class="fas fa-eye"></i> Tampilkan Info</button>
@@ -232,8 +230,6 @@
     </main>
 
     <canvas id="kanvasFoto" class="hidden no-print"></canvas>
-    
-    <!-- AREA CETAK DINAMIS -->
     <div id="printArea" class="hidden"></div>
 
     <script>
@@ -241,7 +237,6 @@
         const TOKO_LAT = -6.699192;  
         const TOKO_LNG = 107.481993; 
         const RADIUS_MAKSIMAL = 50; 
-        // GANTI API_URL DI BAWAH INI DENGAN LINK APPS SCRIPT BOS YANG TERBARU:
         const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
         
         let configHRD = { tarifLembur: 8000 };
@@ -255,18 +250,14 @@
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
         let databaseCetakSlip = {}; 
         let isEditPintasActive = false; 
-        let isDataSensitifVisible = false; // Status Tombol Mata (Sensor Data)
+        let isDataSensitifVisible = false; 
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
-        // AUTO FORMAT NOMOR WA
-        function formatWA(el) {
-            let val = el.value.replace(/\D/g, ''); 
-            el.value = val.replace(/(.{4})/g, '$1 ').trim(); 
-        }
+        function formatWA(el) { let val = el.value.replace(/\D/g, ''); el.value = val.replace(/(.{4})/g, '$1 ').trim(); }
 
         function parseTanggalSakti(waktuAsli) {
             if(!waktuAsli) return null;
@@ -281,7 +272,7 @@
         }
 
         // ===============================================================
-        // FUNGSI CEK SUDAH ABSEN HARI INI (ANTI-DOUBLE ALL)
+        // FUNGSI CEK SUDAH ABSEN (ANTI-DOUBLE SEMUA KATEGORI)
         // ===============================================================
         function getJamAbsenHariIni(kategoriTarget) {
             if (!cacheRiwayatGlobal || !dataProfil) return null;
@@ -333,7 +324,7 @@
             });
             
             if(!adaData) {
-                container.innerHTML = '<div class="text-center text-[10px] text-gray-400 mt-10 font-bold uppercase tracking-widest"><i class="fas fa-moon text-3xl opacity-20 block mb-2"></i>Belum Ada Aktivitas</div>';
+                container.innerHTML = '<div class="text-center text-[10px] text-gray-400 mt-10 font-bold uppercase tracking-widest"><i class="fas fa-moon text-3xl opacity-20 block mb-2"></i>Belum Ada Aktivitas Hari Ini</div>';
                 return;
             }
             
@@ -382,7 +373,6 @@
                 if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
             }, 1000);
 
-            // Wajib fetch awal untuk mengisi Radar Publik
             fetchAndCacheAll(true);
         };
 
@@ -523,17 +513,17 @@
         }
 
         // ===============================================================
-        // TOMBOL EDIT PINTAS / QUICK EDIT
+        // TOMBOL EDIT PINTAS / QUICK EDIT (MODE DARURAT - 3 PILIHAN)
         // ===============================================================
         function toggleEditPintas() {
             isEditPintasActive = !isEditPintasActive;
             const btn = document.getElementById('btnEditPintas');
             if(isEditPintasActive) {
-                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Pintas: ON';
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Darurat: ON';
                 btn.className = "bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-red-700 animate-pulse";
-                Toast.fire({icon:'info', title:'Klik logo ✔️ untuk potong 1/2 hari!'});
+                Toast.fire({icon:'info', title:'Mode Darurat Aktif! Klik kotak mana saja untuk mengubah status.'});
             } else {
-                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Pintas: OFF';
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Darurat: OFF';
                 btn.className = "bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600";
             }
             renderMatriks(); 
@@ -541,35 +531,65 @@
 
         function handleCellClick(nama, tgl, sim) {
             if(!isEditPintasActive) return;
-            if(sim === "✔️") {
-                Swal.fire({
-                    title: 'Potong Setengah Hari?',
-                    text: `Ubah kehadiran ${nama} (Tgl ${tgl}) menjadi 1/2 Hari?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#f97316',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Ya, Potong 50%!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        eksekusiSetengahHariPintas(nama, tgl);
-                    }
-                })
-            } else if (sim === "🌗") {
-                 Swal.fire('Info Sistem', 'Ini sudah setengah hari. Untuk mengembalikannya jadi hadir penuh, Bos harus menghapus recordnya di tab Kasbon Google Sheets secara manual.', 'info');
-            }
-        }
-
-        async function eksekusiSetengahHariPintas(nama, tgl) {
             let selectBulan = document.getElementById('rekapBulan').value;
             let selectTahun = document.getElementById('rekapTahun').value;
             let formatTgl = `${tgl}/${selectBulan}/${selectTahun}`;
-            
+
+            let warnText = sim === "🌗" ? `<div class="text-[10px] mt-3 bg-red-100 border border-red-300 text-red-600 p-2 rounded font-bold uppercase"><i class="fas fa-exclamation-triangle"></i> Penting: Status sebelumnya adalah 1/2 Hari. Jika Anda ubah ke Hadir/Bolos, sistem HANYA mengubah tampilan centang. Anda tetap WAJIB menghapus data potongannya di menu KASBON secara manual agar gajinya normal!</div>` : '';
+
+            Swal.fire({
+                title: `Edit Darurat: ${nama}`,
+                html: `<p class="font-bold mb-2">Tanggal: ${formatTgl}</p>Pilih status yang baru untuk tanggal ini:` + warnText,
+                showCloseButton: true,
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: '✔️ HADIR',
+                cancelButtonText: '🌗 1/2 HARI',
+                denyButtonText: '🟥 BOLOS',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#f97316',
+                denyButtonColor: '#ef4444'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    eksekusiEditDarurat(nama, formatTgl, "MASUK (MANUAL)");
+                } else if (result.isDenied) {
+                    eksekusiEditDarurat(nama, formatTgl, "ALPA MANUAL");
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    eksekusiSetengahHariPintas(nama, formatTgl);
+                }
+            })
+        }
+
+        // FUNGSI KHUSUS UNTUK INJEKSI HADIR / BOLOS SECARA MANUAL KE SHEET "RIWAYAT"
+        async function eksekusiEditDarurat(nama, formatTgl, statusBaru) {
+            Swal.fire({ title: 'Memperbarui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+                let kar = cacheKaryawan.find(k => k.nama.toUpperCase() === nama.toUpperCase());
+                let tipeKaryawan = kar ? kar.tipe : "TETAP";
+                
+                let waktuManipulasi = `${formatTgl}, 08.00.00`;
+                const payloadData = { waktu: waktuManipulasi, nama: nama, tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
+
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_absen", data: payloadData }) }); 
+                const res = await response.json(); 
+                
+                if(res.status === 'success') { 
+                    if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+                    cacheRiwayatGlobal.unshift({ waktu: waktuManipulasi, nama: nama, status: statusBaru, tipe: tipeKaryawan, jarak: 0, catatan: "Edit Darurat" });
+                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                    
+                    renderMatriks(); 
+                    Swal.close(); 
+                    Toast.fire({ icon: 'success', title: `Berhasil diubah ke ${statusBaru.includes("ALPA") ? "BOLOS" : "HADIR"}` }); 
+                } 
+            } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
+        }
+
+        async function eksekusiSetengahHariPintas(nama, formatTgl) {
             let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
             let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
             if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); 
-            
             let nom = parseInt(kar.gaji) / 2; 
             Swal.fire({ title: 'Memotong Gaji 50%...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
             try { 
@@ -580,7 +600,7 @@
                 if(res.status === 'success') { 
                     await fetchAndCacheAll(true); 
                     Swal.close(); 
-                    Toast.fire({ icon: 'success', title: 'Berhasil diubah ke 🌗' }); 
+                    Toast.fire({ icon: 'success', title: 'Berhasil dipotong ke 🌗' }); 
                 } 
             } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
         }
@@ -616,11 +636,12 @@
                     if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                         let dTgl = dPars.tgl; let nama = t.nama.toUpperCase();
                         if (matriks[nama] && !t.status.includes("PULANG")) { 
-                            if (t.status === "PAGI" || t.status === "MASUK") matriks[nama][dTgl] = "✔️"; 
-                            else if (t.status === "PAGI (TELAT)" || t.status === "MASUK (TELAT)") matriks[nama][dTgl] = "⚠️"; 
+                            if (t.status === "PAGI" || t.status.includes("MASUK")) matriks[nama][dTgl] = "✔️"; 
+                            else if (t.status === "PAGI (TELAT)") matriks[nama][dTgl] = "⚠️"; 
                             else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️"; 
                             else if (t.status.includes("IZIN") || t.status.includes("SAKIT")) matriks[nama][dTgl] = "🪪";
                             else if (t.status === "SETENGAH HARI") matriks[nama][dTgl] = "🌗";
+                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = ""; // KOSONGKAN JIKA ALPA/BOLOS
                         }
                     }
                 });
@@ -666,7 +687,7 @@
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
                     else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
                     
-                    let cursorStyle = (isEditPintasActive && (sim === "✔️" || sim === "🌗")) ? "cursor-pointer hover:bg-orange-200 transition ring-inset ring-2 ring-orange-500 z-20 relative shadow-lg" : "";
+                    let cursorStyle = isEditPintasActive ? "cursor-pointer hover:bg-yellow-200 transition ring-inset ring-2 ring-yellow-500 z-20 relative shadow-lg" : "";
                     
                     bodyHtml += `<td onclick="handleCellClick('${nama}', ${i}, '${sim}')" class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna} ${cursorStyle}">${sim}</td>`;
                 }
@@ -1009,7 +1030,7 @@
         async function prosesAbsen(statusAbsen) {
             const now = new Date(); const jamSekarang = now.getHours();
             
-            // Tentukan kategori untuk proteksi double klik
+            // Tentukan kategori proteksi
             let kategori = statusAbsen;
             if (statusAbsen === 'PAGI' && jamSekarang >= 8) statusAbsen = 'PAGI (TELAT)';
             if (statusAbsen.includes('PAGI') || statusAbsen.includes('MASUK')) kategori = 'PAGI';
@@ -1017,7 +1038,7 @@
             // CEK ANTI DOUBLE ABSEN
             let jamSudah = getJamAbsenHariIni(kategori);
             if (jamSudah) {
-                return Swal.fire({ icon: 'info', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
+                return Swal.fire({ icon: 'error', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
             }
 
             if (statusAbsen === 'PULANG' && jamSekarang < 17) return Swal.fire('Belum Waktunya!', 'Absen pulang buka jam 17:00!', 'warning');
@@ -1050,7 +1071,6 @@
                 if (result.status === "success") { 
                     Swal.fire({ icon: 'success', title: 'Data Terkirim!', text: `Terima kasih, ${dataProfil.nama}!` }); 
                     
-                    // Update cache lokal langsung supaya anti-double langsung aktif
                     if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
                     cacheRiwayatGlobal.unshift({ waktu: waktuSekarang, nama: dataProfil.nama, status: statusAbsen });
 
