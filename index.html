@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.1 - WA Format</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.2 - Super Shield</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -41,19 +41,34 @@
 
     <main class="flex-grow flex flex-col items-center p-3 w-full mx-auto relative overflow-hidden no-print">
         
-        <!-- INITIAL SETUP VIEW -->
-        <div id="setupView" class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-200 my-auto hidden">
-            <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
-            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
-            <select id="inputNama" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-4 text-sm font-black text-gray-700 transition">
-                <option value="" disabled selected>-- Memuat Daftar... --</option>
-            </select>
-            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Masukkan Password Kunci:</label>
-            <input type="password" id="inputPassword" placeholder="Sandi dari Owner..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-5 font-mono text-center text-base tracking-widest transition">
-            <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
+        <!-- INITIAL SETUP VIEW (LOGIN & DASHBOARD PUBLIK) -->
+        <div id="setupView" class="w-full max-w-md mx-auto hidden flex-col gap-4 my-auto">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
+                <select id="inputNama" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-4 text-sm font-black text-gray-700 transition">
+                    <option value="" disabled selected>-- Memuat Daftar... --</option>
+                </select>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Masukkan Password Kunci:</label>
+                <input type="password" id="inputPassword" placeholder="Sandi dari Owner..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-5 font-mono text-center text-base tracking-widest transition">
+                <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
+            </div>
+
+            <!-- PANEL RADAR ABSEN HARI INI -->
+            <div class="bg-white p-4 rounded-2xl shadow-lg border border-gray-200 flex flex-col h-64">
+                <h3 class="text-[11px] font-black text-emerald-700 uppercase tracking-wide border-b border-gray-200 pb-2 mb-2 flex justify-between">
+                    <span><i class="fas fa-satellite-dish animate-pulse mr-1"></i> Radar Absen Hari Ini</span>
+                    <span id="labelTglPublik" class="text-gray-400"></span>
+                </h3>
+                <div id="listAbsenPublik" class="overflow-y-auto scrollbar-thin flex-1 pr-1 flex flex-col gap-2">
+                    <div class="text-center text-xs text-gray-400 mt-6 italic"><i class="fas fa-spinner fa-spin mr-1"></i> Menghubungkan satelit...</div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- ABSEN VIEW -->
+        <!-- ABSEN VIEW (SETELAH LOGIN) -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
                 <div>
@@ -122,7 +137,7 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MATRIKS GAJI -->
+            <!-- PANEL 2: MATRIKS GAJI BERSIH (GRID EXCEL KOTAK-KOTAK 1:1) -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
                     <span class="font-bold text-gray-600 text-sm"><i class="fas fa-table text-emerald-500 mr-1"></i> Matriks Gaji</span>
@@ -153,19 +168,23 @@
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2.5 h-fit">
                         <h3 class="font-black text-xs uppercase tracking-wide text-gray-400"><i class="fas fa-user-plus text-emerald-500"></i> Daftarkan Anggota</h3>
                         <input type="text" id="addNama" placeholder="Nama Lengkap..." class="p-2 text-xs border rounded bg-gray-50 font-bold uppercase">
-                        
-                        <!-- INPUT NOMOR WA DENGAN AUTO-FORMAT -->
                         <input type="text" id="addWA" oninput="formatWA(this)" placeholder="No. WA (Misal: 0812 3456...)" class="p-2 text-xs border rounded bg-gray-50 font-bold text-green-600">
-                        
                         <select id="addTipe" class="p-2 text-xs border rounded bg-gray-50 font-bold text-gray-600"><option value="TETAP">🏠 Pasukan Toko</option><option value="MOBILE">🏍️ Lapangan</option></select>
                         <input type="text" id="addPassword" placeholder="Sandi Rahasia..." class="p-2 text-xs border rounded bg-gray-50 font-mono text-center font-bold">
                         <input type="number" id="addGaji" placeholder="Gaji/Hari (Rp)..." class="p-2 text-xs border rounded bg-gray-50 font-bold text-blue-600 text-center">
                         <button onclick="tambahKaryawanAPI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition shadow"><i class="fas fa-plus"></i> Simpan Data</button>
                     </div>
-                    <div class="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+                        
+                        <!-- HEADER PANEL DENGAN TOMBOL MATA -->
+                        <div class="flex justify-between items-center bg-gray-100 p-2.5 border-b border-gray-200">
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="fas fa-database text-emerald-500 mr-1"></i> Database Pusat</span>
+                            <button onclick="toggleSensitiveData()" id="btnToggleEye" class="bg-white border border-gray-300 text-gray-600 px-3 py-1 rounded text-[9px] font-bold hover:bg-gray-50 transition shadow-sm"><i class="fas fa-eye"></i> Tampilkan Info</button>
+                        </div>
+                        
                         <div class="overflow-x-auto scrollbar-thin">
                             <table class="w-full text-left">
-                                <thead class="bg-gray-100 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5">No. WA</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-center">Aksi</th></tr></thead>
+                                <thead class="bg-gray-50 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5">No. WA</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-center">Aksi</th></tr></thead>
                                 <tbody id="tableKaryawanOwner" class="text-xs divide-y divide-gray-100"></tbody>
                             </table>
                         </div>
@@ -236,18 +255,17 @@
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
         let databaseCetakSlip = {}; 
         let isEditPintasActive = false; 
+        let isDataSensitifVisible = false; // Status Tombol Mata (Sensor Data)
         
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
-        // ===============================================================
-        // FUNGSI AUTO FORMAT NOMOR WA (0812 3456 7890)
-        // ===============================================================
+        // AUTO FORMAT NOMOR WA
         function formatWA(el) {
-            let val = el.value.replace(/\D/g, ''); // Hapus semua huruf/simbol selain angka
-            el.value = val.replace(/(.{4})/g, '$1 ').trim(); // Sisipkan spasi tiap 4 angka
+            let val = el.value.replace(/\D/g, ''); 
+            el.value = val.replace(/(.{4})/g, '$1 ').trim(); 
         }
 
         function parseTanggalSakti(waktuAsli) {
@@ -262,11 +280,98 @@
             return { tgl: d, bln: m, thn: y };
         }
 
+        // ===============================================================
+        // FUNGSI CEK SUDAH ABSEN HARI INI (ANTI-DOUBLE ALL)
+        // ===============================================================
+        function getJamAbsenHariIni(kategoriTarget) {
+            if (!cacheRiwayatGlobal || !dataProfil) return null;
+            let tHariIni = new Date();
+            let tglSkg = tHariIni.getDate(); let blnSkg = tHariIni.getMonth() + 1; let thnSkg = tHariIni.getFullYear();
+            
+            let absen = cacheRiwayatGlobal.find(t => {
+                let dPars = parseTanggalSakti(t.waktu);
+                if (!(dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg && t.nama.toUpperCase() === dataProfil.nama.toUpperCase())) return false;
+                
+                if (kategoriTarget === 'PAGI') return t.status.includes("PAGI") || t.status.includes("MASUK");
+                if (kategoriTarget === 'PULANG') return t.status.includes("PULANG");
+                if (kategoriTarget === 'SETENGAH HARI') return t.status.includes("SETENGAH HARI");
+                return false;
+            });
+
+            if (absen) {
+                let parts = String(absen.waktu).split(',');
+                return parts.length > 1 ? parts[1].trim() : absen.waktu;
+            }
+            return null;
+        }
+
+        // ===============================================================
+        // RENDER RADAR PUBLIK (DASHBOARD AWAL LOGIN)
+        // ===============================================================
+        function renderAbsenPublik() {
+            const container = document.getElementById('listAbsenPublik');
+            if (!container) return; 
+            
+            let dNow = new Date();
+            document.getElementById('labelTglPublik').innerText = dNow.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            if (!cacheRiwayatGlobal) {
+                container.innerHTML = '<div class="text-center text-xs text-gray-400 mt-6 italic">Gagal memuat data radar.</div>';
+                return;
+            }
+            
+            let tglSkg = dNow.getDate(); let blnSkg = dNow.getMonth() + 1; let thnSkg = dNow.getFullYear();
+            let adaData = false; let absenMap = {};
+            
+            cacheRiwayatGlobal.forEach(t => {
+                let dPars = parseTanggalSakti(t.waktu);
+                if (dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg) {
+                    adaData = true;
+                    if(!absenMap[t.nama]) absenMap[t.nama] = [];
+                    absenMap[t.nama].push({status: t.status, waktu: t.waktu});
+                }
+            });
+            
+            if(!adaData) {
+                container.innerHTML = '<div class="text-center text-[10px] text-gray-400 mt-10 font-bold uppercase tracking-widest"><i class="fas fa-moon text-3xl opacity-20 block mb-2"></i>Belum Ada Aktivitas</div>';
+                return;
+            }
+            
+            let html = "";
+            for(let nama in absenMap) {
+                let badgeHtml = '';
+                absenMap[nama].reverse().forEach(ab => { 
+                    let w = ab.waktu.split(',')[1] ? ab.waktu.split(',')[1].substring(0,6).trim() : '';
+                    if(ab.status.includes('PAGI') || ab.status.includes('MASUK')) {
+                        let c = ab.status.includes('TELAT') ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200';
+                        badgeHtml += `<span class="${c} border text-[8px] px-1.5 py-0.5 rounded font-bold mr-1 shadow-sm"><i class="fas fa-sign-in-alt mr-0.5"></i> ${w}</span>`;
+                    } else if(ab.status.includes('PULANG')) {
+                        badgeHtml += `<span class="bg-blue-50 text-blue-600 border border-blue-200 text-[8px] px-1.5 py-0.5 rounded font-bold mr-1 shadow-sm"><i class="fas fa-sign-out-alt mr-0.5"></i> ${w}</span>`;
+                    } else if(ab.status.includes('SETENGAH')) {
+                        badgeHtml += `<span class="bg-orange-50 text-orange-600 border border-orange-200 text-[8px] px-1.5 py-0.5 rounded font-bold mr-1 shadow-sm"><i class="fas fa-adjust mr-0.5"></i> ${w}</span>`;
+                    } else if(ab.status.includes('IZIN') || ab.status.includes('SAKIT')) {
+                        badgeHtml += `<span class="bg-purple-50 text-purple-600 border border-purple-200 text-[8px] px-1.5 py-0.5 rounded font-bold mr-1 shadow-sm">Izin/Sakit</span>`;
+                    }
+                });
+                
+                html += `
+                <div class="flex flex-col bg-gray-50 border border-gray-100 p-2 rounded-lg">
+                    <span class="text-[10px] font-black text-gray-700 uppercase"><i class="fas fa-user-circle text-gray-400 mr-1 text-xs"></i> ${nama}</span>
+                    <div class="flex flex-wrap gap-y-1 mt-1 pl-4 border-l-2 border-emerald-300 ml-1.5">${badgeHtml}</div>
+                </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
         window.onload = () => {
             if (!deviceID) { deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase(); localStorage.setItem('device_id_fajri', deviceID); }
             document.getElementById('labelPerangkat').innerText = "Dev: " + deviceID.substring(0,8);
-            if (!dataProfil) { document.getElementById('setupView').classList.remove('hidden'); loadDropdownKaryawan(); } 
-            else { bukaSistemKaryawan(); }
+            if (!dataProfil) { 
+                document.getElementById('setupView').classList.remove('hidden'); 
+                document.getElementById('setupView').classList.add('flex');
+                loadDropdownKaryawan(); 
+            } else { bukaSistemKaryawan(); }
             
             setInterval(() => {
                 const now = new Date(); document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
@@ -277,9 +382,8 @@
                 if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
             }, 1000);
 
-            fetch(API_URL + "?action=get_config_hrd").then(res => res.json()).then(res => {
-                if(res.status === 'success') { configHRD.tarifLembur = parseInt(res.data.tarifLembur) || 8000; }
-            }).catch(e => {});
+            // Wajib fetch awal untuk mengisi Radar Publik
+            fetchAndCacheAll(true);
         };
 
         async function loadDropdownKaryawan() {
@@ -310,7 +414,11 @@
                 const result = await response.json();
                 if (result.status === "success") {
                     dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe }; localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => { document.getElementById('setupView').classList.add('hidden'); bukaSistemKaryawan(); });
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => { 
+                        document.getElementById('setupView').classList.add('hidden'); 
+                        document.getElementById('setupView').classList.remove('flex');
+                        bukaSistemKaryawan(); 
+                    });
                 } else { Swal.fire('Akses Gagal', result.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Gagal verifikasi internet terputus!', 'error'); }
         }
@@ -327,7 +435,10 @@
         function loginOwner() {
             Swal.fire({ title: 'Akses Mastermind', input: 'password', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Masuk' }).then((res) => {
                 if (res.isConfirmed && res.value === 'Cidalung') {
-                    document.getElementById('absenView').classList.add('hidden'); document.getElementById('setupView').classList.add('hidden');
+                    document.getElementById('absenView').classList.add('hidden'); 
+                    document.getElementById('setupView').classList.add('hidden');
+                    document.getElementById('setupView').classList.remove('flex');
+
                     if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                     document.getElementById('ownerView').classList.remove('hidden');
                     
@@ -383,7 +494,12 @@
                 const jKB = await resKB.json(); if (jKB.status === "success") { cacheKasbonGlobal = jKB.data; localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); }
                 const jCfg = await resCfg.json(); if(jCfg.status === "success") { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; }
 
-                if(isBackground) { if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner(); if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks(); if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian(); }
+                if(isBackground) { 
+                    if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner(); 
+                    if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks(); 
+                    if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian(); 
+                    if(document.getElementById('setupView') && !document.getElementById('setupView').classList.contains('hidden')) renderAbsenPublik();
+                }
             } catch (e) { }
         }
 
@@ -809,14 +925,34 @@
             window.print();
         }
 
-        // --- MANAJEMEN KARYAWAN ---
+        // --- MANAJEMEN KARYAWAN DENGAN TOMBOL MATA SENSOR DATA ---
+        function toggleSensitiveData() {
+            isDataSensitifVisible = !isDataSensitifVisible;
+            const btn = document.getElementById('btnToggleEye');
+            if (isDataSensitifVisible) {
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Sembunyikan Info';
+                btn.className = "bg-white border border-gray-300 text-gray-600 px-3 py-1 rounded text-[9px] font-bold hover:bg-gray-50 transition shadow-sm";
+            } else {
+                btn.innerHTML = '<i class="fas fa-eye"></i> Tampilkan Info';
+                btn.className = "bg-emerald-50 border border-emerald-200 text-emerald-600 px-3 py-1 rounded text-[9px] font-bold hover:bg-emerald-100 transition shadow-sm";
+            }
+            loadDataKaryawanOwner();
+        }
+
         function loadDataKaryawanOwner() {
             const tbody = document.getElementById('tableKaryawanOwner'); const cacheNama = localStorage.getItem('cache_nama_karyawan');
             if (cacheNama) {
                 let data = JSON.parse(cacheNama); let html = "";
                 data.forEach((k, idx) => { 
+                    // Logika Sensor WA
                     let waText = k.wa && k.wa !== '-' ? k.wa.toString().replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim() : '-';
-                    html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 text-xs text-green-600 font-semibold whitespace-nowrap">${waText}</td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">••••••</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">${formatRupiah(k.gaji || 0)}</td><td class="p-2.5 text-center whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}', '${k.wa || ''}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-1"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
+                    let displayWa = isDataSensitifVisible ? waText : waText.replace(/\d/g, '*').replace(/\*/, '0').replace(/\*/, '8'); 
+                    if(!isDataSensitifVisible && displayWa.length > 5 && waText !== '-') displayWa = displayWa.substring(0,4) + ' **** ****';
+                    
+                    // Logika Sensor Gaji
+                    let displayGaji = isDataSensitifVisible ? formatRupiah(k.gaji || 0) : '<span class="text-gray-400">Rp ••••••</span>';
+
+                    html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 text-xs text-green-600 font-semibold whitespace-nowrap">${displayWa}</td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">••••••</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">${displayGaji}</td><td class="p-2.5 text-center whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}', '${k.wa || ''}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-1"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
                 });
                 tbody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-xs">Belum ada karyawan</td></tr>';
             }
@@ -872,8 +1008,20 @@
 
         async function prosesAbsen(statusAbsen) {
             const now = new Date(); const jamSekarang = now.getHours();
-            if (statusAbsen === 'PULANG' && jamSekarang < 17) return Swal.fire('Belum Waktunya!', 'Absen pulang buka jam 17:00!', 'warning');
+            
+            // Tentukan kategori untuk proteksi double klik
+            let kategori = statusAbsen;
             if (statusAbsen === 'PAGI' && jamSekarang >= 8) statusAbsen = 'PAGI (TELAT)';
+            if (statusAbsen.includes('PAGI') || statusAbsen.includes('MASUK')) kategori = 'PAGI';
+
+            // CEK ANTI DOUBLE ABSEN
+            let jamSudah = getJamAbsenHariIni(kategori);
+            if (jamSudah) {
+                return Swal.fire({ icon: 'info', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
+            }
+
+            if (statusAbsen === 'PULANG' && jamSekarang < 17) return Swal.fire('Belum Waktunya!', 'Absen pulang buka jam 17:00!', 'warning');
+            
             if (!currentLat || !currentLng) return Swal.fire('Tunggu!', 'Mencari sinyal GPS...', 'warning');
             if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) return Swal.fire('Ditolak!', `Di luar zona (${currentJarak} M)`, 'error');
 
@@ -901,6 +1049,11 @@
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_absen", data: payloadData }) }); const result = await response.json();
                 if (result.status === "success") { 
                     Swal.fire({ icon: 'success', title: 'Data Terkirim!', text: `Terima kasih, ${dataProfil.nama}!` }); 
+                    
+                    // Update cache lokal langsung supaya anti-double langsung aktif
+                    if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+                    cacheRiwayatGlobal.unshift({ waktu: waktuSekarang, nama: dataProfil.nama, status: statusAbsen });
+
                     const jamSistem = new Date().getHours(); const menitSistem = new Date().getMinutes();
                     if (statusAbsen === 'PULANG' && jamSistem >= 17) {
                         let totalMenitKelebihan = (jamSistem * 60 + menitSistem) - (17 * 60);
