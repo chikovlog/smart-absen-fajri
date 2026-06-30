@@ -263,6 +263,70 @@
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
 
+        // ===============================================================
+        // KONEKSI CLOUD STABIL: anti loading muter tanpa selesai
+        // ===============================================================
+        function fetchDenganTimeout(url, options = {}, timeoutMs = 12000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...options, signal: controller.signal })
+                .finally(() => clearTimeout(timer));
+        }
+
+        async function ambilJSON(url, options = {}, timeoutMs = 12000) {
+            const response = await fetchDenganTimeout(url, options, timeoutMs);
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (err) {
+                throw new Error('Balasan server bukan JSON. Kemungkinan Web App belum deploy ulang / akses belum benar. Cuplikan: ' + text.substring(0, 120));
+            }
+        }
+
+        async function kirimAPI(payload, timeoutMs = 15000) {
+            const res = await ambilJSON(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }, timeoutMs);
+            if (!res || res.status !== 'success') {
+                throw new Error((res && res.message) ? res.message : 'Server menolak proses.');
+            }
+            return res;
+        }
+
+        function renderSetelahRefresh() {
+            try {
+                if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
+                if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks();
+                if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
+                if(document.getElementById('setupView') && !document.getElementById('setupView').classList.contains('hidden')) renderAbsenPublik();
+            } catch(e) { console.warn('Render refresh skip:', e); }
+        }
+
+        async function refreshKaryawanOnly() {
+            const jK = await ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000);
+            if (jK.status === 'success') {
+                localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data || []));
+                const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
+                dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data || [], el); });
+                loadDataKaryawanOwner();
+            } else {
+                throw new Error(jK.message || 'Gagal mengambil data karyawan.');
+            }
+        }
+
+        async function refreshKasbonOnly() {
+            const jKB = await ambilJSON(API_URL + '?action=get_kasbon&ts=' + Date.now(), {}, 12000);
+            if (jKB.status === 'success') {
+                cacheKasbonGlobal = jKB.data || [];
+                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                renderSetelahRefresh();
+            } else {
+                throw new Error(jKB.message || 'Gagal mengambil data kasbon.');
+            }
+        }
+
         function formatWA(el) { let val = el.value.replace(/\D/g, ''); el.value = val.replace(/(.{4})/g, '$1 ').trim(); }
 
         function parseTanggalSakti(waktuAsli) {
@@ -387,7 +451,7 @@
             const cacheNama = localStorage.getItem('cache_nama_karyawan');
             if (cacheNama) { let data = JSON.parse(cacheNama); renderDropdown(data, dropdown); }
             try {
-                const response = await fetch(API_URL + "?action=get_karyawan"); const result = await response.json();
+                const result = await ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000);
                 if (result.status === "success") { 
                     localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data)); 
                     renderDropdown(result.data, dropdown); 
@@ -406,8 +470,7 @@
             if (!nama) return Swal.fire('Error', 'Pilih nama Anda!', 'error'); if (!password) return Swal.fire('Error', 'Masukkan password gembok!', 'error');
             Swal.fire({ title: 'Menghubungkan Satelit...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "verifikasi_karyawan", nama: nama, password: password }) });
-                const result = await response.json();
+                const result = await kirimAPI({ action: "verifikasi_karyawan", nama: nama, password: password }, 15000);
                 if (result.status === "success") {
                     dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe }; localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
                     Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => { 
@@ -463,8 +526,7 @@
             const tarif = parseInt(document.getElementById('cfgTarifLembur').value) || 0;
             Swal.fire({ title: 'Upload ke Server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_config_hrd", tarifLembur: tarif }) });
-                const res = await response.json();
+                const res = await kirimAPI({ action: "simpan_config_hrd", tarifLembur: tarif }, 15000);
                 if(res.status === 'success') {
                     configHRD.tarifLembur = tarif;
                     Swal.fire('Tersimpan di Cloud!', 'Pengaturan berhasil diperbarui.', 'success');
@@ -473,30 +535,66 @@
         }
 
         async function refreshSemuaDataSilent() {
-            Swal.fire({ title: 'Menarik Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Data Terupdate!' });
+            Swal.fire({ title: 'Menarik Data...', text: 'Menyamakan data dari Cloud. Maksimal tunggu 15 detik.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await fetchAndCacheAll(true);
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Data Terupdate!' });
+            } catch (e) {
+                Swal.close();
+                Swal.fire('Refresh Tidak Sempurna', (e && e.message) ? e.message : 'Koneksi Cloud lambat. Data lokal tetap dipakai dulu.', 'warning');
+            }
         }
 
         async function fetchAndCacheAll(isBackground = false) {
             try {
-                const [resR, resK, resKB, resCfg] = await Promise.all([ 
-                    fetch(API_URL + "?action=get_riwayat"), fetch(API_URL + "?action=get_karyawan"), fetch(API_URL + "?action=get_kasbon"), fetch(API_URL + "?action=get_config_hrd")
+                // Endpoint baru: 1x tarik semua data ringan. Lebih cepat daripada 4 request paralel.
+                const all = await ambilJSON(API_URL + '?action=get_all&ts=' + Date.now(), {}, 15000);
+                if (all.status === 'success' && all.data) {
+                    const d = all.data;
+                    cacheRiwayatGlobal = d.riwayat || [];
+                    cacheKasbonGlobal = d.kasbon || [];
+                    configHRD.tarifLembur = parseInt((d.config || {}).tarifLembur) || 8000;
+                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                    localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(d.karyawan || []));
+                    const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
+                    dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(d.karyawan || [], el); });
+                    if (isBackground) renderSetelahRefresh();
+                    return true;
+                }
+                throw new Error(all.message || 'Endpoint get_all belum aktif.');
+            } catch (errGetAll) {
+                // Fallback untuk Web App lama: ambil satu-satu, tapi semua diberi timeout agar popup tidak muter terus.
+                const hasil = await Promise.allSettled([
+                    ambilJSON(API_URL + '?action=get_riwayat&ts=' + Date.now(), {}, 12000),
+                    ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000),
+                    ambilJSON(API_URL + '?action=get_kasbon&ts=' + Date.now(), {}, 12000),
+                    ambilJSON(API_URL + '?action=get_config_hrd&ts=' + Date.now(), {}, 12000)
                 ]);
-                const jR = await resR.json(); if (jR.status === "success") { cacheRiwayatGlobal = jR.data; localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); }
-                const jK = await resK.json(); if (jK.status === "success") { 
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data)); 
-                    const dropdowns = ['kasbonNama', 'setengahNama', 'lemburNama'];
-                    dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data, el); });
-                }
-                const jKB = await resKB.json(); if (jKB.status === "success") { cacheKasbonGlobal = jKB.data; localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); }
-                const jCfg = await resCfg.json(); if(jCfg.status === "success") { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; }
 
-                if(isBackground) { 
-                    if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner(); 
-                    if(!document.getElementById('panel-rekap').classList.contains('hidden')) renderMatriks(); 
-                    if(!document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian(); 
-                    if(document.getElementById('setupView') && !document.getElementById('setupView').classList.contains('hidden')) renderAbsenPublik();
+                let adaSukses = false;
+                const jR = hasil[0].status === 'fulfilled' ? hasil[0].value : null;
+                if (jR && jR.status === 'success') { cacheRiwayatGlobal = jR.data || []; localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); adaSukses = true; }
+
+                const jK = hasil[1].status === 'fulfilled' ? hasil[1].value : null;
+                if (jK && jK.status === 'success') {
+                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data || []));
+                    const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
+                    dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data || [], el); });
+                    adaSukses = true;
                 }
-            } catch (e) { }
+
+                const jKB = hasil[2].status === 'fulfilled' ? hasil[2].value : null;
+                if (jKB && jKB.status === 'success') { cacheKasbonGlobal = jKB.data || []; localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); adaSukses = true; }
+
+                const jCfg = hasil[3].status === 'fulfilled' ? hasil[3].value : null;
+                if (jCfg && jCfg.status === 'success') { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; adaSukses = true; }
+
+                if (isBackground) renderSetelahRefresh();
+                if (!adaSukses) throw errGetAll;
+                return true;
+            }
         }
 
         function renderTabelHarian() {
@@ -984,10 +1082,9 @@
             if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error'); 
             Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); 
             try { 
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji, wa: wa }) }); 
-                const res = await response.json(); 
-                if(res.status === 'success') { document.getElementById('addNama').value = ''; document.getElementById('addWA').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } 
-            } catch(e) { } 
+                const res = await kirimAPI({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji, wa: wa }, 15000); 
+                document.getElementById('addNama').value = ''; document.getElementById('addWA').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Karyawan tersimpan!' }); 
+            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan ke server.', 'error'); } 
         }
         
         async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama, waLama) { 
@@ -1005,22 +1102,86 @@
             if (formValues) { 
                 Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() }); 
                 try { 
-                    const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "edit_karyawan", nama: nama, wa: formValues.wa, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }) }); 
-                    const res = await response.json(); 
-                    if (res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } 
-                } catch (e) { } 
+                    const res = await kirimAPI({ action: "edit_karyawan", nama: nama, wa: formValues.wa, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }, 15000); 
+                    await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Data karyawan diperbarui!' }); 
+                } catch (e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal memperbarui data.', 'error'); } 
             } 
         }
 
-        async function hapusKaryawanAPI(nama) { Swal.fire({ title: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => { if (result.isConfirmed) { Swal.fire({ title: 'Menghapus...', didOpen: () => Swal.showLoading() }); try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "hapus_karyawan", nama: nama }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); switchTabOwner('karyawan'); } } catch(e) { } } }); }
+        async function hapusKaryawanAPI(nama) {
+            Swal.fire({ title: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    try {
+                        await kirimAPI({ action: "hapus_karyawan", nama: nama }, 15000);
+                        await refreshKaryawanOnly();
+                        Swal.close();
+                        switchTabOwner('karyawan');
+                        Toast.fire({ icon: 'success', title: 'Karyawan dihapus!' });
+                    } catch(e) {
+                        Swal.close();
+                        Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghapus data.', 'error');
+                    }
+                }
+            });
+        }
 
         // --- FUNGSI KEUANGAN ---
-        async function tambahKasbonAPI() { const nama = document.getElementById('kasbonNama').value; const nominal = document.getElementById('kasbonNominal').value; const ket = document.getElementById('kasbonKeterangan').value || "-"; if(!nama || !nominal) return Swal.fire('Error', 'Isi Form!', 'error'); Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('kasbonNominal').value = ''; document.getElementById('kasbonKeterangan').value = ''; await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Kasbon memotong gaji ${nama}`, 'success'); } } catch(e) { } }
-        async function tambahSetengahHariAPI() { const nama = document.getElementById('setengahNama').value; const tgl = document.getElementById('setengahTgl').value; if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal!', 'error'); const p = tgl.split('-'); const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`; let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase()); if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); let nom = parseInt(kar.gaji) / 2; Swal.fire({ title: 'Memotong Gaji 50%...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `SETENGAH HARI: ${formatTgl}`; const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { await fetchAndCacheAll(true); Swal.close(); Swal.fire('Berhasil!', `Tgl ${formatTgl} menjadi 🌗`, 'success'); } } catch(e) { } }
-        async function tambahLemburAPI() { const nama = document.getElementById('lemburNama').value; const jam = document.getElementById('lemburJam').value; if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam!', 'error'); let nom = -(parseInt(jam) * configHRD.tarifLembur); Swal.fire({ title: 'Menambah Lembur...', didOpen: () => Swal.showLoading() }); try { let waktu = new Date().toLocaleString('id-ID'); let ket = `LEMBUR MANUAL: ${jam}x`; const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); const res = await response.json(); if(res.status === 'success') { document.getElementById('lemburJam').value = ''; await fetchAndCacheAll(true); Swal.close(); Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' }); } } catch(e) { } }
+        async function tambahKasbonAPI() {
+            const nama = document.getElementById('kasbonNama').value;
+            const nominal = document.getElementById('kasbonNominal').value;
+            const ket = document.getElementById('kasbonKeterangan').value || "-";
+            if(!nama || !nominal) return Swal.fire('Error', 'Isi Form!', 'error');
+            Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                let waktu = new Date().toLocaleString('id-ID');
+                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
+                document.getElementById('kasbonNominal').value = '';
+                document.getElementById('kasbonKeterangan').value = '';
+                await refreshKasbonOnly();
+                Swal.close();
+                Swal.fire('Berhasil!', `Kasbon memotong gaji ${nama}`, 'success');
+            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan kasbon.', 'error'); }
+        }
+        async function tambahSetengahHariAPI() {
+            const nama = document.getElementById('setengahNama').value;
+            const tgl = document.getElementById('setengahTgl').value;
+            if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal!', 'error');
+            const p = tgl.split('-');
+            const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`;
+            let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
+            let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
+            if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error');
+            let nom = parseInt(kar.gaji) / 2;
+            Swal.fire({ title: 'Memotong Gaji 50%...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                let waktu = new Date().toLocaleString('id-ID');
+                let ket = `SETENGAH HARI: ${formatTgl}`;
+                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
+                await refreshKasbonOnly();
+                Swal.close();
+                Swal.fire('Berhasil!', `Tgl ${formatTgl} menjadi 🌗`, 'success');
+            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan setengah hari.', 'error'); }
+        }
+        async function tambahLemburAPI() {
+            const nama = document.getElementById('lemburNama').value;
+            const jam = document.getElementById('lemburJam').value;
+            if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam!', 'error');
+            let nom = -(parseInt(jam) * configHRD.tarifLembur);
+            Swal.fire({ title: 'Menambah Lembur...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                let waktu = new Date().toLocaleString('id-ID');
+                let ket = `LEMBUR MANUAL: ${jam}x`;
+                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
+                document.getElementById('lemburJam').value = '';
+                await refreshKasbonOnly();
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' });
+            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan lembur.', 'error'); }
+        }
 
         // --- KAMERA & GPS & ABSEN ---
-        function bukaFoto(url) { if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error'); Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Bukti', confirmButtonColor: '#10b981' }); }
+        function bukaFoto(url) { if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error'); if(String(url).startsWith('http')) { window.open(url, '_blank'); return; } Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Bukti', confirmButtonColor: '#10b981' }); }
         async function nyalakanKamera() { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); video.srcObject = stream; } catch (err) { } }
         
         function nyalakanRadarGPS() { 
