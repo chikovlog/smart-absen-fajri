@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.4 - Multi Cabang</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V7.6 - Lembur Fixed</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -336,14 +336,75 @@
 
         function parseTanggalSakti(waktuAsli) {
             if(!waktuAsli) return null;
-            let textDate = String(waktuAsli).split(' ')[0].replace(',', '').trim();
-            let parts = textDate.split(/[/\-]/);
+            let textDate = String(waktuAsli).split(/[\s,]+/)[0].replace(',', '').trim();
+            let parts = textDate.split(/[\/\-]/).filter(Boolean);
             if(parts.length !== 3) return null;
-            let a = parseInt(parts[0]); let b = parseInt(parts[1]); let c = parseInt(parts[2]);
-            let y = c > 2000 ? c : c + 2000;
-            let m, d;
-            if (a > 12) { d = a; m = b; } else if (b > 12) { d = b; m = a; } else { d = a; m = b; } 
+            let a = parseInt(parts[0], 10); let b = parseInt(parts[1], 10); let c = parseInt(parts[2], 10);
+            let y, m, d;
+            // Support format dd/mm/yyyy, mm/dd/yyyy, dan yyyy-mm-dd dari Google Sheet / input browser
+            if (String(parts[0]).length === 4 || a > 1900) {
+                y = a; m = b; d = c;
+            } else {
+                y = c > 2000 ? c : c + 2000;
+                if (a > 12) { d = a; m = b; }
+                else if (b > 12) { d = b; m = a; }
+                else { d = a; m = b; }
+            }
+            if(!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return null;
             return { tgl: d, bln: m, thn: y };
+        }
+
+        function tanggalKeyDariPars(dPars) {
+            if(!dPars) return '';
+            return `${dPars.thn}-${String(dPars.bln).padStart(2,'0')}-${String(dPars.tgl).padStart(2,'0')}`;
+        }
+
+        function tanggalKeyDariText(text) {
+            const parsed = parseTanggalSakti(text);
+            return tanggalKeyDariPars(parsed);
+        }
+
+        function ekstrakTanggalDariKeterangan(ket) {
+            const text = String(ket || '');
+            // Format baru: TGL=2026-06-01
+            let m = text.match(/TGL\s*=\s*(\d{4}-\d{1,2}-\d{1,2})/i);
+            if(m) return tanggalKeyDariText(m[1]);
+            // Format lama: ...: 1/6/2026 atau ...: 01-06-2026
+            m = text.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
+            if(m) return tanggalKeyDariText(m[1]);
+            return '';
+        }
+
+        function parseLemburEntry(kb) {
+            const ket = String(kb && kb.keterangan ? kb.keterangan : '');
+            const ketUpper = ket.toUpperCase();
+            if(!ketUpper.includes('LEMBUR')) return null;
+
+            const nominal = parseInt(kb.nominal) || 0;
+            const tarif = parseInt(configHRD.tarifLembur) || 1;
+            let jam = null;
+
+            // Format baru: JAM=3 atau JAM=-1
+            let m = ket.match(/JAM\s*=\s*([\-+]?\d+(?:[\.,]\d+)?)/i);
+            if(m) jam = parseFloat(m[1].replace(',', '.'));
+
+            // Format lama: +3 JAM / -1 JAM / 3x
+            if(jam === null || isNaN(jam)) {
+                m = ket.match(/([\-+]?\d+(?:[\.,]\d+)?)\s*(?:JAM|X)/i);
+                if(m) jam = parseFloat(m[1].replace(',', '.'));
+            }
+
+            // Koreksi lembur wajib negatif meskipun regex menangkap angka positif
+            if(ketUpper.includes('KOREKSI') && jam !== null && !isNaN(jam)) jam = -Math.abs(jam);
+            if((jam === null || isNaN(jam)) && nominal !== 0) {
+                // Di pembukuan lama: nominal negatif = tambahan lembur, positif = koreksi/pengurangan
+                jam = (nominal < 0 ? Math.abs(nominal) : -Math.abs(nominal)) / tarif;
+            }
+            if(jam === null || isNaN(jam)) jam = 0;
+
+            let tanggalKey = ekstrakTanggalDariKeterangan(ket) || tanggalKeyDariText(kb.waktu);
+            const nilaiRp = nominal < 0 ? Math.abs(nominal) : -Math.abs(nominal);
+            return { jam, tanggalKey, nilaiRp, keterangan: ket };
         }
 
         // ===============================================================
@@ -733,26 +794,13 @@
 
         function hitungLemburTanggal(nama, formatTgl) {
             const targetNama = String(nama || '').toUpperCase();
-            const tarif = parseInt(configHRD.tarifLembur) || 1;
+            const targetKey = tanggalKeyDariText(formatTgl);
             let totalJam = 0;
             (cacheKasbonGlobal || []).forEach(kb => {
                 if(String(kb.nama || '').toUpperCase() !== targetNama) return;
-                const ket = String(kb.keterangan || '').toUpperCase();
-                if(!ket.includes('LEMBUR')) return;
-
-                let cocokTanggal = ket.includes(String(formatTgl).toUpperCase());
-                if(!cocokTanggal) {
-                    const dPars = parseTanggalSakti(kb.waktu);
-                    const parts = String(formatTgl).split('/');
-                    if(parts.length === 3 && dPars) {
-                        cocokTanggal = dPars.tgl === parseInt(parts[0]) && dPars.bln === parseInt(parts[1]) && dPars.thn === parseInt(parts[2]);
-                    }
-                }
-                if(!cocokTanggal) return;
-
-                const nom = parseInt(kb.nominal) || 0;
-                const efekRp = nom < 0 ? Math.abs(nom) : -Math.abs(nom);
-                totalJam += efekRp / tarif;
+                const info = parseLemburEntry(kb);
+                if(!info || !info.tanggalKey || info.tanggalKey !== targetKey) return;
+                totalJam += info.jam;
             });
             return Number.isInteger(totalJam) ? totalJam : Number(totalJam.toFixed(2));
         }
@@ -808,22 +856,28 @@
             const tarif = parseInt(configHRD.tarifLembur) || 0;
             if(tarif <= 0) return Swal.fire('Tarif Lembur Kosong', 'Atur dulu tarif lembur per jam di menu Seting HRD.', 'warning');
 
-            const isTambah = jam > 0;
-            const nominal = isTambah ? -(Math.abs(jam) * tarif) : (Math.abs(jam) * tarif);
-            const ket = isTambah ? `LEMBUR DARURAT +${Math.abs(jam)} JAM: ${formatTgl}` : `KOREKSI LEMBUR DARURAT -${Math.abs(jam)} JAM: ${formatTgl}`;
+            const targetKey = tanggalKeyDariText(formatTgl);
+            const nominal = -(jam * tarif); // tambahan +jam menjadi nominal negatif; koreksi -jam menjadi nominal positif
+            const ket = `LEMBUR|JAM=${jam}|TGL=${targetKey}|SUMBER=EDIT_DARURAT`;
             const waktu = `${formatTgl}, 18.00.00`;
 
-            Swal.fire({ title: isTambah ? `Menambah Lembur +${Math.abs(jam)} Jam...` : `Mengurangi Lembur -${Math.abs(jam)} Jam...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: jam > 0 ? `Menyimpan Lembur +${Math.abs(jam)} Jam...` : `Menyimpan Koreksi Lembur -${Math.abs(jam)} Jam...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
+                // Action baru lebih rapi; kalau Apps Script lama belum update, fallback otomatis ke tambah_kasbon.
+                try {
+                    await kirimAPI({ action: "tambah_lembur", waktu: waktu, nama: nama, jam: jam, tarif: tarif, tanggal_key: targetKey, nominal: nominal, keterangan: ket }, 15000);
+                } catch(errActionBaru) {
+                    await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
+                }
 
                 if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
-                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama, nominal: nominal, keterangan: ket });
+                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama.toUpperCase(), nominal: nominal, keterangan: ket });
                 localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                renderMatriks();
 
                 try { await refreshKasbonOnly(); } catch(e) { renderMatriks(); }
                 Swal.close();
-                Toast.fire({ icon: 'success', title: isTambah ? `Lembur ${nama} +${Math.abs(jam)} jam` : `Lembur ${nama} -${Math.abs(jam)} jam` });
+                Toast.fire({ icon: 'success', title: jam > 0 ? `Lembur ${nama} +${Math.abs(jam)} jam tersimpan` : `Koreksi lembur ${nama} -${Math.abs(jam)} jam tersimpan` });
             } catch(e) {
                 Swal.close();
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi lembur.', 'error');
@@ -873,18 +927,28 @@
             }
 
             cacheKasbonGlobal.forEach(kb => {
-                let nama = kb.nama.toUpperCase(); if(!rekapFinansial[nama]) return;
+                let nama = String(kb.nama || '').toUpperCase(); if(!rekapFinansial[nama]) return;
+                let ketText = String(kb.keterangan || '');
+                let ketUpper = ketText.toUpperCase();
+
+                if (ketUpper.includes("LEMBUR")) {
+                    const infoLembur = parseLemburEntry(kb);
+                    if(!infoLembur || !infoLembur.tanggalKey) return;
+                    let partsKey = infoLembur.tanggalKey.split('-');
+                    let yKey = parseInt(partsKey[0]); let mKey = parseInt(partsKey[1]);
+                    if(mKey === selectBulan && yKey === selectTahun) {
+                        rekapFinansial[nama].lemburRp += infoLembur.nilaiRp;
+                        rekapFinansial[nama].jmlLembur += infoLembur.jam;
+                    }
+                    return;
+                }
+
                 let dPars = parseTanggalSakti(kb.waktu);
                 if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                     let nom = parseInt(kb.nominal) || 0;
-                    if (kb.keterangan.includes("LEMBUR")) {
-                        const tarifLemburAktif = parseInt(configHRD.tarifLembur) || 1;
-                        const efekLembur = nom < 0 ? Math.abs(nom) : -Math.abs(nom);
-                        rekapFinansial[nama].lemburRp += efekLembur;
-                        rekapFinansial[nama].jmlLembur += (efekLembur / tarifLemburAktif);
-                    } else if (kb.keterangan.includes("SETENGAH HARI")) {
+                    if (ketUpper.includes("SETENGAH HARI")) {
                         rekapFinansial[nama].jmlSetHari += 1;
-                        let match = kb.keterangan.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                        let match = ketText.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
                         if (match) {
                             let matchTgl = parseInt(match[1]); let matchBln = parseInt(match[2]); let matchThn = parseInt(match[3]);
                             if (matchBln === selectBulan && matchThn === selectTahun && matriks[nama]) { matriks[nama][matchTgl] = "🌗"; }
@@ -946,7 +1010,14 @@
         // ===============================================================
         // FUNGSI POPUP BUKA GAJI, WHATSAPP, & CETAK DOKUMEN RESMI
         // ===============================================================
-        function bukaTotalGaji(nama) {
+        async function bukaTotalGaji(nama) {
+            try {
+                Swal.fire({ title: 'Memuat gaji terbaru...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                await refreshKasbonOnly();
+            } catch(e) {
+                // Kalau cloud lambat, tetap pakai cache lokal terakhir agar popup tidak macet.
+                renderMatriks();
+            }
             const data = databaseCetakSlip[nama];
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
 
@@ -957,7 +1028,6 @@
                 <div class="flex justify-between text-sm text-green-600 mb-1"><span>Lembur (${data.lemburJam} Jam):</span> <span>${formatBonusRupiah(data.uangLembur)}</span></div>
                 <div class="flex justify-between text-sm text-red-500 mb-2 border-b pb-2"><span>Kasbon:</span> <span>-${formatRupiah(data.kasbon)}</span></div>
                 <div class="flex justify-between font-black text-xl text-emerald-700 mt-3 bg-gray-100 p-2 border-2 border-emerald-500 shadow-inner rounded mb-4"><span>TOTAL:</span> <span>${formatRupiah(data.bersih)}</span></div>
-                
                 <div class="flex gap-2">
                     <button onclick="cetakSlipGaji('${nama}')" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold text-xs hover:bg-gray-700 transition"><i class="fas fa-file-pdf"></i> Download PDF</button>
                     <button onclick="kirimWA('${nama}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-green-700 transition"><i class="fab fa-whatsapp"></i> Kirim Rincian WA</button>
@@ -1289,16 +1359,29 @@
         }
         async function tambahLemburAPI() {
             const nama = document.getElementById('lemburNama').value;
-            const jam = document.getElementById('lemburJam').value;
+            const jam = parseInt(document.getElementById('lemburJam').value) || 0;
             if(!nama || !jam) return Swal.fire('Error', 'Isi jumlah jam!', 'error');
-            let nom = -(parseInt(jam) * configHRD.tarifLembur);
+            const tarif = parseInt(configHRD.tarifLembur) || 0;
+            if(tarif <= 0) return Swal.fire('Tarif Lembur Kosong', 'Atur dulu tarif lembur per jam di menu Seting HRD.', 'warning');
+            const now = new Date();
+            const formatTgl = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+            const targetKey = tanggalKeyDariText(formatTgl);
+            let nom = -(jam * tarif);
             Swal.fire({ title: 'Menambah Lembur...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 let waktu = new Date().toLocaleString('id-ID');
-                let ket = `LEMBUR MANUAL: ${jam}x`;
-                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
+                let ket = `LEMBUR|JAM=${jam}|TGL=${targetKey}|SUMBER=MANUAL`;
+                try {
+                    await kirimAPI({ action: "tambah_lembur", waktu: waktu, nama: nama, jam: jam, tarif: tarif, tanggal_key: targetKey, nominal: nom, keterangan: ket }, 15000);
+                } catch(errActionBaru) {
+                    await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
+                }
                 document.getElementById('lemburJam').value = '';
-                await refreshKasbonOnly();
+                if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
+                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama.toUpperCase(), nominal: nom, keterangan: ket });
+                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                renderMatriks();
+                try { await refreshKasbonOnly(); } catch(e) {}
                 Swal.close();
                 Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' });
             } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan lembur.', 'error'); }
