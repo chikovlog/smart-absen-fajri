@@ -262,6 +262,11 @@
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
         const formatRupiah = (angka) => 'Rp ' + parseInt(angka).toLocaleString('id-ID');
+        const formatBonusRupiah = (angka) => {
+            const n = parseInt(angka) || 0;
+            const prefix = n >= 0 ? '+' : '-';
+            return prefix + formatRupiah(Math.abs(n));
+        };
 
         // ===============================================================
         // KONEKSI CLOUD STABIL: anti loading muter tanpa selesai
@@ -643,9 +648,20 @@
 
             let warnText = sim === "🌗" ? `<div class="text-[10px] mt-3 bg-red-100 border border-red-300 text-red-600 p-2 rounded font-bold uppercase"><i class="fas fa-exclamation-triangle"></i> Penting: Status sebelumnya adalah 1/2 Hari. Jika Anda ubah ke Hadir/Bolos, sistem HANYA mengubah tampilan centang. Anda tetap WAJIB menghapus data potongannya di menu KASBON secara manual agar gajinya normal!</div>` : '';
 
+            const tarifJam = parseInt(configHRD.tarifLembur) || 0;
+            const panelLembur = `
+                <div class="mt-4 p-3 rounded-xl border border-green-200 bg-green-50 text-left">
+                    <div class="text-[10px] font-black text-green-700 uppercase tracking-widest mb-2"><i class="fas fa-clock"></i> Koreksi Lembur Cepat</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnLemburMinusDarurat" class="bg-red-500 hover:bg-red-600 text-white font-black py-2 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-minus-circle"></i> -1 JAM</button>
+                        <button type="button" id="btnLemburPlusDarurat" class="bg-green-600 hover:bg-green-700 text-white font-black py-2 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-plus-circle"></i> +1 JAM</button>
+                    </div>
+                    <div class="text-[9px] text-gray-500 mt-2 font-bold">Nominal per jam: ${formatRupiah(tarifJam)}. Tombol + menambah bonus, tombol - mengurangi/koreksi bonus lembur.</div>
+                </div>`;
+
             Swal.fire({
                 title: `Edit Darurat: ${nama}`,
-                html: `<p class="font-bold mb-2">Tanggal: ${formatTgl}</p>Pilih status yang baru untuk tanggal ini:` + warnText,
+                html: `<p class="font-bold mb-2">Tanggal: ${formatTgl}</p>Pilih status yang baru untuk tanggal ini:` + warnText + panelLembur,
                 showCloseButton: true,
                 showDenyButton: true,
                 showCancelButton: true,
@@ -654,7 +670,13 @@
                 denyButtonText: '🟥 BOLOS',
                 confirmButtonColor: '#10b981',
                 cancelButtonColor: '#f97316',
-                denyButtonColor: '#ef4444'
+                denyButtonColor: '#ef4444',
+                didOpen: () => {
+                    const btnPlus = document.getElementById('btnLemburPlusDarurat');
+                    const btnMinus = document.getElementById('btnLemburMinusDarurat');
+                    if(btnPlus) btnPlus.addEventListener('click', () => { Swal.close(); eksekusiLemburPintas(nama, formatTgl, 1); });
+                    if(btnMinus) btnMinus.addEventListener('click', () => { Swal.close(); eksekusiLemburPintas(nama, formatTgl, -1); });
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     eksekusiEditDarurat(nama, formatTgl, "MASUK (MANUAL)");
@@ -710,6 +732,35 @@
             } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
         }
 
+
+        async function eksekusiLemburPintas(nama, formatTgl, jumlahJam) {
+            const jam = parseInt(jumlahJam) || 0;
+            if(jam === 0) return;
+            const tarif = parseInt(configHRD.tarifLembur) || 0;
+            if(tarif <= 0) return Swal.fire('Tarif Lembur Kosong', 'Atur dulu tarif lembur per jam di menu Seting HRD.', 'warning');
+
+            const isTambah = jam > 0;
+            const nominal = isTambah ? -(Math.abs(jam) * tarif) : (Math.abs(jam) * tarif);
+            const ket = isTambah ? `LEMBUR DARURAT +${Math.abs(jam)} JAM: ${formatTgl}` : `KOREKSI LEMBUR DARURAT -${Math.abs(jam)} JAM: ${formatTgl}`;
+            const waktu = `${formatTgl}, 18.00.00`;
+
+            Swal.fire({ title: isTambah ? 'Menambah Lembur +1 Jam...' : 'Mengurangi Lembur -1 Jam...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
+
+                if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
+                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama, nominal: nominal, keterangan: ket });
+                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+
+                try { await refreshKasbonOnly(); } catch(e) { renderMatriks(); }
+                Swal.close();
+                Toast.fire({ icon: 'success', title: isTambah ? `Lembur ${nama} +1 jam` : `Lembur ${nama} -1 jam` });
+            } catch(e) {
+                Swal.close();
+                Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi lembur.', 'error');
+            }
+        }
+
         // ===============================================================
         // LOGIKA MATRIKS GRID KOTAK-KOTAK 1:1
         // ===============================================================
@@ -758,8 +809,10 @@
                 if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                     let nom = parseInt(kb.nominal) || 0;
                     if (kb.keterangan.includes("LEMBUR")) {
-                        rekapFinansial[nama].lemburRp += Math.abs(nom);
-                        rekapFinansial[nama].jmlLembur += (Math.abs(nom) / configHRD.tarifLembur);
+                        const tarifLemburAktif = parseInt(configHRD.tarifLembur) || 1;
+                        const efekLembur = nom < 0 ? Math.abs(nom) : -Math.abs(nom);
+                        rekapFinansial[nama].lemburRp += efekLembur;
+                        rekapFinansial[nama].jmlLembur += (efekLembur / tarifLemburAktif);
                     } else if (kb.keterangan.includes("SETENGAH HARI")) {
                         rekapFinansial[nama].jmlSetHari += 1;
                         let match = kb.keterangan.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -832,7 +885,7 @@
                 <div class="text-left text-xs font-bold text-gray-600 mb-3 border-b pb-2">Periode: ${data.periode}</div>
                 <div class="flex justify-between text-sm mb-1"><span>Hadir Penuh (${data.hadir}x):</span> <span>${formatRupiah(data.uangPokok)}</span></div>
                 <div class="flex justify-between text-sm text-orange-500 mb-1"><span>Setengah Hari (${data.setHari}x):</span> <span>${formatRupiah(data.uangSetHari)}</span></div>
-                <div class="flex justify-between text-sm text-green-600 mb-1"><span>Lembur (${data.lemburJam} Jam):</span> <span>+${formatRupiah(data.uangLembur)}</span></div>
+                <div class="flex justify-between text-sm text-green-600 mb-1"><span>Lembur (${data.lemburJam} Jam):</span> <span>${formatBonusRupiah(data.uangLembur)}</span></div>
                 <div class="flex justify-between text-sm text-red-500 mb-2 border-b pb-2"><span>Kasbon:</span> <span>-${formatRupiah(data.kasbon)}</span></div>
                 <div class="flex justify-between font-black text-xl text-emerald-700 mt-3 bg-gray-100 p-2 border-2 border-emerald-500 shadow-inner rounded mb-4"><span>TOTAL:</span> <span>${formatRupiah(data.bersih)}</span></div>
                 
@@ -870,7 +923,7 @@
             pesan += `--------------------------------\n`;
             pesan += `Hadir Penuh (${data.hadir}x): ${formatRupiah(data.uangPokok)}\n`;
             pesan += `Setengah Hari (${data.setHari}x): ${formatRupiah(data.uangSetHari)}\n`;
-            pesan += `Lembur (${data.lemburJam} Jam): +${formatRupiah(data.uangLembur)}\n`;
+            pesan += `Lembur (${data.lemburJam} Jam): ${formatBonusRupiah(data.uangLembur)}\n`;
             pesan += `Kasbon: -${formatRupiah(data.kasbon)}\n`;
             pesan += `--------------------------------\n`;
             pesan += `*TOTAL DITERIMA: ${formatRupiah(data.bersih)}*\n\n`;
@@ -906,7 +959,7 @@
                     <table style="width: 100%; font-size: 18px; border-collapse: collapse; margin-bottom: 30px;">
                         <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Kehadiran Penuh (${data.hadir}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangPokok)}</td></tr>
                         <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Setengah Hari (${data.setHari}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangSetHari)}</td></tr>
-                        <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatRupiah(data.uangLembur)}</td></tr>
+                        <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatBonusRupiah(data.uangLembur)}</td></tr>
                         <tr><td style="padding: 12px 0; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">Potongan Kasbon</td><td style="text-align: right; font-family: monospace; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">${formatRupiah(data.kasbon)}</td></tr>
                     </table>
                     
@@ -960,7 +1013,7 @@
                         <table style="width: 100%; font-size: 18px; border-collapse: collapse; margin-bottom: 30px;">
                             <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Kehadiran Penuh (${data.hadir}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangPokok)}</td></tr>
                             <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Setengah Hari (${data.setHari}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangSetHari)}</td></tr>
-                            <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatRupiah(data.uangLembur)}</td></tr>
+                            <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatBonusRupiah(data.uangLembur)}</td></tr>
                             <tr><td style="padding: 12px 0; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">Potongan Kasbon</td><td style="text-align: right; font-family: monospace; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">${formatRupiah(data.kasbon)}</td></tr>
                         </table>
                         
