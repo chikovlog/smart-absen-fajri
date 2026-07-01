@@ -649,43 +649,112 @@
             let warnText = sim === "🌗" ? `<div class="text-[10px] mt-3 bg-red-100 border border-red-300 text-red-600 p-2 rounded font-bold uppercase"><i class="fas fa-exclamation-triangle"></i> Penting: Status sebelumnya adalah 1/2 Hari. Jika Anda ubah ke Hadir/Bolos, sistem HANYA mengubah tampilan centang. Anda tetap WAJIB menghapus data potongannya di menu KASBON secara manual agar gajinya normal!</div>` : '';
 
             const tarifJam = parseInt(configHRD.tarifLembur) || 0;
-            const panelLembur = `
-                <div class="mt-4 p-3 rounded-xl border border-green-200 bg-green-50 text-left">
-                    <div class="text-[10px] font-black text-green-700 uppercase tracking-widest mb-2"><i class="fas fa-clock"></i> Koreksi Lembur Cepat</div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="btnLemburMinusDarurat" class="bg-red-500 hover:bg-red-600 text-white font-black py-2 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-minus-circle"></i> -1 JAM</button>
-                        <button type="button" id="btnLemburPlusDarurat" class="bg-green-600 hover:bg-green-700 text-white font-black py-2 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-plus-circle"></i> +1 JAM</button>
-                    </div>
-                    <div class="text-[9px] text-gray-500 mt-2 font-bold">Nominal per jam: ${formatRupiah(tarifJam)}. Tombol + menambah bonus, tombol - mengurangi/koreksi bonus lembur.</div>
-                </div>`;
+            const lemburSaatIni = hitungLemburTanggal(nama, formatTgl);
 
             Swal.fire({
                 title: `Edit Darurat: ${nama}`,
-                html: `<p class="font-bold mb-2">Tanggal: ${formatTgl}</p>Pilih status yang baru untuk tanggal ini:` + warnText + panelLembur,
+                html: `
+                    <div class="text-left">
+                        <p class="font-bold mb-2 text-sm text-gray-700">Tanggal: <span class="text-emerald-700">${formatTgl}</span></p>
+                        <div class="grid grid-cols-3 gap-2 mt-3">
+                            <button type="button" id="btnDaruratHadir" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-lg text-[10px] shadow active:scale-95">✔️ HADIR</button>
+                            <button type="button" id="btnDaruratSetengah" class="bg-orange-500 hover:bg-orange-600 text-white font-black py-2.5 rounded-lg text-[10px] shadow active:scale-95">🌗 1/2 HARI</button>
+                            <button type="button" id="btnDaruratBolos" class="bg-red-600 hover:bg-red-700 text-white font-black py-2.5 rounded-lg text-[10px] shadow active:scale-95">🟥 BOLOS</button>
+                        </div>
+                        ${warnText}
+
+                        <div class="mt-4 p-3 rounded-xl border border-green-300 bg-green-50 text-left">
+                            <div class="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1"><i class="fas fa-clock"></i> Lembur Darurat</div>
+                            <div class="text-[9px] text-gray-500 font-bold mb-2">Klik + / - dulu untuk mengumpulkan jumlah jam, lalu tekan tombol <b>SIMPAN LEMBUR</b>.</div>
+                            <div class="grid grid-cols-3 gap-2 items-center">
+                                <button type="button" id="btnLemburMinusDarurat" class="bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-minus-circle"></i></button>
+                                <div class="bg-white border-2 border-green-400 rounded-xl text-center py-2 shadow-inner">
+                                    <div class="text-[9px] text-gray-400 font-black uppercase">Perubahan</div>
+                                    <div id="labelDraftLembur" class="text-2xl font-black text-green-700">0</div>
+                                    <div class="text-[9px] text-gray-400 font-bold">Jam</div>
+                                </div>
+                                <button type="button" id="btnLemburPlusDarurat" class="bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-plus-circle"></i></button>
+                            </div>
+                            <div class="mt-2 grid grid-cols-2 gap-2 text-[10px] font-bold">
+                                <div class="bg-white border rounded-lg p-2 text-gray-600">Lembur tersimpan hari ini:<br><span id="labelLemburSekarang" class="text-green-700 font-black">${lemburSaatIni} Jam</span></div>
+                                <div class="bg-white border rounded-lg p-2 text-gray-600">Nominal perubahan:<br><span id="labelNominalDraft" class="text-green-700 font-black">${formatRupiah(0)}</span></div>
+                            </div>
+                            <button type="button" id="btnSimpanLemburDarurat" class="mt-3 w-full bg-green-700 hover:bg-green-800 text-white font-black py-2.5 rounded-lg text-xs shadow active:scale-95"><i class="fas fa-save"></i> SIMPAN LEMBUR</button>
+                            <div class="text-[9px] text-gray-500 mt-2 font-bold">Tarif aktif: ${formatRupiah(tarifJam)} / jam. Nilai minus dipakai untuk koreksi pengurangan lembur.</div>
+                        </div>
+                    </div>
+                `,
                 showCloseButton: true,
-                showDenyButton: true,
+                showConfirmButton: false,
                 showCancelButton: true,
-                confirmButtonText: '✔️ HADIR',
-                cancelButtonText: '🌗 1/2 HARI',
-                denyButtonText: '🟥 BOLOS',
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#f97316',
-                denyButtonColor: '#ef4444',
+                cancelButtonText: 'Tutup',
+                cancelButtonColor: '#6b7280',
+                width: 520,
                 didOpen: () => {
+                    let draftJam = 0;
+                    const labelDraft = document.getElementById('labelDraftLembur');
+                    const labelNominal = document.getElementById('labelNominalDraft');
+                    const updateDraft = () => {
+                        if(labelDraft) {
+                            labelDraft.innerText = draftJam > 0 ? `+${draftJam}` : String(draftJam);
+                            labelDraft.className = `text-2xl font-black ${draftJam < 0 ? 'text-red-600' : 'text-green-700'}`;
+                        }
+                        if(labelNominal) {
+                            const nominalDraft = draftJam * tarifJam;
+                            labelNominal.innerText = `${nominalDraft >= 0 ? '+' : '-'}${formatRupiah(Math.abs(nominalDraft))}`;
+                            labelNominal.className = `${nominalDraft < 0 ? 'text-red-600' : 'text-green-700'} font-black`;
+                        }
+                    };
+
+                    const btnHadir = document.getElementById('btnDaruratHadir');
+                    const btnSetengah = document.getElementById('btnDaruratSetengah');
+                    const btnBolos = document.getElementById('btnDaruratBolos');
                     const btnPlus = document.getElementById('btnLemburPlusDarurat');
                     const btnMinus = document.getElementById('btnLemburMinusDarurat');
-                    if(btnPlus) btnPlus.addEventListener('click', () => { Swal.close(); eksekusiLemburPintas(nama, formatTgl, 1); });
-                    if(btnMinus) btnMinus.addEventListener('click', () => { Swal.close(); eksekusiLemburPintas(nama, formatTgl, -1); });
+                    const btnSimpan = document.getElementById('btnSimpanLemburDarurat');
+
+                    if(btnHadir) btnHadir.addEventListener('click', () => { Swal.close(); eksekusiEditDarurat(nama, formatTgl, "MASUK (MANUAL)"); });
+                    if(btnSetengah) btnSetengah.addEventListener('click', () => { Swal.close(); eksekusiSetengahHariPintas(nama, formatTgl); });
+                    if(btnBolos) btnBolos.addEventListener('click', () => { Swal.close(); eksekusiEditDarurat(nama, formatTgl, "ALPA MANUAL"); });
+                    if(btnPlus) btnPlus.addEventListener('click', () => { draftJam += 1; updateDraft(); });
+                    if(btnMinus) btnMinus.addEventListener('click', () => { draftJam -= 1; updateDraft(); });
+                    if(btnSimpan) btnSimpan.addEventListener('click', () => {
+                        if(draftJam === 0) {
+                            Toast.fire({ icon: 'warning', title: 'Jam lembur masih 0. Klik + atau - dulu.' });
+                            return;
+                        }
+                        Swal.close();
+                        eksekusiLemburPintas(nama, formatTgl, draftJam);
+                    });
+                    updateDraft();
                 }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    eksekusiEditDarurat(nama, formatTgl, "MASUK (MANUAL)");
-                } else if (result.isDenied) {
-                    eksekusiEditDarurat(nama, formatTgl, "ALPA MANUAL");
-                } else if (result.dismiss === Swal.DismissReason.cancel) {
-                    eksekusiSetengahHariPintas(nama, formatTgl);
+            });
+        }
+
+        function hitungLemburTanggal(nama, formatTgl) {
+            const targetNama = String(nama || '').toUpperCase();
+            const tarif = parseInt(configHRD.tarifLembur) || 1;
+            let totalJam = 0;
+            (cacheKasbonGlobal || []).forEach(kb => {
+                if(String(kb.nama || '').toUpperCase() !== targetNama) return;
+                const ket = String(kb.keterangan || '').toUpperCase();
+                if(!ket.includes('LEMBUR')) return;
+
+                let cocokTanggal = ket.includes(String(formatTgl).toUpperCase());
+                if(!cocokTanggal) {
+                    const dPars = parseTanggalSakti(kb.waktu);
+                    const parts = String(formatTgl).split('/');
+                    if(parts.length === 3 && dPars) {
+                        cocokTanggal = dPars.tgl === parseInt(parts[0]) && dPars.bln === parseInt(parts[1]) && dPars.thn === parseInt(parts[2]);
+                    }
                 }
-            })
+                if(!cocokTanggal) return;
+
+                const nom = parseInt(kb.nominal) || 0;
+                const efekRp = nom < 0 ? Math.abs(nom) : -Math.abs(nom);
+                totalJam += efekRp / tarif;
+            });
+            return Number.isInteger(totalJam) ? totalJam : Number(totalJam.toFixed(2));
         }
 
         async function eksekusiEditDarurat(nama, formatTgl, statusBaru) {
@@ -744,7 +813,7 @@
             const ket = isTambah ? `LEMBUR DARURAT +${Math.abs(jam)} JAM: ${formatTgl}` : `KOREKSI LEMBUR DARURAT -${Math.abs(jam)} JAM: ${formatTgl}`;
             const waktu = `${formatTgl}, 18.00.00`;
 
-            Swal.fire({ title: isTambah ? 'Menambah Lembur +1 Jam...' : 'Mengurangi Lembur -1 Jam...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: isTambah ? `Menambah Lembur +${Math.abs(jam)} Jam...` : `Mengurangi Lembur -${Math.abs(jam)} Jam...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
 
@@ -754,7 +823,7 @@
 
                 try { await refreshKasbonOnly(); } catch(e) { renderMatriks(); }
                 Swal.close();
-                Toast.fire({ icon: 'success', title: isTambah ? `Lembur ${nama} +1 jam` : `Lembur ${nama} -1 jam` });
+                Toast.fire({ icon: 'success', title: isTambah ? `Lembur ${nama} +${Math.abs(jam)} jam` : `Lembur ${nama} -${Math.abs(jam)} jam` });
             } catch(e) {
                 Swal.close();
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi lembur.', 'error');
