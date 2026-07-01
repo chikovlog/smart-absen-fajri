@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V8.0 - Edit Cepat Final</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.0 - Cache Aman</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -333,6 +333,47 @@
             localStorage.setItem('pending_kasbon_local', JSON.stringify((list || []).slice(0, 80)));
         }
 
+        function getPendingRiwayatLocal() {
+            try { return JSON.parse(localStorage.getItem('pending_riwayat_local') || '[]'); } catch(e) { return []; }
+        }
+
+        function setPendingRiwayatLocal(list) {
+            localStorage.setItem('pending_riwayat_local', JSON.stringify((list || []).slice(0, 120)));
+        }
+
+        function isRiwayatSama(a, b) {
+            if(!a || !b) return false;
+            const sameId = a.id && b.id && String(a.id) === String(b.id);
+            const sameCore = normalNamaUI(a.nama) === normalNamaUI(b.nama)
+                && String(a.status || '').toUpperCase() === String(b.status || '').toUpperCase()
+                && tanggalKeyDariText(a.waktu || '') === tanggalKeyDariText(b.waktu || '')
+                && String(a.waktu || '').split(',')[1] === String(b.waktu || '').split(',')[1];
+            return sameId || sameCore;
+        }
+
+        function mergeRiwayatAman(cloudRows) {
+            const cloud = Array.isArray(cloudRows) ? cloudRows.slice() : [];
+            const cacheLama = Array.isArray(cacheRiwayatGlobal) ? cacheRiwayatGlobal.slice() : [];
+            const pending = getPendingRiwayatLocal();
+            let merged = cloud.slice();
+
+            // Kalau cloud tiba-tiba kosong karena salah sheet/deploy/cache, jangan hapus tampilan data lama.
+            if (merged.length === 0 && cacheLama.length > 0) merged = cacheLama.slice();
+
+            pending.forEach(p => { if(!merged.some(c => isRiwayatSama(c, p))) merged.unshift(p); });
+            // Pertahankan data cache bulan berjalan agar data hari ini tidak menghilang saat Google lambat.
+            cacheLama.forEach(oldRow => {
+                const key = tanggalKeyDariText(oldRow.waktu || '');
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+                if(key && key.startsWith(currentMonth) && !merged.some(c => isRiwayatSama(c, oldRow))) merged.push(oldRow);
+            });
+
+            const sisaPending = pending.filter(p => !cloud.some(c => isRiwayatSama(c, p)));
+            setPendingRiwayatLocal(sisaPending);
+            return merged;
+        }
+
         function isKasbonSama(a, b) {
             if(!a || !b) return false;
             const sameId = a.id && b.id && String(a.id) === String(b.id);
@@ -391,8 +432,13 @@
                 catatan: row.catatan || 'Edit Darurat'
             };
             if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+            cacheRiwayatGlobal = cacheRiwayatGlobal.filter(x => !isRiwayatSama(x, fixed));
             cacheRiwayatGlobal.unshift(fixed);
             localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+
+            const pending = getPendingRiwayatLocal().filter(x => !isRiwayatSama(x, fixed));
+            pending.unshift(fixed);
+            setPendingRiwayatLocal(pending);
         }
 
         async function refreshKasbonOnly() {
@@ -692,8 +738,8 @@
                 const all = await ambilJSON(API_URL + '?action=get_all&ts=' + Date.now(), {}, 15000);
                 if (all.status === 'success' && all.data) {
                     const d = all.data;
-                    cacheRiwayatGlobal = d.riwayat || [];
-                    cacheKasbonGlobal = d.kasbon || [];
+                    cacheRiwayatGlobal = mergeRiwayatAman(d.riwayat || []);
+                    cacheKasbonGlobal = mergeKasbonDenganPending(d.kasbon || []);
                     configHRD.tarifLembur = parseInt((d.config || {}).tarifLembur) || 8000;
                     localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
                     localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
@@ -715,7 +761,7 @@
 
                 let adaSukses = false;
                 const jR = hasil[0].status === 'fulfilled' ? hasil[0].value : null;
-                if (jR && jR.status === 'success') { cacheRiwayatGlobal = jR.data || []; localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); adaSukses = true; }
+                if (jR && jR.status === 'success') { cacheRiwayatGlobal = mergeRiwayatAman(jR.data || []); localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); adaSukses = true; }
 
                 const jK = hasil[1].status === 'fulfilled' ? hasil[1].value : null;
                 if (jK && jK.status === 'success') {
@@ -726,7 +772,7 @@
                 }
 
                 const jKB = hasil[2].status === 'fulfilled' ? hasil[2].value : null;
-                if (jKB && jKB.status === 'success') { cacheKasbonGlobal = jKB.data || []; localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); adaSukses = true; }
+                if (jKB && jKB.status === 'success') { cacheKasbonGlobal = mergeKasbonDenganPending(jKB.data || []); localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); adaSukses = true; }
 
                 const jCfg = hasil[3].status === 'fulfilled' ? hasil[3].value : null;
                 if (jCfg && jCfg.status === 'success') { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; adaSukses = true; }
@@ -974,7 +1020,7 @@
             if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 2}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan.</td></tr>`;
 
             let karyawanSet = new Set(); let gajiDict = {};
-            cacheKaryawan.forEach(k => { karyawanSet.add(k.nama.toUpperCase()); gajiDict[k.nama.toUpperCase()] = parseInt(k.gaji) || 0; });
+            cacheKaryawan.forEach(k => { const nm = normalNamaUI(k.nama); karyawanSet.add(nm); gajiDict[nm] = parseInt(k.gaji) || 0; });
 
             let matriks = {}; let rekapFinansial = {};
             karyawanSet.forEach(nama => { matriks[nama] = {}; rekapFinansial[nama] = { kasbon: 0, lemburRp: 0, jmlLembur: 0, jmlSetHari: 0 }; for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = ""; } });
@@ -983,7 +1029,7 @@
                 cacheRiwayatGlobal.slice().reverse().forEach(t => {
                     let dPars = parseTanggalSakti(t.waktu);
                     if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
-                        let dTgl = dPars.tgl; let nama = t.nama.toUpperCase();
+                        let dTgl = dPars.tgl; let nama = normalNamaUI(t.nama);
                         if (matriks[nama] && !t.status.includes("PULANG")) { 
                             if (t.status === "PAGI" || t.status.includes("MASUK")) matriks[nama][dTgl] = "✔️"; 
                             else if (t.status === "PAGI (TELAT)") matriks[nama][dTgl] = "⚠️"; 
@@ -997,7 +1043,7 @@
             }
 
             cacheKasbonGlobal.forEach(kb => {
-                let nama = String(kb.nama || '').toUpperCase(); if(!rekapFinansial[nama]) return;
+                let nama = normalNamaUI(kb.nama); if(!rekapFinansial[nama]) return;
                 let ketText = String(kb.keterangan || '');
                 let ketUpper = ketText.toUpperCase();
 
@@ -1013,21 +1059,22 @@
                     return;
                 }
 
+                if (ketUpper.includes("SETENGAH HARI")) {
+                    const targetSetengah = ekstrakTanggalDariKeterangan(ketText) || tanggalKeyDariText(kb.waktu);
+                    if(!targetSetengah) return;
+                    const pSet = targetSetengah.split('-');
+                    const ySet = parseInt(pSet[0]); const mSet = parseInt(pSet[1]); const dSet = parseInt(pSet[2]);
+                    if (mSet === selectBulan && ySet === selectTahun) {
+                        rekapFinansial[nama].jmlSetHari += 1;
+                        if (matriks[nama]) matriks[nama][dSet] = "🌗";
+                    }
+                    return;
+                }
+
                 let dPars = parseTanggalSakti(kb.waktu);
                 if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                     let nom = parseInt(kb.nominal) || 0;
-                    if (ketUpper.includes("SETENGAH HARI")) {
-                        rekapFinansial[nama].jmlSetHari += 1;
-                        let match = ketText.match(/SETENGAH HARI:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
-                        if (match) {
-                            let matchTgl = parseInt(match[1]); let matchBln = parseInt(match[2]); let matchThn = parseInt(match[3]);
-                            if (matchBln === selectBulan && matchThn === selectTahun && matriks[nama]) { matriks[nama][matchTgl] = "🌗"; }
-                        } else {
-                            if (matriks[nama]) matriks[nama][dPars.tgl] = "🌗";
-                        }
-                    } else {
-                        rekapFinansial[nama].kasbon += nom; 
-                    }
+                    rekapFinansial[nama].kasbon += nom; 
                 }
             });
 
@@ -1085,7 +1132,7 @@
             // Jangan paksa refresh cloud di sini. Data edit cepat/lembur yang baru disimpan sudah masuk cache lokal,
             // jadi detail gaji harus langsung membaca cache terbaru, bukan menunggu Google Script yang kadang lambat.
             renderMatriks();
-            const data = databaseCetakSlip[nama];
+            const data = databaseCetakSlip[normalNamaUI(nama)];
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
 
             let htmlGaji = `
@@ -1122,7 +1169,7 @@
             let noWA = kar.wa.toString().replace(/[^0-9]/g, '');
             if(noWA.startsWith('0')) { noWA = '62' + noWA.substring(1); }
 
-            const data = databaseCetakSlip[nama];
+            const data = databaseCetakSlip[normalNamaUI(nama)];
             let pesan = `*SLIP GAJI FAJRI MANDIRI FURNITUR* 🏢\n\n`;
             pesan += `Nama: *${nama}*\n`;
             pesan += `Periode: ${data.periode}\n`;
@@ -1140,7 +1187,7 @@
         }
 
         function cetakSlipGaji(nama) {
-            const data = databaseCetakSlip[nama]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
+            const data = databaseCetakSlip[normalNamaUI(nama)]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
             
             document.getElementById('printArea').innerHTML = `
                 <div style="padding: 40px; font-family: sans-serif; color: black; background: white; width: 100%; min-height: 100vh;">
