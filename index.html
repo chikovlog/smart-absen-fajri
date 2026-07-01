@@ -321,10 +321,84 @@
             }
         }
 
+        function normalNamaUI(nama) {
+            return String(nama || '').toUpperCase().replace(/\s+/g, ' ').trim();
+        }
+
+        function getPendingKasbonLocal() {
+            try { return JSON.parse(localStorage.getItem('pending_kasbon_local') || '[]'); } catch(e) { return []; }
+        }
+
+        function setPendingKasbonLocal(list) {
+            localStorage.setItem('pending_kasbon_local', JSON.stringify((list || []).slice(0, 80)));
+        }
+
+        function isKasbonSama(a, b) {
+            if(!a || !b) return false;
+            const sameId = a.id && b.id && String(a.id) === String(b.id);
+            const sameCore = normalNamaUI(a.nama) === normalNamaUI(b.nama)
+                && String(a.keterangan || '') === String(b.keterangan || '')
+                && (parseInt(a.nominal) || 0) === (parseInt(b.nominal) || 0);
+            return sameId || sameCore;
+        }
+
+        function mergeKasbonDenganPending(cloudRows) {
+            const cloud = Array.isArray(cloudRows) ? cloudRows.slice() : [];
+            const pending = getPendingKasbonLocal();
+            const merged = cloud.slice();
+            pending.forEach(p => {
+                if(!merged.some(c => isKasbonSama(c, p))) merged.unshift(p);
+            });
+            // Bersihkan pending yang sudah terlihat dari cloud, supaya tidak dobel di refresh berikutnya.
+            const sisaPending = pending.filter(p => !cloud.some(c => isKasbonSama(c, p)));
+            setPendingKasbonLocal(sisaPending);
+            return merged;
+        }
+
+        function pushKasbonLocal(row) {
+            if(!row) return;
+            const fixed = {
+                id: row.id || ('LOCAL-KB-' + Date.now() + '-' + Math.floor(Math.random() * 9999)),
+                waktu: row.waktu || new Date().toLocaleString('id-ID'),
+                nama: normalNamaUI(row.nama),
+                nominal: parseInt(row.nominal) || 0,
+                keterangan: String(row.keterangan || '-')
+            };
+            if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
+            cacheKasbonGlobal = cacheKasbonGlobal.filter(x => !isKasbonSama(x, fixed));
+            cacheKasbonGlobal.unshift(fixed);
+            localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+
+            const pending = getPendingKasbonLocal().filter(x => !isKasbonSama(x, fixed));
+            pending.unshift(fixed);
+            setPendingKasbonLocal(pending);
+        }
+
+        function pushRiwayatLocal(row) {
+            if(!row) return;
+            const fixed = {
+                id: row.id || ('LOCAL-ABS-' + Date.now() + '-' + Math.floor(Math.random() * 9999)),
+                waktu: row.waktu || new Date().toLocaleString('id-ID'),
+                nama: normalNamaUI(row.nama),
+                tipe: String(row.tipe || 'TETAP').toUpperCase(),
+                status: String(row.status || '').toUpperCase(),
+                jarak: row.jarak === undefined ? 0 : row.jarak,
+                lat: row.lat || '',
+                lng: row.lng || '',
+                maps: row.maps || '#',
+                foto: row.foto || '-',
+                perangkat: row.perangkat || 'HRD-MANUAL',
+                catatan: row.catatan || 'Edit Darurat'
+            };
+            if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+            cacheRiwayatGlobal.unshift(fixed);
+            localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+        }
+
         async function refreshKasbonOnly() {
             const jKB = await ambilJSON(API_URL + '?action=get_kasbon&ts=' + Date.now(), {}, 12000);
             if (jKB.status === 'success') {
-                cacheKasbonGlobal = jKB.data || [];
+                cacheKasbonGlobal = mergeKasbonDenganPending(jKB.data || []);
                 localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
                 renderSetelahRefresh();
             } else {
@@ -807,48 +881,50 @@
 
         async function eksekusiEditDarurat(nama, formatTgl, statusBaru) {
             Swal.fire({ title: 'Memperbarui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
-                let kar = cacheKaryawan.find(k => k.nama.toUpperCase() === nama.toUpperCase());
-                let tipeKaryawan = kar ? kar.tipe : "TETAP";
-                
-                let waktuManipulasi = `${formatTgl}, 08.00.00`;
-                const payloadData = { waktu: waktuManipulasi, nama: nama, tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
+            let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+            let kar = cacheKaryawan.find(k => normalNamaUI(k.nama) === normalNamaUI(nama));
+            let tipeKaryawan = kar ? kar.tipe : "TETAP";
+            let waktuManipulasi = `${formatTgl}, 08.00.00`;
+            const payloadData = { waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
 
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_absen", data: payloadData }) }); 
-                const res = await response.json(); 
-                
-                if(res.status === 'success') { 
-                    if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
-                    cacheRiwayatGlobal.unshift({ waktu: waktuManipulasi, nama: nama, status: statusBaru, tipe: tipeKaryawan, jarak: 0, catatan: "Edit Darurat" });
-                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
-                    
-                    renderMatriks(); 
-                    Swal.close(); 
-                    Toast.fire({ icon: 'success', title: `Berhasil diubah ke ${statusBaru.includes("ALPA") ? "BOLOS" : "HADIR"}` }); 
-                } 
-            } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
+            try {
+                const res = await kirimAPI({ action: "simpan_absen", data: payloadData }, 15000);
+                pushRiwayatLocal({ ...payloadData, id: res.id || null });
+                renderMatriks();
+                Swal.close();
+                Toast.fire({ icon: 'success', title: `Berhasil diubah ke ${statusBaru.includes("ALPA") ? "BOLOS" : "HADIR"}` });
+            } catch(e) {
+                Swal.close();
+                Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghubungi server', 'error');
+            }
         }
 
         async function eksekusiSetengahHariPintas(nama, formatTgl) {
             let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
-            let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
+            let kar = cache.find(k => normalNamaUI(k.nama) === normalNamaUI(nama));
             if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); 
-            let nom = parseInt(kar.gaji) / 2; 
-            Swal.fire({ title: 'Memotong Gaji 50%...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
-            try { 
-                let waktu = new Date().toLocaleString('id-ID'); 
-                let ket = `SETENGAH HARI: ${formatTgl}`; 
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) }); 
-                const res = await response.json(); 
-                if(res.status === 'success') { 
-                    await fetchAndCacheAll(true); 
-                    Swal.close(); 
-                    Toast.fire({ icon: 'success', title: 'Berhasil dipotong ke 🌗' }); 
-                } 
-            } catch(e) { Swal.fire('Error','Gagal menghubungi server','error'); }
-        }
+            let nom = Math.round((parseInt(kar.gaji) || 0) / 2); 
+            let waktuManipulasi = `${formatTgl}, 12.00.00`;
+            let ket = `SETENGAH HARI: ${formatTgl}`;
+            const payloadAbsen = { waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: kar.tipe || 'TETAP', status: 'SETENGAH HARI', jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: 'HRD-MANUAL', catatan: 'Edit Darurat Setengah Hari' };
 
+            Swal.fire({ title: 'Menyimpan 1/2 Hari...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
+            try { 
+                // Simpan status absensi agar kotak matriks langsung berubah menjadi 🌗.
+                let resAbsen = await kirimAPI({ action: "simpan_absen", data: payloadAbsen }, 15000);
+                // Simpan potongan gaji 50% ke pembukuan.
+                let resKasbon = await kirimAPI({ action: "tambah_kasbon", waktu: waktuManipulasi, nama: normalNamaUI(nama), nominal: nom, keterangan: ket }, 15000);
+
+                pushRiwayatLocal({ ...payloadAbsen, id: resAbsen.id || null });
+                pushKasbonLocal({ id: resKasbon.id || null, waktu: waktuManipulasi, nama: normalNamaUI(nama), nominal: nom, keterangan: ket });
+                renderMatriks();
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Berhasil diubah ke 🌗 dan potongan masuk gaji' });
+            } catch(e) {
+                Swal.close();
+                Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghubungi server', 'error');
+            }
+        }
 
         async function eksekusiLemburPintas(nama, formatTgl, jumlahJam) {
             const jam = parseInt(jumlahJam) || 0;
@@ -857,27 +933,21 @@
             if(tarif <= 0) return Swal.fire('Tarif Lembur Kosong', 'Atur dulu tarif lembur per jam di menu Seting HRD.', 'warning');
 
             const targetKey = tanggalKeyDariText(formatTgl);
-            const nominal = -(jam * tarif); // tambahan +jam menjadi nominal negatif; koreksi -jam menjadi nominal positif
+            const nominal = -(jam * tarif); // +jam = bonus, disimpan negatif agar kompatibel dengan Kasbon lama.
             const ket = `LEMBUR|JAM=${jam}|TGL=${targetKey}|SUMBER=EDIT_DARURAT`;
             const waktu = `${formatTgl}, 18.00.00`;
 
             Swal.fire({ title: jam > 0 ? `Menyimpan Lembur +${Math.abs(jam)} Jam...` : `Menyimpan Koreksi Lembur -${Math.abs(jam)} Jam...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                // Action baru lebih rapi; kalau Apps Script lama belum update, fallback otomatis ke tambah_kasbon.
-                try {
-                    await kirimAPI({ action: "tambah_lembur", waktu: waktu, nama: nama, jam: jam, tarif: tarif, tanggal_key: targetKey, nominal: nominal, keterangan: ket }, 15000);
-                } catch(errActionBaru) {
-                    await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nominal, keterangan: ket }, 15000);
-                }
+                // Pakai tambah_kasbon sebagai jalur utama karena action ini paling stabil di semua versi backend.
+                const res = await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: normalNamaUI(nama), nominal: nominal, keterangan: ket }, 15000);
 
-                if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
-                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama.toUpperCase(), nominal: nominal, keterangan: ket });
-                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                pushKasbonLocal({ id: res.id || null, waktu: waktu, nama: normalNamaUI(nama), nominal: nominal, keterangan: ket });
                 renderMatriks();
-
-                try { await refreshKasbonOnly(); } catch(e) { renderMatriks(); }
                 Swal.close();
                 Toast.fire({ icon: 'success', title: jam > 0 ? `Lembur ${nama} +${Math.abs(jam)} jam tersimpan` : `Koreksi lembur ${nama} -${Math.abs(jam)} jam tersimpan` });
+                // Refresh di belakang layar dan merge dengan data lokal agar detail tidak balik 0.
+                refreshKasbonOnly().catch(() => {});
             } catch(e) {
                 Swal.close();
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi lembur.', 'error');
@@ -920,7 +990,7 @@
                             else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️"; 
                             else if (t.status.includes("IZIN") || t.status.includes("SAKIT")) matriks[nama][dTgl] = "🪪";
                             else if (t.status === "SETENGAH HARI") matriks[nama][dTgl] = "🌗";
-                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = ""; 
+                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = "✖️"; 
                         }
                     }
                 });
@@ -976,6 +1046,7 @@
                     else if (sim === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
                     else if (sim === "🪪") styleWarna = "text-purple-600 font-bold bg-purple-50";
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
+                    else if (sim === "✖️") styleWarna = "bg-red-600 text-white font-bold";
                     else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
                     
                     let cursorStyle = isEditPintasActive ? "cursor-pointer hover:bg-yellow-200 transition ring-inset ring-2 ring-yellow-500 z-20 relative shadow-lg" : "";
@@ -1011,13 +1082,9 @@
         // FUNGSI POPUP BUKA GAJI, WHATSAPP, & CETAK DOKUMEN RESMI
         // ===============================================================
         async function bukaTotalGaji(nama) {
-            try {
-                Swal.fire({ title: 'Memuat gaji terbaru...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                await refreshKasbonOnly();
-            } catch(e) {
-                // Kalau cloud lambat, tetap pakai cache lokal terakhir agar popup tidak macet.
-                renderMatriks();
-            }
+            // Jangan paksa refresh cloud di sini. Data edit cepat/lembur yang baru disimpan sudah masuk cache lokal,
+            // jadi detail gaji harus langsung membaca cache terbaru, bukan menunggu Google Script yang kadang lambat.
+            renderMatriks();
             const data = databaseCetakSlip[nama];
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
 
@@ -1377,11 +1444,9 @@
                     await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
                 }
                 document.getElementById('lemburJam').value = '';
-                if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
-                cacheKasbonGlobal.unshift({ waktu: waktu, nama: nama.toUpperCase(), nominal: nom, keterangan: ket });
-                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                pushKasbonLocal({ waktu: waktu, nama: normalNamaUI(nama), nominal: nom, keterangan: ket });
                 renderMatriks();
-                try { await refreshKasbonOnly(); } catch(e) {}
+                refreshKasbonOnly().catch(() => {});
                 Swal.close();
                 Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' });
             } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan lembur.', 'error'); }
