@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radar Absensi - Fajri Mandiri V8</title>
+    <title>Radar Absensi - Fajri Mandiri V9.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.0 - Cache Aman</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.1 - Payroll Aman</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -452,8 +452,36 @@
             ) || null;
         }
 
+        function adaNominalKoreksi(value) {
+            return value !== undefined && value !== null && String(value).trim() !== '' && Number.isFinite(Number(value));
+        }
+
+        function hitungNominalLemburFinal(koreksi, dataAsli, lemburJamFinal, tarifLemburFinal) {
+            if(!koreksi) return Number(dataAsli.uangLembur) || 0;
+
+            // Versi baru menyimpan jam dan nominal lembur secara terpisah agar angka historis
+            // tidak berubah diam-diam saat tarif lembur saat ini berbeda dari tarif transaksi lama.
+            if(adaNominalKoreksi(koreksi.lemburRp)) {
+                return Math.max(0, Math.round(Number(koreksi.lemburRp)));
+            }
+
+            // Migrasi aman untuk koreksi lama: jika jam tidak diubah, pertahankan nominal
+            // lembur asli. Ini memperbaiki koreksi lama yang hanya mengubah kasbon/kehadiran.
+            const jamAsli = Number(dataAsli.lemburJam) || 0;
+            if(Math.abs((Number(lemburJamFinal) || 0) - jamAsli) < 0.0001) {
+                return Number(dataAsli.uangLembur) || 0;
+            }
+
+            // Fallback hanya untuk koreksi lama yang memang mengubah jumlah jam.
+            return Math.max(0, Math.round((Number(lemburJamFinal) || 0) * (Number(tarifLemburFinal) || 0)));
+        }
+
         function upsertKoreksiGajiLocal(row) {
             if(!row) return;
+            const rawLemburRp = row.lemburRp;
+            const lemburRp = adaNominalKoreksi(rawLemburRp)
+                ? Math.max(0, Math.round(Number(rawLemburRp)))
+                : null;
             const fixed = {
                 id: row.id || ('LOCAL-KG-' + Date.now()),
                 nama: normalNamaUI(row.nama),
@@ -462,8 +490,9 @@
                 hadirPenuh: Math.max(0, parseInt(row.hadirPenuh) || 0),
                 setengahHari: Math.max(0, parseInt(row.setengahHari) || 0),
                 lemburJam: Math.max(0, parseFloat(row.lemburJam) || 0),
-                kasbon: Math.max(0, parseInt(row.kasbon) || 0),
-                tarifLembur: Math.max(0, parseInt(row.tarifLembur) || parseInt(configHRD.tarifLembur) || 0),
+                lemburRp: lemburRp,
+                kasbon: Math.max(0, Math.round(Number(row.kasbon) || 0)),
+                tarifLembur: Math.max(0, Math.round(Number(row.tarifLembur) || Number(configHRD.tarifLembur) || 0)),
                 catatan: String(row.catatan || 'Koreksi admin'),
                 updatedAt: row.updatedAt || new Date().toLocaleString('id-ID')
             };
@@ -1180,7 +1209,7 @@
 
                 let uangHadirPenuh = hadirFinal * gajiHarian;
                 let uangSetHari = setengahFinal * (gajiHarian / 2);
-                let totalLembur = koreksi ? (lemburJamFinal * tarifLemburFinal) : dataAsli.uangLembur;
+                let totalLembur = hitungNominalLemburFinal(koreksi, dataAsli, lemburJamFinal, tarifLemburFinal);
                 let totalPotongan = kasbonFinal;
                 let sisaBersih = uangHadirPenuh + uangSetHari + totalLembur - totalPotongan;
                 grandTotalBersih += sisaBersih;
@@ -1190,7 +1219,8 @@
                     lemburJam: lemburJamFinal, uangLembur: totalLembur, kasbon: totalPotongan, bersih: sisaBersih,
                     periode: document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text + " " + selectTahun,
                     bulan: selectBulan, tahun: selectTahun, gajiHarian: gajiHarian, tarifLembur: tarifLemburFinal,
-                    koreksiAktif: !!koreksi, catatanKoreksi: koreksi ? (koreksi.catatan || 'Koreksi admin') : '',
+                    koreksiAktif: !!koreksi, koreksiId: koreksi ? (koreksi.id || '') : '',
+                    catatanKoreksi: koreksi ? (koreksi.catatan || 'Koreksi admin') : '',
                     updatedAtKoreksi: koreksi ? (koreksi.updatedAt || '') : '', dataAsli: dataAsli
                 };
 
@@ -1266,7 +1296,7 @@
                 title: `Edit Gaji: ${namaNormal}`,
                 html: `
                     <div class="text-left text-[10px] font-bold text-gray-500 mb-3 bg-blue-50 border border-blue-200 rounded-lg p-2">
-                        Angka yang disimpan menjadi angka resmi payroll <b>${data.periode}</b>. Log absensi asli tidak dihapus agar jejak pemeriksaan tetap aman.
+                        Angka yang disimpan menjadi angka resmi payroll <b>${data.periode}</b>. Log absensi, lembur, dan kasbon asli tidak dihapus agar jejak pemeriksaan tetap aman.
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-left">
                         <label class="text-xs font-bold text-gray-600">Hadir Penuh
@@ -1276,35 +1306,44 @@
                             <input id="editGajiSetengah" type="number" min="0" max="${jumlahHari}" step="1" value="${data.setHari}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-orange-600">
                         </label>
                         <label class="text-xs font-bold text-gray-600">Lembur (Jam)
-                            <input id="editGajiLembur" type="number" min="0" step="0.5" value="${data.lemburJam}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-green-600">
+                            <input id="editGajiLemburJam" type="number" min="0" max="1000" step="0.5" value="${data.lemburJam}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-green-600">
                         </label>
-                        <label class="text-xs font-bold text-gray-600">Kasbon (Rp)
-                            <input id="editGajiKasbon" type="number" min="0" step="1000" value="${data.kasbon}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-red-600">
+                        <label class="text-xs font-bold text-gray-600">Nominal Lembur (Rp)
+                            <input id="editGajiLemburRp" type="number" min="0" max="1000000000" step="1000" value="${Math.round(data.uangLembur)}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-green-700">
+                        </label>
+                        <label class="text-xs font-bold text-gray-600 col-span-2">Kasbon/Potongan (Rp)
+                            <input id="editGajiKasbon" type="number" min="0" max="1000000000" step="1000" value="${Math.round(data.kasbon)}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-red-600">
                         </label>
                     </div>
+                    <div class="mt-2 text-[9px] text-amber-700 text-left bg-amber-50 border border-amber-200 rounded p-2">
+                        <b>Penting:</b> nominal lembur disimpan persis sesuai angka di atas dan tidak akan berubah otomatis hanya karena tarif lembur aktif berbeda.
+                    </div>
                     <label class="block text-left text-xs font-bold text-gray-600 mt-3">Alasan/Catatan Koreksi
-                        <input id="editGajiCatatan" type="text" maxlength="150" value="${String(catatanAwal || '').replace(/"/g, '&quot;')}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-left text-xs" placeholder="Contoh: Karyawan lupa absen tanggal 12">
+                        <input id="editGajiCatatan" type="text" maxlength="150" value="${String(catatanAwal || '').replace(/"/g, '&quot;')}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-left text-xs" placeholder="Contoh: Koreksi kasbon berdasarkan bukti transaksi">
                     </label>
                     <div class="mt-3 bg-gray-100 border-2 border-emerald-400 rounded-lg p-3 flex justify-between items-center font-black text-emerald-700">
                         <span>Preview Total</span><span id="previewTotalEditGaji">${formatRupiah(data.bersih)}</span>
                     </div>
-                    <div class="mt-2 text-[9px] text-gray-500 text-left">Gaji harian: ${formatRupiah(data.gajiHarian)} • Tarif lembur: ${formatRupiah(data.tarifLembur)}/jam • Maksimal hari: ${jumlahHari}</div>
+                    <div class="mt-2 text-[9px] text-gray-500 text-left">Gaji harian: ${formatRupiah(data.gajiHarian)} • Tarif lembur aktif hanya sebagai acuan: ${formatRupiah(data.tarifLembur)}/jam • Maksimal hari: ${jumlahHari}</div>
                 `,
                 showCancelButton: true,
                 confirmButtonText: '<i class="fas fa-save"></i> Simpan & Update Semua',
                 cancelButtonText: 'Batal',
                 confirmButtonColor: '#059669',
                 cancelButtonColor: '#6b7280',
-                width: 600,
+                width: 640,
                 focusConfirm: false,
                 didOpen: () => {
-                    const ids = ['editGajiHadir', 'editGajiSetengah', 'editGajiLembur', 'editGajiKasbon'];
+                    const ids = ['editGajiHadir', 'editGajiSetengah', 'editGajiLemburJam', 'editGajiLemburRp', 'editGajiKasbon'];
                     const updatePreview = () => {
-                        const hadir = Math.max(0, parseInt(document.getElementById('editGajiHadir').value) || 0);
-                        const setengah = Math.max(0, parseInt(document.getElementById('editGajiSetengah').value) || 0);
-                        const lembur = Math.max(0, parseFloat(document.getElementById('editGajiLembur').value) || 0);
-                        const kasbon = Math.max(0, parseInt(document.getElementById('editGajiKasbon').value) || 0);
-                        const total = (hadir * data.gajiHarian) + (setengah * data.gajiHarian / 2) + (lembur * data.tarifLembur) - kasbon;
+                        const hadir = Number(document.getElementById('editGajiHadir').value);
+                        const setengah = Number(document.getElementById('editGajiSetengah').value);
+                        const lemburRp = Number(document.getElementById('editGajiLemburRp').value);
+                        const kasbon = Number(document.getElementById('editGajiKasbon').value);
+                        const total = ((Number.isFinite(hadir) ? hadir : 0) * data.gajiHarian)
+                            + ((Number.isFinite(setengah) ? setengah : 0) * data.gajiHarian / 2)
+                            + (Number.isFinite(lemburRp) ? lemburRp : 0)
+                            - (Number.isFinite(kasbon) ? kasbon : 0);
                         const el = document.getElementById('previewTotalEditGaji');
                         if(el) el.innerText = formatRupiah(total);
                     };
@@ -1312,22 +1351,52 @@
                         const el = document.getElementById(id);
                         if(el) el.addEventListener('input', updatePreview);
                     });
-                    const fokusMap = { hadir: 'editGajiHadir', setengah: 'editGajiSetengah', lembur: 'editGajiLembur', kasbon: 'editGajiKasbon' };
+                    const fokusMap = {
+                        hadir: 'editGajiHadir',
+                        setengah: 'editGajiSetengah',
+                        lembur: 'editGajiLemburJam',
+                        kasbon: 'editGajiKasbon'
+                    };
                     const fokusEl = document.getElementById(fokusMap[fokusField] || 'editGajiHadir');
                     if(fokusEl) { fokusEl.focus(); fokusEl.select(); }
                     updatePreview();
                 },
                 preConfirm: () => {
-                    const hadirPenuh = Math.max(0, parseInt(document.getElementById('editGajiHadir').value) || 0);
-                    const setengahHari = Math.max(0, parseInt(document.getElementById('editGajiSetengah').value) || 0);
-                    const lemburJam = Math.max(0, parseFloat(document.getElementById('editGajiLembur').value) || 0);
-                    const kasbon = Math.max(0, parseInt(document.getElementById('editGajiKasbon').value) || 0);
-                    const catatan = document.getElementById('editGajiCatatan').value.trim() || 'Koreksi admin';
-                    if((hadirPenuh + setengahHari) > jumlahHari) {
-                        Swal.showValidationMessage(`Hadir Penuh + Setengah Hari maksimal ${jumlahHari} hari.`);
+                    const readRequiredNumber = (id, label) => {
+                        const raw = String(document.getElementById(id).value || '').trim();
+                        if(raw === '') throw new Error(`${label} wajib diisi.`);
+                        const value = Number(raw);
+                        if(!Number.isFinite(value)) throw new Error(`${label} tidak valid.`);
+                        return value;
+                    };
+
+                    try {
+                        const hadirRaw = readRequiredNumber('editGajiHadir', 'Hadir Penuh');
+                        const setengahRaw = readRequiredNumber('editGajiSetengah', 'Setengah Hari');
+                        const lemburJamRaw = readRequiredNumber('editGajiLemburJam', 'Jam Lembur');
+                        const lemburRpRaw = readRequiredNumber('editGajiLemburRp', 'Nominal Lembur');
+                        const kasbonRaw = readRequiredNumber('editGajiKasbon', 'Kasbon');
+
+                        if(!Number.isInteger(hadirRaw) || hadirRaw < 0) throw new Error('Hadir Penuh harus berupa bilangan bulat 0 atau lebih.');
+                        if(!Number.isInteger(setengahRaw) || setengahRaw < 0) throw new Error('Setengah Hari harus berupa bilangan bulat 0 atau lebih.');
+                        if(lemburJamRaw < 0 || lemburJamRaw > 1000) throw new Error('Jam Lembur tidak valid.');
+                        if(lemburRpRaw < 0 || lemburRpRaw > 1000000000) throw new Error('Nominal Lembur tidak valid.');
+                        if(kasbonRaw < 0 || kasbonRaw > 1000000000) throw new Error('Nominal Kasbon tidak valid.');
+                        if((hadirRaw + setengahRaw) > jumlahHari) throw new Error(`Hadir Penuh + Setengah Hari maksimal ${jumlahHari} hari.`);
+
+                        const catatan = document.getElementById('editGajiCatatan').value.trim() || 'Koreksi admin';
+                        return {
+                            hadirPenuh: hadirRaw,
+                            setengahHari: setengahRaw,
+                            lemburJam: Math.round(lemburJamRaw * 100) / 100,
+                            lemburRp: Math.round(lemburRpRaw),
+                            kasbon: Math.round(kasbonRaw),
+                            catatan
+                        };
+                    } catch(err) {
+                        Swal.showValidationMessage(err.message || 'Data koreksi tidak valid.');
                         return false;
                     }
-                    return { hadirPenuh, setengahHari, lemburJam, kasbon, catatan };
                 }
             });
 
@@ -1342,14 +1411,21 @@
                     hadirPenuh: result.value.hadirPenuh,
                     setengahHari: result.value.setengahHari,
                     lemburJam: result.value.lemburJam,
+                    lemburRp: result.value.lemburRp,
                     kasbon: result.value.kasbon,
                     tarifLembur: data.tarifLembur,
-                    catatan: result.value.catatan
+                    catatan: result.value.catatan,
+                    expectedId: data.koreksiId || '',
+                    checkConflict: '1'
                 }, 15000);
-                upsertKoreksiGajiLocal(res.data || { nama: namaNormal, bulan: data.bulan, tahun: data.tahun, tarifLembur: data.tarifLembur, ...result.value });
+                if(!res || res.status !== 'success') throw new Error((res && res.message) || 'Gagal menyimpan koreksi gaji.');
+                upsertKoreksiGajiLocal(res.data || {
+                    nama: namaNormal, bulan: data.bulan, tahun: data.tahun,
+                    tarifLembur: data.tarifLembur, ...result.value
+                });
                 renderMatriks();
                 Swal.close();
-                Toast.fire({ icon: 'success', title: 'Gaji berhasil diperbarui. Rekap, total, PDF, dan WA ikut berubah.' });
+                Toast.fire({ icon: 'success', title: 'Gaji berhasil diperbarui. Total, rekap, PDF, dan WA sudah disinkronkan.' });
                 setTimeout(() => bukaTotalGaji(namaNormal), 180);
                 refreshKoreksiGajiOnly().catch(() => {});
             } catch(e) {
