@@ -254,6 +254,7 @@
         
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
+        let cacheKoreksiGajiGlobal = JSON.parse(localStorage.getItem('cache_koreksi_gaji')) || [];
         let databaseCetakSlip = {}; 
         let isEditPintasActive = false; 
         let isDataSensitifVisible = false; 
@@ -439,6 +440,57 @@
             const pending = getPendingRiwayatLocal().filter(x => !isRiwayatSama(x, fixed));
             pending.unshift(fixed);
             setPendingRiwayatLocal(pending);
+        }
+
+
+        function getKoreksiGajiAktif(nama, bulan, tahun) {
+            const targetNama = normalNamaUI(nama);
+            return (cacheKoreksiGajiGlobal || []).find(k =>
+                normalNamaUI(k.nama) === targetNama &&
+                parseInt(k.bulan) === parseInt(bulan) &&
+                parseInt(k.tahun) === parseInt(tahun)
+            ) || null;
+        }
+
+        function upsertKoreksiGajiLocal(row) {
+            if(!row) return;
+            const fixed = {
+                id: row.id || ('LOCAL-KG-' + Date.now()),
+                nama: normalNamaUI(row.nama),
+                bulan: parseInt(row.bulan) || 0,
+                tahun: parseInt(row.tahun) || 0,
+                hadirPenuh: Math.max(0, parseInt(row.hadirPenuh) || 0),
+                setengahHari: Math.max(0, parseInt(row.setengahHari) || 0),
+                lemburJam: Math.max(0, parseFloat(row.lemburJam) || 0),
+                kasbon: Math.max(0, parseInt(row.kasbon) || 0),
+                tarifLembur: Math.max(0, parseInt(row.tarifLembur) || parseInt(configHRD.tarifLembur) || 0),
+                catatan: String(row.catatan || 'Koreksi admin'),
+                updatedAt: row.updatedAt || new Date().toLocaleString('id-ID')
+            };
+            cacheKoreksiGajiGlobal = (cacheKoreksiGajiGlobal || []).filter(k => !(
+                normalNamaUI(k.nama) === fixed.nama &&
+                parseInt(k.bulan) === fixed.bulan &&
+                parseInt(k.tahun) === fixed.tahun
+            ));
+            cacheKoreksiGajiGlobal.unshift(fixed);
+            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+        }
+
+        function hapusKoreksiGajiLocal(nama, bulan, tahun) {
+            cacheKoreksiGajiGlobal = (cacheKoreksiGajiGlobal || []).filter(k => !(
+                normalNamaUI(k.nama) === normalNamaUI(nama) &&
+                parseInt(k.bulan) === parseInt(bulan) &&
+                parseInt(k.tahun) === parseInt(tahun)
+            ));
+            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+        }
+
+        async function refreshKoreksiGajiOnly() {
+            const j = await ambilJSON(API_URL + '?action=get_koreksi_gaji&ts=' + Date.now(), {}, 12000);
+            if(j.status !== 'success') throw new Error(j.message || 'Gagal mengambil koreksi gaji.');
+            cacheKoreksiGajiGlobal = Array.isArray(j.data) ? j.data : [];
+            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+            renderMatriks();
         }
 
         async function refreshKasbonOnly() {
@@ -741,6 +793,8 @@
                     cacheRiwayatGlobal = mergeRiwayatAman(d.riwayat || []);
                     cacheKasbonGlobal = mergeKasbonDenganPending(d.kasbon || []);
                     configHRD.tarifLembur = parseInt((d.config || {}).tarifLembur) || 8000;
+                    cacheKoreksiGajiGlobal = Array.isArray(d.koreksiGaji) ? d.koreksiGaji : [];
+                    localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
                     localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
                     localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
                     localStorage.setItem('cache_nama_karyawan', JSON.stringify(d.karyawan || []));
@@ -756,7 +810,8 @@
                     ambilJSON(API_URL + '?action=get_riwayat&ts=' + Date.now(), {}, 12000),
                     ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000),
                     ambilJSON(API_URL + '?action=get_kasbon&ts=' + Date.now(), {}, 12000),
-                    ambilJSON(API_URL + '?action=get_config_hrd&ts=' + Date.now(), {}, 12000)
+                    ambilJSON(API_URL + '?action=get_config_hrd&ts=' + Date.now(), {}, 12000),
+                    ambilJSON(API_URL + '?action=get_koreksi_gaji&ts=' + Date.now(), {}, 12000)
                 ]);
 
                 let adaSukses = false;
@@ -776,6 +831,13 @@
 
                 const jCfg = hasil[3].status === 'fulfilled' ? hasil[3].value : null;
                 if (jCfg && jCfg.status === 'success') { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; adaSukses = true; }
+
+                const jKG = hasil[4].status === 'fulfilled' ? hasil[4].value : null;
+                if (jKG && jKG.status === 'success') {
+                    cacheKoreksiGajiGlobal = Array.isArray(jKG.data) ? jKG.data : [];
+                    localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+                    adaSukses = true;
+                }
 
                 if (isBackground) renderSetelahRefresh();
                 if (!adaSukses) throw errGetAll;
@@ -1102,22 +1164,41 @@
                 }
                 
                 let gajiHarian = gajiDict[nama] || 0;
-                let uangHadirPenuh = hadirPenuh * gajiHarian;
-                let uangSetHari = rekapFinansial[nama].jmlSetHari * (gajiHarian / 2);
-                let totalLembur = rekapFinansial[nama].lemburRp;
-                let totalPotongan = rekapFinansial[nama].kasbon;
-                
+                const dataAsli = {
+                    hadir: hadirPenuh,
+                    setHari: rekapFinansial[nama].jmlSetHari,
+                    lemburJam: rekapFinansial[nama].jmlLembur,
+                    kasbon: rekapFinansial[nama].kasbon,
+                    uangLembur: rekapFinansial[nama].lemburRp
+                };
+                const koreksi = getKoreksiGajiAktif(nama, selectBulan, selectTahun);
+                const hadirFinal = koreksi ? Math.max(0, parseInt(koreksi.hadirPenuh) || 0) : dataAsli.hadir;
+                const setengahFinal = koreksi ? Math.max(0, parseInt(koreksi.setengahHari) || 0) : dataAsli.setHari;
+                const lemburJamFinal = koreksi ? Math.max(0, parseFloat(koreksi.lemburJam) || 0) : dataAsli.lemburJam;
+                const kasbonFinal = koreksi ? Math.max(0, parseInt(koreksi.kasbon) || 0) : dataAsli.kasbon;
+                const tarifLemburFinal = koreksi ? (parseInt(koreksi.tarifLembur) || parseInt(configHRD.tarifLembur) || 0) : (parseInt(configHRD.tarifLembur) || 0);
+
+                let uangHadirPenuh = hadirFinal * gajiHarian;
+                let uangSetHari = setengahFinal * (gajiHarian / 2);
+                let totalLembur = koreksi ? (lemburJamFinal * tarifLemburFinal) : dataAsli.uangLembur;
+                let totalPotongan = kasbonFinal;
                 let sisaBersih = uangHadirPenuh + uangSetHari + totalLembur - totalPotongan;
                 grandTotalBersih += sisaBersih;
 
                 databaseCetakSlip[nama] = {
-                    hadir: hadirPenuh, uangPokok: uangHadirPenuh, setHari: rekapFinansial[nama].jmlSetHari, uangSetHari: uangSetHari,
-                    lemburJam: rekapFinansial[nama].jmlLembur, uangLembur: totalLembur, kasbon: totalPotongan, bersih: sisaBersih,
-                    periode: document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text + " " + selectTahun
+                    hadir: hadirFinal, uangPokok: uangHadirPenuh, setHari: setengahFinal, uangSetHari: uangSetHari,
+                    lemburJam: lemburJamFinal, uangLembur: totalLembur, kasbon: totalPotongan, bersih: sisaBersih,
+                    periode: document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text + " " + selectTahun,
+                    bulan: selectBulan, tahun: selectTahun, gajiHarian: gajiHarian, tarifLembur: tarifLemburFinal,
+                    koreksiAktif: !!koreksi, catatanKoreksi: koreksi ? (koreksi.catatan || 'Koreksi admin') : '',
+                    updatedAtKoreksi: koreksi ? (koreksi.updatedAt || '') : '', dataAsli: dataAsli
                 };
 
+                const btnPayrollClass = koreksi ? 'bg-orange-500 hover:bg-orange-600' : 'bg-emerald-600 hover:bg-emerald-700';
+                const btnPayrollIcon = koreksi ? 'fa-user-edit' : 'fa-eye';
+                const btnPayrollText = koreksi ? 'GAJI EDIT' : 'BUKA GAJI';
                 bodyHtml += `<td class="p-1 border border-gray-400 bg-emerald-50/30 text-center">
-                    <button onclick="bukaTotalGaji('${nama}')" class="bg-emerald-600 text-white text-[8px] font-bold py-1 px-2 rounded shadow hover:bg-emerald-700 transition active:scale-95"><i class="fas fa-eye"></i> BUKA GAJI</button>
+                    <button onclick="bukaTotalGaji('${nama}')" class="${btnPayrollClass} text-white text-[8px] font-bold py-1 px-2 rounded shadow transition active:scale-95"><i class="fas ${btnPayrollIcon}"></i> ${btnPayrollText}</button>
                 </td></tr>`;
             });
 
@@ -1129,33 +1210,182 @@
         // FUNGSI POPUP BUKA GAJI, WHATSAPP, & CETAK DOKUMEN RESMI
         // ===============================================================
         async function bukaTotalGaji(nama) {
-            // Jangan paksa refresh cloud di sini. Data edit cepat/lembur yang baru disimpan sudah masuk cache lokal,
-            // jadi detail gaji harus langsung membaca cache terbaru, bukan menunggu Google Script yang kadang lambat.
             renderMatriks();
-            const data = databaseCetakSlip[normalNamaUI(nama)];
+            const namaNormal = normalNamaUI(nama);
+            const data = databaseCetakSlip[namaNormal];
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
+            const namaEncoded = encodeURIComponent(namaNormal);
+            const infoKoreksi = data.koreksiAktif ? `
+                <div class="mb-3 rounded-lg border border-orange-300 bg-orange-50 p-2 text-left text-[10px] text-orange-700 font-bold">
+                    <i class="fas fa-user-edit"></i> Payroll ini memakai koreksi admin.<br>
+                    <span class="font-normal">${data.catatanKoreksi || 'Koreksi admin'}${data.updatedAtKoreksi ? ' • ' + data.updatedAtKoreksi : ''}</span>
+                </div>` : '';
+
+            const rowGaji = (label, detail, nominal, warna, fokus, prefix = '') => `
+                <div class="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm mb-1 ${warna}">
+                    <span>${label} (${detail}):</span>
+                    <span class="font-semibold whitespace-nowrap">${prefix}${nominal}</span>
+                    <button type="button" onclick="editDataGaji(decodeURIComponent('${namaEncoded}'), '${fokus}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-[10px] font-black whitespace-nowrap"><i class="fas fa-edit"></i> Edit</button>
+                </div>`;
 
             let htmlGaji = `
                 <div class="text-left text-xs font-bold text-gray-600 mb-3 border-b pb-2">Periode: ${data.periode}</div>
-                <div class="flex justify-between text-sm mb-1"><span>Hadir Penuh (${data.hadir}x):</span> <span>${formatRupiah(data.uangPokok)}</span></div>
-                <div class="flex justify-between text-sm text-orange-500 mb-1"><span>Setengah Hari (${data.setHari}x):</span> <span>${formatRupiah(data.uangSetHari)}</span></div>
-                <div class="flex justify-between text-sm text-green-600 mb-1"><span>Lembur (${data.lemburJam} Jam):</span> <span>${formatBonusRupiah(data.uangLembur)}</span></div>
-                <div class="flex justify-between text-sm text-red-500 mb-2 border-b pb-2"><span>Kasbon:</span> <span>-${formatRupiah(data.kasbon)}</span></div>
+                ${infoKoreksi}
+                ${rowGaji('Hadir Penuh', data.hadir + 'x', formatRupiah(data.uangPokok), '', 'hadir')}
+                ${rowGaji('Setengah Hari', data.setHari + 'x', formatRupiah(data.uangSetHari), 'text-orange-500', 'setengah')}
+                ${rowGaji('Lembur', data.lemburJam + ' Jam', formatBonusRupiah(data.uangLembur), 'text-green-600', 'lembur')}
+                ${rowGaji('Kasbon', 'potongan', formatRupiah(data.kasbon), 'text-red-500 mb-2 border-b pb-2', 'kasbon', '-')}
                 <div class="flex justify-between font-black text-xl text-emerald-700 mt-3 bg-gray-100 p-2 border-2 border-emerald-500 shadow-inner rounded mb-4"><span>TOTAL:</span> <span>${formatRupiah(data.bersih)}</span></div>
                 <div class="flex gap-2">
-                    <button onclick="cetakSlipGaji('${nama}')" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold text-xs hover:bg-gray-700 transition"><i class="fas fa-file-pdf"></i> Download PDF</button>
-                    <button onclick="kirimWA('${nama}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-green-700 transition"><i class="fab fa-whatsapp"></i> Kirim Rincian WA</button>
+                    <button onclick="cetakSlipGaji(decodeURIComponent('${namaEncoded}'))" class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold text-xs hover:bg-gray-700 transition"><i class="fas fa-file-pdf"></i> Download PDF</button>
+                    <button onclick="kirimWA(decodeURIComponent('${namaEncoded}'))" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-green-700 transition"><i class="fab fa-whatsapp"></i> Kirim Rincian WA</button>
                 </div>
+                ${data.koreksiAktif ? `<button onclick="hapusKoreksiGaji(decodeURIComponent('${namaEncoded}'))" class="mt-2 w-full bg-red-50 hover:bg-red-100 border border-red-300 text-red-600 py-2 rounded-lg font-bold text-[10px]"><i class="fas fa-undo"></i> Hapus Koreksi & Kembali ke Data Absensi</button>` : ''}
             `;
 
             Swal.fire({
-                title: nama,
+                title: namaNormal,
                 html: htmlGaji,
                 showConfirmButton: false,
                 showCancelButton: true,
                 cancelButtonColor: '#6b7280',
-                cancelButtonText: 'Tutup'
+                cancelButtonText: 'Tutup',
+                width: 560
             });
+        }
+
+        async function editDataGaji(nama, fokusField) {
+            renderMatriks();
+            const namaNormal = normalNamaUI(nama);
+            const data = databaseCetakSlip[namaNormal];
+            if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
+            const jumlahHari = new Date(data.tahun, data.bulan, 0).getDate();
+            const catatanAwal = data.koreksiAktif ? data.catatanKoreksi : 'Koreksi admin';
+
+            const result = await Swal.fire({
+                title: `Edit Gaji: ${namaNormal}`,
+                html: `
+                    <div class="text-left text-[10px] font-bold text-gray-500 mb-3 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                        Angka yang disimpan menjadi angka resmi payroll <b>${data.periode}</b>. Log absensi asli tidak dihapus agar jejak pemeriksaan tetap aman.
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-left">
+                        <label class="text-xs font-bold text-gray-600">Hadir Penuh
+                            <input id="editGajiHadir" type="number" min="0" max="${jumlahHari}" step="1" value="${data.hadir}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-emerald-700">
+                        </label>
+                        <label class="text-xs font-bold text-gray-600">Setengah Hari
+                            <input id="editGajiSetengah" type="number" min="0" max="${jumlahHari}" step="1" value="${data.setHari}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-orange-600">
+                        </label>
+                        <label class="text-xs font-bold text-gray-600">Lembur (Jam)
+                            <input id="editGajiLembur" type="number" min="0" step="0.5" value="${data.lemburJam}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-green-600">
+                        </label>
+                        <label class="text-xs font-bold text-gray-600">Kasbon (Rp)
+                            <input id="editGajiKasbon" type="number" min="0" step="1000" value="${data.kasbon}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-center font-black text-red-600">
+                        </label>
+                    </div>
+                    <label class="block text-left text-xs font-bold text-gray-600 mt-3">Alasan/Catatan Koreksi
+                        <input id="editGajiCatatan" type="text" maxlength="150" value="${String(catatanAwal || '').replace(/"/g, '&quot;')}" class="swal2-input !m-0 !mt-1 !w-full !h-10 text-left text-xs" placeholder="Contoh: Karyawan lupa absen tanggal 12">
+                    </label>
+                    <div class="mt-3 bg-gray-100 border-2 border-emerald-400 rounded-lg p-3 flex justify-between items-center font-black text-emerald-700">
+                        <span>Preview Total</span><span id="previewTotalEditGaji">${formatRupiah(data.bersih)}</span>
+                    </div>
+                    <div class="mt-2 text-[9px] text-gray-500 text-left">Gaji harian: ${formatRupiah(data.gajiHarian)} • Tarif lembur: ${formatRupiah(data.tarifLembur)}/jam • Maksimal hari: ${jumlahHari}</div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-save"></i> Simpan & Update Semua',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#6b7280',
+                width: 600,
+                focusConfirm: false,
+                didOpen: () => {
+                    const ids = ['editGajiHadir', 'editGajiSetengah', 'editGajiLembur', 'editGajiKasbon'];
+                    const updatePreview = () => {
+                        const hadir = Math.max(0, parseInt(document.getElementById('editGajiHadir').value) || 0);
+                        const setengah = Math.max(0, parseInt(document.getElementById('editGajiSetengah').value) || 0);
+                        const lembur = Math.max(0, parseFloat(document.getElementById('editGajiLembur').value) || 0);
+                        const kasbon = Math.max(0, parseInt(document.getElementById('editGajiKasbon').value) || 0);
+                        const total = (hadir * data.gajiHarian) + (setengah * data.gajiHarian / 2) + (lembur * data.tarifLembur) - kasbon;
+                        const el = document.getElementById('previewTotalEditGaji');
+                        if(el) el.innerText = formatRupiah(total);
+                    };
+                    ids.forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) el.addEventListener('input', updatePreview);
+                    });
+                    const fokusMap = { hadir: 'editGajiHadir', setengah: 'editGajiSetengah', lembur: 'editGajiLembur', kasbon: 'editGajiKasbon' };
+                    const fokusEl = document.getElementById(fokusMap[fokusField] || 'editGajiHadir');
+                    if(fokusEl) { fokusEl.focus(); fokusEl.select(); }
+                    updatePreview();
+                },
+                preConfirm: () => {
+                    const hadirPenuh = Math.max(0, parseInt(document.getElementById('editGajiHadir').value) || 0);
+                    const setengahHari = Math.max(0, parseInt(document.getElementById('editGajiSetengah').value) || 0);
+                    const lemburJam = Math.max(0, parseFloat(document.getElementById('editGajiLembur').value) || 0);
+                    const kasbon = Math.max(0, parseInt(document.getElementById('editGajiKasbon').value) || 0);
+                    const catatan = document.getElementById('editGajiCatatan').value.trim() || 'Koreksi admin';
+                    if((hadirPenuh + setengahHari) > jumlahHari) {
+                        Swal.showValidationMessage(`Hadir Penuh + Setengah Hari maksimal ${jumlahHari} hari.`);
+                        return false;
+                    }
+                    return { hadirPenuh, setengahHari, lemburJam, kasbon, catatan };
+                }
+            });
+
+            if(!result.isConfirmed || !result.value) return;
+            Swal.fire({ title: 'Memperbarui seluruh data gaji...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await kirimAPI({
+                    action: 'simpan_koreksi_gaji',
+                    nama: namaNormal,
+                    bulan: data.bulan,
+                    tahun: data.tahun,
+                    hadirPenuh: result.value.hadirPenuh,
+                    setengahHari: result.value.setengahHari,
+                    lemburJam: result.value.lemburJam,
+                    kasbon: result.value.kasbon,
+                    tarifLembur: data.tarifLembur,
+                    catatan: result.value.catatan
+                }, 15000);
+                upsertKoreksiGajiLocal(res.data || { nama: namaNormal, bulan: data.bulan, tahun: data.tahun, tarifLembur: data.tarifLembur, ...result.value });
+                renderMatriks();
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Gaji berhasil diperbarui. Rekap, total, PDF, dan WA ikut berubah.' });
+                setTimeout(() => bukaTotalGaji(namaNormal), 180);
+                refreshKoreksiGajiOnly().catch(() => {});
+            } catch(e) {
+                Swal.close();
+                Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi gaji.', 'error');
+            }
+        }
+
+        async function hapusKoreksiGaji(nama) {
+            renderMatriks();
+            const namaNormal = normalNamaUI(nama);
+            const data = databaseCetakSlip[namaNormal];
+            if(!data || !data.koreksiAktif) return;
+            const konfirmasi = await Swal.fire({
+                title: 'Hapus Koreksi Gaji?',
+                text: 'Nilai payroll akan kembali mengikuti data absensi, lembur, dan kasbon asli.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kembalikan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626'
+            });
+            if(!konfirmasi.isConfirmed) return;
+            Swal.fire({ title: 'Mengembalikan data asli...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await kirimAPI({ action: 'hapus_koreksi_gaji', nama: namaNormal, bulan: data.bulan, tahun: data.tahun }, 15000);
+                hapusKoreksiGajiLocal(namaNormal, data.bulan, data.tahun);
+                renderMatriks();
+                Swal.close();
+                Toast.fire({ icon: 'success', title: 'Koreksi dihapus. Payroll kembali ke data absensi asli.' });
+                setTimeout(() => bukaTotalGaji(namaNormal), 180);
+                refreshKoreksiGajiOnly().catch(() => {});
+            } catch(e) {
+                Swal.close();
+                Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghapus koreksi gaji.', 'error');
+            }
         }
 
         function kirimWA(nama) {
@@ -1173,6 +1403,7 @@
             let pesan = `*SLIP GAJI FAJRI MANDIRI FURNITUR* 🏢\n\n`;
             pesan += `Nama: *${nama}*\n`;
             pesan += `Periode: ${data.periode}\n`;
+            if(data.koreksiAktif) pesan += `Status: *DIKOREKSI ADMIN* (${data.catatanKoreksi || 'Koreksi admin'})\n`;
             pesan += `--------------------------------\n`;
             pesan += `Hadir Penuh (${data.hadir}x): ${formatRupiah(data.uangPokok)}\n`;
             pesan += `Setengah Hari (${data.setHari}x): ${formatRupiah(data.uangSetHari)}\n`;
@@ -1206,6 +1437,7 @@
                             <p style="margin:5px 0 0 0; font-size: 20px; font-weight: bold;">${data.periode}</p>
                         </div>
                     </div>
+                    ${data.koreksiAktif ? `<div style="margin: -10px 0 20px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; font-size: 12px; font-weight: bold;">PAYROLL DIKOREKSI ADMIN: ${data.catatanKoreksi || 'Koreksi admin'}</div>` : ''}
                     
                     <h3 style="border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">RINCIAN KOMPONEN GAJI</h3>
                     
