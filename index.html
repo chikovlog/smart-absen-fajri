@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radar Absensi - Fajri Mandiri V9.2</title>
+    <title>Radar Absensi - Fajri Mandiri V9.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.2 - Total Gaji Langsung</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.3 - Absensi Stabil</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -78,7 +78,8 @@
             </div>
 
             <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden shadow-lg border-4 border-gray-300 mb-3">
-                <video id="kamera" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                <video id="kamera" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                <div id="kameraStatus" class="absolute top-2 right-2 bg-black/70 text-yellow-300 border border-gray-600 px-2 py-1 rounded-lg text-[9px] font-bold z-10"><i class="fas fa-camera mr-1"></i> Menyiapkan kamera...</div>
                 <div class="absolute inset-0 border-[3px] border-emerald-500 rounded-lg m-3 opacity-40 pointer-events-none"></div>
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20"><i class="fas fa-crosshairs text-7xl text-emerald-500"></i></div>
                 <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-md text-white p-2.5 rounded-lg text-[10px] flex flex-col gap-1 border border-gray-600/50">
@@ -250,7 +251,12 @@
         let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
         let deviceID = localStorage.getItem('device_id_fajri');
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
+        let lastGpsAt = 0; let lastGpsAccuracy = null; let cameraReady = false; let lastCameraError = null;
+        let absenSedangDiproses = false; let pendingPromptSedangTampil = false;
         let namaLokasiAman = ""; // Menyimpan info apakah dia di TOKO atau di GUDANG
+        const ABSEN_TIMEOUT_MS = 50000;
+        const FOTO_MAX_CHARS = 43000; // aman di bawah batas isi sel Google Sheets
+        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93';
         
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
@@ -296,9 +302,66 @@
                 body: JSON.stringify(payload)
             }, timeoutMs);
             if (!res || res.status !== 'success') {
-                throw new Error((res && res.message) ? res.message : 'Server menolak proses.');
+                const err = new Error((res && res.message) ? res.message : 'Server menolak proses.');
+                err.code = (res && res.code) ? res.code : 'SERVER_REJECT';
+                err.retryable = ['SERVER_BUSY', 'TEMPORARY_ERROR'].includes(err.code);
+                err.serverResponse = res || null;
+                throw err;
             }
             return res;
+        }
+
+        const tidur = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function buatRequestId(prefix = 'REQ') {
+            const uuid = (window.crypto && typeof window.crypto.randomUUID === 'function')
+                ? window.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
+            return `${prefix}-${uuid}`.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 90);
+        }
+
+        function adalahErrorJaringan(err) {
+            const msg = String((err && err.message) || '').toLowerCase();
+            return !navigator.onLine || (err && err.name === 'AbortError') || err instanceof TypeError ||
+                msg.includes('failed to fetch') || msg.includes('network') || msg.includes('timeout') || msg.includes('aborted') || msg.includes('balasan server bukan json');
+        }
+
+        async function kirimAPIStabil(payload, opsi = {}) {
+            const timeoutMs = Number(opsi.timeoutMs) || ABSEN_TIMEOUT_MS;
+            const retries = Number.isInteger(opsi.retries) ? opsi.retries : 1;
+            let errorTerakhir = null;
+
+            for (let percobaan = 0; percobaan <= retries; percobaan++) {
+                try {
+                    const res = await ambilJSON(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    }, timeoutMs);
+
+                    if (res && res.status === 'success') return res;
+
+                    // Bila request pertama sebenarnya tersimpan tetapi jawabannya putus,
+                    // backend akan mengenali requestId yang sama. Duplikat kategori juga
+                    // dianggap informasi bahwa absen sudah aman tersimpan.
+                    if (payload.action === 'simpan_absen' && res && res.code === 'DUPLICATE_ABSEN') {
+                        return { ...res, status: 'success', alreadySaved: true };
+                    }
+
+                    const err = new Error((res && res.message) ? res.message : 'Server menolak proses.');
+                    err.code = (res && res.code) ? res.code : 'SERVER_REJECT';
+                    err.retryable = ['SERVER_BUSY', 'TEMPORARY_ERROR'].includes(err.code);
+                    err.serverResponse = res || null;
+                    throw err;
+                } catch (err) {
+                    errorTerakhir = err;
+                    const bolehUlang = percobaan < retries && (adalahErrorJaringan(err) || err.retryable);
+                    if (!bolehUlang) throw err;
+                    try { Swal.update({ title: `Koneksi lambat, mencoba lagi (${percobaan + 2}/${retries + 1})...` }); } catch (_) {}
+                    await tidur(1200 + (percobaan * 800));
+                }
+            }
+            throw errorTerakhir || new Error('Gagal mengirim data.');
         }
 
         function renderSetelahRefresh() {
@@ -710,7 +773,9 @@
                 if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
             }, 1000);
 
-            fetchAndCacheAll(true);
+            // Halaman karyawan cukup menarik riwayat ringan. Data gaji/kasbon hanya
+            // ditarik saat owner masuk agar server tidak berat ketika banyak orang absen bersamaan.
+            fetchRiwayatRingan(true).catch(() => {});
         };
 
         async function loadDropdownKaryawan() {
@@ -754,6 +819,7 @@
             document.getElementById('displayNama').innerText = dataProfil.nama; document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
+            setTimeout(() => cekPendingAbsen(), 1300);
         }
 
         function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
@@ -810,6 +876,25 @@
             } catch (e) {
                 Swal.close();
                 Swal.fire('Refresh Tidak Sempurna', (e && e.message) ? e.message : 'Koneksi Cloud lambat. Data lokal tetap dipakai dulu.', 'warning');
+            }
+        }
+
+        async function fetchRiwayatRingan(isBackground = false) {
+            try {
+                const jR = await ambilJSON(API_URL + '?action=get_riwayat&ts=' + Date.now(), {}, 15000);
+                if (!jR || jR.status !== 'success') throw new Error((jR && jR.message) || 'Gagal mengambil riwayat.');
+                cacheRiwayatGlobal = mergeRiwayatAman(jR.data || []);
+                localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                if (isBackground) {
+                    renderAbsenPublik();
+                    if (document.getElementById('panel-monitoring') && !document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
+                }
+                return true;
+            } catch (err) {
+                if (isBackground) {
+                    try { renderAbsenPublik(); } catch (_) {}
+                }
+                throw err;
             }
         }
 
@@ -1022,10 +1107,10 @@
             let kar = cacheKaryawan.find(k => normalNamaUI(k.nama) === normalNamaUI(nama));
             let tipeKaryawan = kar ? kar.tipe : "TETAP";
             let waktuManipulasi = `${formatTgl}, 08.00.00`;
-            const payloadData = { waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
+            const payloadData = { requestId: buatRequestId('MAN'), waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
 
             try {
-                const res = await kirimAPI({ action: "simpan_absen", data: payloadData }, 15000);
+                const res = await kirimAPIStabil({ action: "simpan_absen", data: payloadData }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
                 pushRiwayatLocal({ ...payloadData, id: res.id || null });
                 renderMatriks();
                 Swal.close();
@@ -1043,12 +1128,12 @@
             let nom = Math.round((parseInt(kar.gaji) || 0) / 2); 
             let waktuManipulasi = `${formatTgl}, 12.00.00`;
             let ket = `SETENGAH HARI: ${formatTgl}`;
-            const payloadAbsen = { waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: kar.tipe || 'TETAP', status: 'SETENGAH HARI', jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: 'HRD-MANUAL', catatan: 'Edit Darurat Setengah Hari' };
+            const payloadAbsen = { requestId: buatRequestId('MANHALF'), waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: kar.tipe || 'TETAP', status: 'SETENGAH HARI', jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: 'HRD-MANUAL', catatan: 'Edit Darurat Setengah Hari' };
 
             Swal.fire({ title: 'Menyimpan 1/2 Hari...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
             try { 
                 // Simpan status absensi agar kotak matriks langsung berubah menjadi 🌗.
-                let resAbsen = await kirimAPI({ action: "simpan_absen", data: payloadAbsen }, 15000);
+                let resAbsen = await kirimAPIStabil({ action: "simpan_absen", data: payloadAbsen }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
                 // Simpan potongan gaji 50% ke pembukuan.
                 let resKasbon = await kirimAPI({ action: "tambah_kasbon", waktu: waktuManipulasi, nama: normalNamaUI(nama), nominal: nom, keterangan: ket }, 15000);
 
@@ -1887,118 +1972,423 @@
             });
         }
 
-        async function nyalakanKamera() { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); video.srcObject = stream; } catch (err) { } }
-        
-        function nyalakanRadarGPS() { 
-            if (navigator.geolocation) { 
-                gpsWatcher = navigator.geolocation.watchPosition( (pos) => { 
-                    currentLat = pos.coords.latitude; 
-                    currentLng = pos.coords.longitude; 
-                    document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`; 
-                    
-                    let jarakToko = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
-                    let jarakGudang = hitungJarak(currentLat, currentLng, GUDANG_LAT, GUDANG_LNG);
-                    currentJarak = Math.min(jarakToko, jarakGudang);
-                    let namaLokasiAman = jarakToko <= jarakGudang ? "TOKO" : "GUDANG";
+        function setStatusKamera(teks, tipe = 'loading') {
+            const el = document.getElementById('kameraStatus');
+            if (!el) return;
+            const kelas = tipe === 'ok'
+                ? 'bg-emerald-900/85 text-emerald-200 border-emerald-500'
+                : tipe === 'error'
+                    ? 'bg-red-900/85 text-red-200 border-red-500'
+                    : 'bg-black/70 text-yellow-300 border-gray-600';
+            el.className = `absolute top-2 right-2 ${kelas} border px-2 py-1 rounded-lg text-[9px] font-bold z-10`;
+            el.innerHTML = `<i class="fas fa-camera mr-1"></i> ${teks}`;
+        }
 
-                    const labelJarak = document.getElementById('liveJarak'); 
-                    if (dataProfil.tipe === 'TETAP') { 
-                        if (currentJarak <= RADIUS_MAKSIMAL) { 
-                            labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN ${namaLokasiAman})`; 
-                            labelJarak.className = "font-mono text-green-400 font-bold"; 
-                        } else { 
-                            labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`; 
-                            labelJarak.className = "font-mono text-red-500 font-bold animate-pulse"; 
-                        } 
-                    } else { 
-                        labelJarak.innerText = `Jarak dari ${namaLokasiAman}: ${currentJarak} Meter`; 
-                        labelJarak.className = "font-mono text-blue-400"; 
-                    } 
-                }, (e) => { }, { enableHighAccuracy: true } ); 
-            } 
+        function pesanErrorKamera(err) {
+            const nama = String((err && err.name) || '');
+            if (nama === 'NotAllowedError' || nama === 'PermissionDeniedError') return 'Izin kamera ditolak. Aktifkan kamera untuk situs ini.';
+            if (nama === 'NotFoundError' || nama === 'DevicesNotFoundError') return 'Kamera tidak ditemukan pada perangkat.';
+            if (nama === 'NotReadableError' || nama === 'TrackStartError') return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera lalu coba lagi.';
+            if (!window.isSecureContext) return 'Kamera hanya bisa digunakan melalui HTTPS.';
+            return 'Kamera belum siap. Muat ulang halaman lalu izinkan kamera.';
+        }
+
+        function tungguVideoSiap(timeoutMs = 10000) {
+            return new Promise((resolve, reject) => {
+                if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return resolve(true);
+                let selesai = false;
+                const beres = () => {
+                    if (selesai) return;
+                    if (video.videoWidth > 0 && video.videoHeight > 0) {
+                        selesai = true;
+                        clearTimeout(timer);
+                        video.removeEventListener('loadedmetadata', beres);
+                        video.removeEventListener('canplay', beres);
+                        resolve(true);
+                    }
+                };
+                const timer = setTimeout(() => {
+                    if (selesai) return;
+                    selesai = true;
+                    video.removeEventListener('loadedmetadata', beres);
+                    video.removeEventListener('canplay', beres);
+                    reject(new Error('Kamera terlalu lama menyiapkan gambar.'));
+                }, timeoutMs);
+                video.addEventListener('loadedmetadata', beres);
+                video.addEventListener('canplay', beres);
+            });
+        }
+
+        async function nyalakanKamera() {
+            cameraReady = false;
+            lastCameraError = null;
+            setStatusKamera('Menyiapkan kamera...');
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('MEDIA_NOT_SUPPORTED');
+                if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'user' }, width: { ideal: 640 }, height: { ideal: 854 } },
+                    audio: false
+                });
+                video.srcObject = stream;
+                await video.play().catch(() => {});
+                await tungguVideoSiap(10000);
+                cameraReady = true;
+                lastCameraError = null;
+                setStatusKamera('Kamera siap', 'ok');
+                return true;
+            } catch (err) {
+                cameraReady = false;
+                lastCameraError = err;
+                setStatusKamera('Kamera bermasalah', 'error');
+                console.warn('Kamera gagal:', err);
+                return false;
+            }
+        }
+
+        async function pastikanKameraSiap() {
+            if (cameraReady && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return true;
+            const berhasil = await nyalakanKamera();
+            if (!berhasil) {
+                const err = new Error(pesanErrorKamera(lastCameraError));
+                err.code = 'CAMERA_NOT_READY';
+                throw err;
+            }
+            return true;
+        }
+
+        function pesanErrorGPS(err) {
+            if (!err) return 'GPS tidak tersedia.';
+            if (err.code === 1) return 'Izin lokasi ditolak. Aktifkan Lokasi untuk situs ini.';
+            if (err.code === 2) return 'Sinyal GPS belum ditemukan. Pindah ke area lebih terbuka.';
+            if (err.code === 3) return 'Pencarian GPS terlalu lama. Coba lagi.';
+            return 'GPS bermasalah. Pastikan layanan lokasi aktif.';
+        }
+
+        function terapkanPosisiGPS(pos) {
+            currentLat = Number(pos.coords.latitude);
+            currentLng = Number(pos.coords.longitude);
+            lastGpsAccuracy = Number(pos.coords.accuracy) || null;
+            lastGpsAt = Date.now();
+            document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}${lastGpsAccuracy ? ` (akurasi ±${Math.round(lastGpsAccuracy)}m)` : ''}`;
+
+            const jarakToko = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
+            const jarakGudang = hitungJarak(currentLat, currentLng, GUDANG_LAT, GUDANG_LNG);
+            currentJarak = Math.min(jarakToko, jarakGudang);
+            namaLokasiAman = jarakToko <= jarakGudang ? 'TOKO' : 'GUDANG';
+
+            const labelJarak = document.getElementById('liveJarak');
+            if (dataProfil.tipe === 'TETAP') {
+                if (currentJarak <= RADIUS_MAKSIMAL) {
+                    labelJarak.innerText = `Jarak: ${currentJarak} M (ZONA AMAN ${namaLokasiAman})`;
+                    labelJarak.className = 'font-mono text-green-400 font-bold';
+                } else {
+                    labelJarak.innerText = `Jarak: ${currentJarak} M (LUAR ZONA!)`;
+                    labelJarak.className = 'font-mono text-red-500 font-bold animate-pulse';
+                }
+            } else {
+                labelJarak.innerText = `Jarak dari ${namaLokasiAman}: ${currentJarak} Meter`;
+                labelJarak.className = 'font-mono text-blue-400';
+            }
+        }
+
+        function ambilLokasiSekali(timeoutMs = 18000) {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('Browser tidak mendukung GPS.'));
+                navigator.geolocation.getCurrentPosition(
+                    pos => { terapkanPosisiGPS(pos); resolve(pos); },
+                    err => { const e = new Error(pesanErrorGPS(err)); e.code = 'GPS_ERROR'; reject(e); },
+                    { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 5000 }
+                );
+            });
+        }
+
+        function nyalakanRadarGPS() {
+            if (!navigator.geolocation) {
+                document.getElementById('liveGPS').innerText = 'GPS tidak didukung browser.';
+                return;
+            }
+            if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
+            document.getElementById('liveGPS').innerText = 'Mencari sinyal GPS...';
+            ambilLokasiSekali(18000).catch(err => {
+                document.getElementById('liveGPS').innerText = err.message;
+            });
+            gpsWatcher = navigator.geolocation.watchPosition(
+                terapkanPosisiGPS,
+                err => { document.getElementById('liveGPS').innerText = pesanErrorGPS(err); },
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 8000 }
+            );
+        }
+
+        async function pastikanGPSBaru() {
+            const valid = Number.isFinite(currentLat) && Number.isFinite(currentLng) && Number.isFinite(currentJarak);
+            const masihBaru = valid && (Date.now() - lastGpsAt) < 90000;
+            if (masihBaru) return true;
+            document.getElementById('liveGPS').innerText = 'Memperbarui posisi GPS...';
+            await ambilLokasiSekali(18000);
+            return true;
         }
 
         function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180; const dP = (lat2-lat1) * Math.PI/180; const dL = (lon2-lon1) * Math.PI/180; const a = Math.sin(dP/2) * Math.sin(dP/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL/2) * Math.sin(dL/2); return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))); }
 
-        async function prosesIzinSakit() { const { value: alasan } = await Swal.fire({ title: 'Form Izin / Sakit', input: 'text', inputPlaceholder: 'Misal: Sakit lambung...', showCancelButton: true, confirmButtonColor: '#9333ea', confirmButtonText: 'Lanjut Foto', inputValidator: (v) => !v && 'Keterangan wajib diisi!' }); if (alasan) { Swal.fire({ title: 'Ambil Bukti', text: 'Siapkan Surat Dokter/Kondisi Saat Ini.', icon: 'info', confirmButtonText: 'Cekrek!', confirmButtonColor: '#10b981' }).then((res) => { if (res.isConfirmed) { eksekusiKirimData('IZIN / SAKIT', alasan); } }); } }
+        function formatWaktuKanonik(tanggal = new Date()) {
+            const pad = n => String(n).padStart(2, '0');
+            return `${pad(tanggal.getDate())}/${pad(tanggal.getMonth() + 1)}/${tanggal.getFullYear()}, ${pad(tanggal.getHours())}.${pad(tanggal.getMinutes())}.${pad(tanggal.getSeconds())}`;
+        }
+
+        function setTombolAbsenDisabled(disabled) {
+            ['btnPagi', 'btnSetengah', 'btnPulang', 'btnKunjungan', 'btnIzin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.disabled = !!disabled;
+                el.classList.toggle('opacity-50', !!disabled);
+                el.classList.toggle('pointer-events-none', !!disabled);
+            });
+        }
+
+        function gambarFotoKompres(statusAbsen, waktuSekarang) {
+            const vw = Number(video.videoWidth) || 0;
+            const vh = Number(video.videoHeight) || 0;
+            if (vw < 2 || vh < 2) throw new Error('Gambar kamera belum siap. Tunggu sebentar lalu coba lagi.');
+
+            let targetWidth = Math.min(320, vw);
+            let kualitas = 0.62;
+            let hasil = '';
+
+            const gambarUlang = () => {
+                const targetHeight = Math.max(180, Math.round(vh * (targetWidth / vw)));
+                kanvas.width = Math.round(targetWidth);
+                kanvas.height = targetHeight;
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, kanvas.width, kanvas.height);
+                ctx.translate(kanvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                const panelH = Math.min(70, Math.max(52, Math.round(kanvas.height * 0.22)));
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
+                ctx.fillRect(0, kanvas.height - panelH, kanvas.width, panelH);
+                ctx.font = `bold ${kanvas.width < 240 ? 8 : 10}px monospace`;
+                ctx.fillStyle = '#10b981'; ctx.fillText(`NAMA  : ${dataProfil.nama}`, 8, kanvas.height - panelH + 16);
+                ctx.fillStyle = (statusAbsen.includes('TELAT') || statusAbsen.includes('IZIN')) ? '#ef4444' : '#ffffff';
+                ctx.fillText(`STATUS: ${statusAbsen}`, 8, kanvas.height - panelH + 31);
+                ctx.fillStyle = '#ffffff'; ctx.fillText(`WAKTU : ${waktuSekarang}`, 8, kanvas.height - panelH + 46);
+                ctx.fillStyle = '#facc15'; ctx.fillText(`LOKASI: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
+                hasil = kanvas.toDataURL('image/jpeg', kualitas);
+            };
+
+            gambarUlang();
+            let penjaga = 0;
+            while (hasil.length > FOTO_MAX_CHARS && penjaga < 8) {
+                penjaga++;
+                if (kualitas > 0.38) kualitas -= 0.07;
+                else targetWidth = Math.max(180, Math.round(targetWidth * 0.86));
+                gambarUlang();
+            }
+            if (!hasil.startsWith('data:image/jpeg;base64,') || hasil.length > 48000) {
+                throw new Error('Foto masih terlalu besar untuk dikirim. Dekatkan wajah dan coba lagi.');
+            }
+            return hasil;
+        }
+
+        function simpanPendingAbsen(payload) {
+            try { localStorage.setItem(PENDING_ABSEN_KEY, JSON.stringify({ payload, savedAt: Date.now() })); } catch (_) {}
+        }
+
+        function bacaPendingAbsen() {
+            try { return JSON.parse(localStorage.getItem(PENDING_ABSEN_KEY) || 'null'); } catch (_) { return null; }
+        }
+
+        function hapusPendingAbsen() {
+            try { localStorage.removeItem(PENDING_ABSEN_KEY); } catch (_) {}
+        }
+
+        async function cekPendingAbsen() {
+            if (pendingPromptSedangTampil || absenSedangDiproses || !dataProfil) return;
+            const pending = bacaPendingAbsen();
+            if (!pending || !pending.payload) return;
+            pendingPromptSedangTampil = true;
+            try {
+                if (normalNamaUI(pending.payload.nama) !== normalNamaUI(dataProfil.nama)) {
+                    const bedaAkun = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Ada antrean milik akun lain',
+                        text: `Masih ada absensi ${pending.payload.nama || 'karyawan lain'} yang belum mendapat jawaban server. Ganti ke akun tersebut untuk mengirim ulang, atau hapus antreannya bila sudah diperiksa admin.`,
+                        showCancelButton: true,
+                        confirmButtonText: 'Hapus Antrean',
+                        cancelButtonText: 'Biarkan'
+                    });
+                    if (bedaAkun.isConfirmed) hapusPendingAbsen();
+                    return;
+                }
+                const umurJam = (Date.now() - Number(pending.savedAt || 0)) / 3600000;
+                if (umurJam > 18) {
+                    const lama = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Ada antrean absen lama',
+                        text: 'Data ini sudah terlalu lama untuk dikirim otomatis. Catat waktunya dan hubungi admin untuk pemeriksaan.',
+                        showCancelButton: true,
+                        confirmButtonText: 'Hapus Antrean Lama',
+                        cancelButtonText: 'Simpan Dulu'
+                    });
+                    if (lama.isConfirmed) hapusPendingAbsen();
+                    return;
+                }
+                const pilih = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Ada absen yang belum mendapat jawaban server',
+                    text: 'Kirim ulang sekarang? Request ID yang sama mencegah data tersimpan dua kali.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Kirim Ulang',
+                    cancelButtonText: 'Nanti'
+                });
+                if (pilih.isConfirmed) await kirimPayloadAbsen(pending.payload, true);
+            } finally {
+                pendingPromptSedangTampil = false;
+            }
+        }
+
+        async function prosesIzinSakit() {
+            if (absenSedangDiproses) return;
+            if (bacaPendingAbsen()) return cekPendingAbsen();
+            const { value: alasan } = await Swal.fire({ title: 'Form Izin / Sakit', input: 'text', inputPlaceholder: 'Misal: Sakit lambung...', showCancelButton: true, confirmButtonColor: '#9333ea', confirmButtonText: 'Lanjut Foto', inputValidator: (v) => !v && 'Keterangan wajib diisi!' });
+            if (alasan) {
+                const res = await Swal.fire({ title: 'Ambil Bukti', text: 'Siapkan Surat Dokter/Kondisi Saat Ini.', icon: 'info', confirmButtonText: 'Cekrek!', confirmButtonColor: '#10b981' });
+                if (res.isConfirmed) eksekusiKirimData('IZIN / SAKIT', alasan);
+            }
+        }
 
         async function prosesAbsen(statusAbsen) {
+            if (absenSedangDiproses) return;
+            if (bacaPendingAbsen()) return cekPendingAbsen();
             const now = new Date(); const jamSekarang = now.getHours();
-            
+
             let kategori = statusAbsen;
             if (statusAbsen === 'PAGI' && jamSekarang >= 8) statusAbsen = 'PAGI (TELAT)';
             if (statusAbsen.includes('PAGI') || statusAbsen.includes('MASUK')) kategori = 'PAGI';
 
-            let jamSudah = getJamAbsenHariIni(kategori);
+            const jamSudah = getJamAbsenHariIni(kategori);
             if (jamSudah) {
                 return Swal.fire({ icon: 'error', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
             }
-
             if (statusAbsen === 'PULANG' && jamSekarang < 17) return Swal.fire('Belum Waktunya!', 'Absen pulang buka jam 17:00!', 'warning');
-            
-            if (!currentLat || !currentLng) return Swal.fire('Tunggu!', 'Mencari sinyal GPS...', 'warning');
-            if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) return Swal.fire('Ditolak!', `Di luar zona (${currentJarak} M)`, 'error');
+
+            try {
+                Swal.fire({ title: 'Memastikan Kamera & GPS...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                await Promise.all([pastikanKameraSiap(), pastikanGPSBaru()]);
+                Swal.close();
+            } catch (err) {
+                Swal.close();
+                return Swal.fire('Belum Siap', err.message || 'Kamera atau GPS belum siap.', 'warning');
+            }
+
+            if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) {
+                if (lastGpsAccuracy && lastGpsAccuracy > 45) {
+                    return Swal.fire('GPS Belum Akurat', `Akurasi GPS masih ±${Math.round(lastGpsAccuracy)} meter dan posisi terbaca ${currentJarak} meter dari lokasi. Pindah ke area terbuka lalu coba lagi.`, 'warning');
+                }
+                return Swal.fire('Ditolak!', `Di luar zona (${currentJarak} M)`, 'error');
+            }
 
             let laporanHarian = null;
-            if (statusAbsen === 'PULANG' || statusAbsen === 'SETENGAH HARI') { 
-                const { value: teksLaporan } = await Swal.fire({ title: 'Laporan Hari Ini', input: 'textarea', inputPlaceholder: 'Stok, kas, kendala...', showCancelButton: true, confirmButtonText: 'Kirim', confirmButtonColor: '#10b981', inputValidator: (v) => !v && 'Laporan tidak boleh kosong!' }); 
-                if (!teksLaporan) return; 
-                laporanHarian = teksLaporan; 
+            if (statusAbsen === 'PULANG' || statusAbsen === 'SETENGAH HARI') {
+                const { value: teksLaporan } = await Swal.fire({ title: 'Laporan Hari Ini', input: 'textarea', inputPlaceholder: 'Stok, kas, kendala...', showCancelButton: true, confirmButtonText: 'Kirim', confirmButtonColor: '#10b981', inputValidator: (v) => !v && 'Laporan tidak boleh kosong!' });
+                if (!teksLaporan) return;
+                laporanHarian = teksLaporan;
             }
-            eksekusiKirimData(statusAbsen, laporanHarian);
+            await eksekusiKirimData(statusAbsen, laporanHarian);
         }
 
         async function eksekusiKirimData(statusAbsen, catatanTambahan) {
-            Swal.fire({ title: 'Memproses Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const MAX_WIDTH = 300; const scale = MAX_WIDTH / video.videoWidth; kanvas.width = MAX_WIDTH; kanvas.height = video.videoHeight * scale; ctx.translate(kanvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height); ctx.translate(kanvas.width, 0); ctx.scale(-1, 1);
-            const waktuSekarang = new Date().toLocaleString('id-ID');
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, kanvas.height - 70, kanvas.width, 70);
-            ctx.font = "bold 10px monospace"; ctx.fillStyle = "#10b981"; ctx.fillText(`NAMA  : ${dataProfil.nama}`, 8, kanvas.height - 50);
-            ctx.fillStyle = (statusAbsen.includes("TELAT") || statusAbsen.includes("IZIN")) ? "#ef4444" : "#ffffff"; ctx.fillText(`STATUS: ${statusAbsen}`, 8, kanvas.height - 35);
-            ctx.fillStyle = "#ffffff"; ctx.fillText(`WAKTU : ${waktuSekarang}`, 8, kanvas.height - 20); ctx.fillStyle = "#facc15"; ctx.fillText(`LOKASI: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
-            const fotoBase64 = kanvas.toDataURL('image/jpeg', 0.5);
-            const payloadData = { waktu: waktuSekarang, nama: dataProfil.nama, tipe: dataProfil.tipe, status: statusAbsen, jarak: currentJarak, lat: currentLat, lng: currentLng, fotoBase64: fotoBase64, perangkat: deviceID, catatan: catatanTambahan || "-" };
+            if (absenSedangDiproses) return;
+            try {
+                await pastikanKameraSiap();
+                await pastikanGPSBaru();
+                const waktuSekarang = formatWaktuKanonik(new Date());
+                const fotoBase64 = gambarFotoKompres(statusAbsen, waktuSekarang);
+                const payloadData = {
+                    requestId: buatRequestId('ABS'),
+                    waktu: waktuSekarang,
+                    clientTimestamp: Date.now(),
+                    nama: dataProfil.nama,
+                    tipe: dataProfil.tipe,
+                    status: statusAbsen,
+                    jarak: currentJarak,
+                    lat: currentLat,
+                    lng: currentLng,
+                    akurasi: lastGpsAccuracy,
+                    fotoBase64,
+                    perangkat: deviceID,
+                    catatan: catatanTambahan || '-'
+                };
+                await kirimPayloadAbsen(payloadData, false);
+            } catch (err) {
+                Swal.close();
+                Swal.fire('Gagal Menyiapkan Absen', err.message || 'Kamera/GPS belum siap.', 'error');
+            }
+        }
+
+        async function kirimPayloadAbsen(payloadData, dariAntrean = false) {
+            if (absenSedangDiproses) return;
+            let dialihkanKeRetry = false;
+            absenSedangDiproses = true;
+            setTombolAbsenDisabled(true);
+            simpanPendingAbsen(payloadData);
+            Swal.fire({ title: dariAntrean ? 'Mengirim ulang absensi...' : 'Mengirim absensi...', text: 'Jangan tutup halaman sampai ada hasil.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
 
             try {
-                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "simpan_absen", data: payloadData }) }); const result = await response.json();
-                if (result.status === "success") { 
-                    Swal.fire({ icon: 'success', title: 'Data Terkirim!', text: `Terima kasih, ${dataProfil.nama}!` }); 
-                    
-                    if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
-                    cacheRiwayatGlobal.unshift({ waktu: waktuSekarang, nama: dataProfil.nama, status: statusAbsen });
+                const result = await kirimAPIStabil({ action: 'simpan_absen', data: payloadData }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
+                hapusPendingAbsen();
 
-                    const jamSistem = new Date().getHours(); const menitSistem = new Date().getMinutes();
-                    if (statusAbsen === 'PULANG' && jamSistem >= 17) {
-                        let totalMenitKelebihan = (jamSistem * 60 + menitSistem) - (17 * 60);
-                        let totalJamLembur = Math.round(totalMenitKelebihan / 60); 
-                        if (totalJamLembur > 0) { setTimeout(() => { triggerLemburOtomatis(waktuSekarang, dataProfil.nama, totalJamLembur); }, 1500); }
+                const hasilData = (result && result.data) ? result.data : {};
+                const waktuTersimpan = hasilData.waktu || payloadData.waktu;
+                const statusTersimpan = hasilData.status || payloadData.status;
+                const idTersimpan = result.id || hasilData.id || null;
+
+                if (!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+                cacheRiwayatGlobal.unshift({ id: idTersimpan, waktu: waktuTersimpan, nama: payloadData.nama, tipe: payloadData.tipe, status: statusTersimpan, jarak: payloadData.jarak, lat: payloadData.lat, lng: payloadData.lng, perangkat: payloadData.perangkat, catatan: payloadData.catatan });
+                localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+
+                const tambahan = result.alreadySaved || result.duplicateRequest
+                    ? 'Data sebelumnya ternyata sudah tersimpan aman. Tidak dibuat ganda.'
+                    : (result.otomatis && result.otomatis.lemburJam > 0)
+                        ? `Lembur otomatis ${result.otomatis.lemburJam} jam ikut tercatat.`
+                        : 'Data sudah tersimpan di server.';
+                await Swal.fire({ icon: 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Data Terkirim!', text: tambahan, confirmButtonColor: '#10b981' });
+                fetchRiwayatRingan(true).catch(() => {});
+            } catch (err) {
+                const retryable = adalahErrorJaringan(err) || err.retryable;
+                if (!retryable) hapusPendingAbsen();
+                Swal.close();
+                if (retryable) {
+                    const pilih = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Server belum memberi jawaban',
+                        text: 'Data disimpan sementara di HP. Jangan membuat absen baru. Coba kirim ulang sekarang?',
+                        showCancelButton: true,
+                        confirmButtonText: 'Coba Lagi',
+                        cancelButtonText: 'Nanti'
+                    });
+                    absenSedangDiproses = false;
+                    setTombolAbsenDisabled(false);
+                    if (pilih.isConfirmed) {
+                        dialihkanKeRetry = true;
+                        return kirimPayloadAbsen(payloadData, true);
                     }
-                    if (statusAbsen === 'SETENGAH HARI') { setTimeout(() => { triggerSetengahHariOtomatis(waktuSekarang, dataProfil.nama); }, 1500); }
-                } else { Swal.fire('Gagal', result.message, 'error'); }
-            } catch (e) { Swal.fire('Error', 'Koneksi terputus!', 'error'); }
+                    return;
+                }
+                await Swal.fire('Absen Ditolak', err.message || 'Server menolak data.', 'error');
+            } finally {
+                if (!dialihkanKeRetry) {
+                    absenSedangDiproses = false;
+                    setTombolAbsenDisabled(false);
+                }
+            }
         }
 
-        async function triggerLemburOtomatis(waktu, nama, jamLembur) {
-            let tgl = waktu.split(' ')[0]; let cekCache = localStorage.getItem(`lembur_${nama}_${tgl}`);
-            if (cekCache) return; 
-            try {
-                let nom = -(jamLembur * configHRD.tarifLembur); let ket = `LEMBUR OTOMATIS: ${jamLembur}x`;
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
-                localStorage.setItem(`lembur_${nama}_${tgl}`, 'true');
-            } catch(e){}
-        }
-
-        async function triggerSetengahHariOtomatis(waktu, nama) {
-            let tgl = waktu.split(' ')[0]; let cekCache = localStorage.getItem(`sethari_${nama}_${tgl}`);
-            if (cekCache) return;
-            try {
-                let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); let kar = cacheKaryawan.find(k => k.nama.toUpperCase() === nama.toUpperCase());
-                if(!kar) return;
-                let nom = parseInt(kar.gaji) / 2; let ket = `SETENGAH HARI: ${tgl}`; 
-                await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }) });
-                localStorage.setItem(`sethari_${nama}_${tgl}`, 'true');
-            } catch(e){}
-        }
+        // Efek setengah hari dan lembur otomatis sekarang dibuat oleh backend
+        // dalam request absensi yang sama. Fungsi lama sengaja tidak dipanggil lagi
+        // agar tidak ada potongan/bonus ganda ketika jaringan lambat.
 
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
     </script>
