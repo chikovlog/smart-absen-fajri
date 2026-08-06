@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radar Absensi - Fajri Mandiri V9.4</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Radar Absensi - Fajri Mandiri V9.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -30,7 +33,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.4 - Pulang Stabil</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.5 - Pulang Cepat</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -253,12 +256,17 @@
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
         let lastGpsAt = 0; let lastGpsAccuracy = null; let cameraReady = false; let lastCameraError = null;
         let absenSedangDiproses = false; let pendingPromptSedangTampil = false;
+        let backendVersionAktif = '';
         let namaLokasiAman = ""; // Menyimpan info apakah dia di TOKO atau di GUDANG
-        const ABSEN_TIMEOUT_MS = 25000;
-        const FOTO_TIMEOUT_MS = 35000;
+        const APP_VERSION = 'V9.5-PULANG-FAST';
+        const ABSEN_TIMEOUT_MS = 16000;
+        const STATUS_TIMEOUT_MS = 7000;
+        const FOTO_TIMEOUT_MS = 25000;
+        const EFFECT_TIMEOUT_MS = 16000;
         const FOTO_MAX_CHARS = 43000; // aman di bawah batas isi sel Google Sheets
-        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93'; // dipertahankan agar antrean versi lama tidak hilang
+        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93'; // antrean lama tetap dibaca
         const PENDING_FOTO_KEY = 'pending_foto_absen_fajri_v94';
+        const PENDING_EFFECT_KEY = 'pending_efek_absen_fajri_v95';
         
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
@@ -306,7 +314,7 @@
             if (!res || res.status !== 'success') {
                 const err = new Error((res && res.message) ? res.message : 'Server menolak proses.');
                 err.code = (res && res.code) ? res.code : 'SERVER_REJECT';
-                err.retryable = ['SERVER_BUSY', 'TEMPORARY_ERROR'].includes(err.code);
+                err.retryable = !!(res && res.retryable) || ['SERVER_BUSY', 'TEMPORARY_ERROR', 'EFFECT_PENDING'].includes(err.code);
                 err.serverResponse = res || null;
                 throw err;
             }
@@ -314,6 +322,40 @@
         }
 
         const tidur = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function tungguSwalTertutup(maxMs = 1200) {
+            try { Swal.close(); } catch (_) {}
+            const mulai = Date.now();
+            while (typeof Swal.isVisible === 'function' && Swal.isVisible() && (Date.now() - mulai) < maxMs) {
+                await tidur(40);
+            }
+            // iOS Safari membutuhkan satu frame tambahan sebelum popup berikutnya dibuat.
+            await tidur(90);
+        }
+
+        async function cekBackendKompatibel(silent = true) {
+            try {
+                const res = await ambilJSON(API_URL + '?action=health&ts=' + Date.now(), {}, 6000);
+                backendVersionAktif = String((res && res.version) || 'VERSI-LAMA');
+                if (!backendVersionAktif.startsWith('V9.5') && !silent) {
+                    await Swal.fire('Backend Belum Diperbarui', 'Code.gs yang aktif masih versi lama. Deploy Code.gs V9.5 sebagai New version terlebih dahulu.', 'error');
+                    return false;
+                }
+                return backendVersionAktif.startsWith('V9.5');
+            } catch (_) {
+                // Gangguan health-check tidak boleh memblokir absensi. Request utama tetap dicoba.
+                return true;
+            }
+        }
+
+        async function cekStatusAbsenServer(requestId) {
+            const res = await ambilJSON(
+                API_URL + '?action=cek_absen_request&requestId=' + encodeURIComponent(requestId || '') + '&ts=' + Date.now(),
+                {}, STATUS_TIMEOUT_MS
+            );
+            if (res && res.status === 'success' && res.found) return res;
+            return null;
+        }
 
         function buatRequestId(prefix = 'REQ') {
             const uuid = (window.crypto && typeof window.crypto.randomUUID === 'function')
@@ -352,7 +394,7 @@
 
                     const err = new Error((res && res.message) ? res.message : 'Server menolak proses.');
                     err.code = (res && res.code) ? res.code : 'SERVER_REJECT';
-                    err.retryable = ['SERVER_BUSY', 'TEMPORARY_ERROR'].includes(err.code);
+                    err.retryable = !!(res && res.retryable) || ['SERVER_BUSY', 'TEMPORARY_ERROR', 'EFFECT_PENDING'].includes(err.code);
                     err.serverResponse = res || null;
                     throw err;
                 } catch (err) {
@@ -777,6 +819,7 @@
 
             // Halaman karyawan cukup menarik riwayat ringan. Data gaji/kasbon hanya
             // ditarik saat owner masuk agar server tidak berat ketika banyak orang absen bersamaan.
+            cekBackendKompatibel(true).catch(() => {});
             fetchRiwayatRingan(true).catch(() => {});
         };
 
@@ -821,8 +864,9 @@
             document.getElementById('displayNama').innerText = dataProfil.nama; document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
-            setTimeout(() => cekPendingAbsen(), 1300);
-            setTimeout(() => sinkronkanAntreanFoto(true), 1800);
+            setTimeout(() => cekPendingAbsen(), 1100);
+            setTimeout(() => sinkronkanAntreanEfek(true), 1500);
+            setTimeout(() => sinkronkanAntreanFoto(true), 2600);
         }
 
         function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
@@ -2267,7 +2311,62 @@
             }
         }
 
-        window.addEventListener('online', () => sinkronkanAntreanFoto(true));
+        function bacaAntreanEfek() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(PENDING_EFFECT_KEY) || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) { return []; }
+        }
+
+        function simpanAntreanEfek(list) {
+            try { localStorage.setItem(PENDING_EFFECT_KEY, JSON.stringify((list || []).slice(-30))); } catch (_) {}
+        }
+
+        function tambahAntreanEfek(item) {
+            if (!item || !item.id) return;
+            const list = bacaAntreanEfek().filter(x => x && x.id !== item.id);
+            list.push({ id: item.id, savedAt: Date.now() });
+            simpanAntreanEfek(list);
+        }
+
+        function hapusDariAntreanEfek(id) {
+            simpanAntreanEfek(bacaAntreanEfek().filter(x => x && x.id !== id));
+        }
+
+        let sinkronEfekSedangBerjalan = false;
+        async function sinkronkanAntreanEfek(silent = true) {
+            if (sinkronEfekSedangBerjalan || !navigator.onLine) return;
+            const list = bacaAntreanEfek();
+            if (!list.length) return;
+            sinkronEfekSedangBerjalan = true;
+            try {
+                const batasUmur = 7 * 24 * 60 * 60 * 1000;
+                for (const item of list) {
+                    if (!item || !item.id || (Date.now() - Number(item.savedAt || 0)) > batasUmur) {
+                        if (item && item.id) hapusDariAntreanEfek(item.id);
+                        continue;
+                    }
+                    try {
+                        const res = await kirimAPIStabil(
+                            { action: 'proses_efek_absen', id: item.id },
+                            { timeoutMs: EFFECT_TIMEOUT_MS, retries: 0, silent: true }
+                        );
+                        if (res && res.status === 'success') hapusDariAntreanEfek(item.id);
+                    } catch (err) {
+                        console.warn('Sinkron efek payroll belum selesai:', err);
+                        if (!navigator.onLine) break;
+                    }
+                }
+                if (!silent && !bacaAntreanEfek().length) Toast.fire({ icon: 'success', title: 'Lembur/potongan sudah tersinkron' });
+            } finally {
+                sinkronEfekSedangBerjalan = false;
+            }
+        }
+
+        window.addEventListener('online', () => {
+            sinkronkanAntreanEfek(true);
+            setTimeout(() => sinkronkanAntreanFoto(true), 1200);
+        });
         window.addEventListener('pagehide', () => {
             const item = bacaAntreanFoto()[0];
             if (!item || !navigator.sendBeacon) return;
@@ -2365,9 +2464,23 @@
 
             let laporanHarian = null;
             if (statusAbsen === 'PULANG' || statusAbsen === 'SETENGAH HARI') {
-                const { value: teksLaporan } = await Swal.fire({ title: 'Laporan Hari Ini', input: 'textarea', inputPlaceholder: 'Stok, kas, kendala...', showCancelButton: true, confirmButtonText: 'Kirim', confirmButtonColor: '#10b981', inputValidator: (v) => !v && 'Laporan tidak boleh kosong!' });
-                if (!teksLaporan) return;
-                laporanHarian = teksLaporan;
+                const hasilLaporan = await Swal.fire({
+                    title: 'Laporan Hari Ini',
+                    input: 'textarea',
+                    inputPlaceholder: 'Stok, kas, kendala...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Kirim',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#10b981',
+                    returnFocus: false,
+                    heightAuto: false,
+                    inputValidator: (v) => !String(v || '').trim() && 'Laporan tidak boleh kosong!'
+                });
+                if (!hasilLaporan.isConfirmed) return;
+                laporanHarian = String(hasilLaporan.value || '').trim();
+                // Wajib menunggu popup input benar-benar hilang. Tanpa ini iOS kadang
+                // menampilkan loader di popup laporan dan terlihat seperti macet selamanya.
+                await tungguSwalTertutup();
             }
             await eksekusiKirimData(statusAbsen, laporanHarian);
         }
@@ -2375,8 +2488,17 @@
         async function eksekusiKirimData(statusAbsen, catatanTambahan) {
             if (absenSedangDiproses) return;
             try {
-                await pastikanKameraSiap();
-                await pastikanGPSBaru();
+                const kameraMasihSiap = cameraReady && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0;
+                const gpsMasihSiap = Number.isFinite(currentLat) && Number.isFinite(currentLng) && Number.isFinite(currentJarak) && (Date.now() - lastGpsAt) < 120000;
+
+                if (!kameraMasihSiap || !gpsMasihSiap) {
+                    await tungguSwalTertutup();
+                    Swal.fire({ title: 'Menyiapkan bukti absensi...', text: 'Memastikan kamera dan GPS satu kali lagi.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
+                    if (!kameraMasihSiap) await pastikanKameraSiap();
+                    if (!gpsMasihSiap) await pastikanGPSBaru();
+                    await tungguSwalTertutup();
+                }
+
                 const waktuSekarang = formatWaktuKanonik(new Date());
                 const fotoBase64 = gambarFotoKompres(statusAbsen, waktuSekarang);
                 const payloadData = {
@@ -2396,7 +2518,7 @@
                 };
                 await kirimPayloadAbsen(payloadData, false);
             } catch (err) {
-                Swal.close();
+                await tungguSwalTertutup();
                 Swal.fire('Gagal Menyiapkan Absen', err.message || 'Kamera/GPS belum siap.', 'error');
             }
         }
@@ -2407,17 +2529,48 @@
             absenSedangDiproses = true;
             setTombolAbsenDisabled(true);
             simpanPendingAbsen(payloadData);
-            Swal.fire({ title: dariAntrean ? 'Mengirim ulang absensi...' : 'Menyimpan absensi...', text: 'Data utama disimpan lebih dulu agar tidak macet saat jam pulang.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // Foto dipisah dari request utama. Menulis base64 ke Google Sheets adalah
-                // bagian paling lambat dan sebelumnya membuat absen pulang ikut menunggu.
+                if (!backendVersionAktif) await cekBackendKompatibel(false);
+                if (backendVersionAktif && !backendVersionAktif.startsWith('V9.5')) {
+                    throw Object.assign(new Error('Code.gs yang aktif masih versi lama. Deploy Code.gs V9.5 sebagai New version.'), { code: 'OLD_BACKEND' });
+                }
+
+                await tungguSwalTertutup();
+                Swal.fire({
+                    title: dariAntrean ? 'Mengirim ulang absensi...' : 'Menyimpan absensi...',
+                    text: 'Data utama diproses maksimal sekitar 20 detik.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
                 const fotoBase64 = payloadData.fotoBase64 || '';
                 const payloadRingan = { ...payloadData, fotoTerpisah: true };
                 delete payloadRingan.fotoBase64;
 
-                const result = await kirimAPIStabil({ action: 'simpan_absen', data: payloadRingan }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 2 });
+                let result = null;
+                let errorUtama = null;
+                try {
+                    // Tidak ada retry otomatis panjang. Bila jawaban putus, status ID diperiksa.
+                    result = await kirimAPIStabil(
+                        { action: 'simpan_absen', data: payloadRingan },
+                        { timeoutMs: ABSEN_TIMEOUT_MS, retries: 0, silent: true }
+                    );
+                } catch (err) {
+                    errorUtama = err;
+                    if (adalahErrorJaringan(err) || err.retryable) {
+                        try {
+                            Swal.update({ title: 'Memastikan hasil di server...', text: 'Jangan tutup halaman. Sistem sedang mengecek apakah data sudah masuk.' });
+                            const statusServer = await cekStatusAbsenServer(payloadData.requestId);
+                            if (statusServer) result = { ...statusServer, status: 'success', alreadySaved: true };
+                        } catch (_) {}
+                    }
+                }
+                if (!result) throw errorUtama || new Error('Server tidak memberi jawaban.');
+
                 hapusPendingAbsen();
+                if (result.version) backendVersionAktif = String(result.version);
 
                 const hasilData = (result && result.data) ? result.data : {};
                 const waktuTersimpan = hasilData.waktu || payloadData.waktu;
@@ -2426,8 +2579,11 @@
 
                 if (result.allowPhotoUpload && idTersimpan && fotoBase64) {
                     tambahAntreanFoto({ id: idTersimpan, nama: payloadData.nama, fotoBase64 });
-                    // Tidak ditunggu: absensi utama sudah sah dan popup tidak akan muter lama.
-                    sinkronkanAntreanFoto(true);
+                }
+
+                const kategoriEfek = statusTersimpan.includes('PULANG') || statusTersimpan.includes('SETENGAH');
+                if (idTersimpan && (result.efekPending || kategoriEfek)) {
+                    tambahAntreanEfek({ id: idTersimpan });
                 }
 
                 if (!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
@@ -2437,25 +2593,34 @@
                     localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
                 }
 
+                // Jalankan sinkronisasi setelah data utama sah, tanpa ditunggu popup.
+                setTimeout(() => sinkronkanAntreanEfek(true), 500);
+                setTimeout(() => sinkronkanAntreanFoto(true), 1800);
+
                 let tambahan = result.alreadySaved || result.duplicateRequest
                     ? 'Data sebelumnya ternyata sudah tersimpan aman. Tidak dibuat ganda.'
-                    : (result.otomatis && result.otomatis.lemburJam > 0)
-                        ? `Absen pulang tersimpan. Lembur otomatis ${result.otomatis.lemburJam} jam ikut tercatat.`
-                        : 'Data absensi sudah tersimpan di server.';
-                if (result.warning) tambahan += ` ${result.warning}`;
-                else if (result.allowPhotoUpload && fotoBase64) tambahan += ' Foto bukti sedang disinkronkan otomatis.';
+                    : 'Data absensi utama sudah tersimpan di server.';
+                if (kategoriEfek) tambahan += ' Perhitungan lembur/potongan disinkronkan terpisah agar tombol pulang tidak macet.';
+                if (result.allowPhotoUpload && fotoBase64) tambahan += ' Foto bukti ikut disinkronkan otomatis.';
 
-                await Swal.fire({ icon: result.warning ? 'warning' : 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Absensi Berhasil!', text: tambahan, confirmButtonColor: '#10b981' });
+                await tungguSwalTertutup();
+                await Swal.fire({ icon: 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Absensi Berhasil!', text: tambahan, confirmButtonColor: '#10b981' });
                 fetchRiwayatRingan(true).catch(() => {});
             } catch (err) {
                 const retryable = adalahErrorJaringan(err) || err.retryable;
                 if (!retryable) hapusPendingAbsen();
-                Swal.close();
+                await tungguSwalTertutup();
+
+                if (err && err.code === 'OLD_BACKEND') {
+                    await Swal.fire('Backend Belum Diperbarui', err.message, 'error');
+                    return;
+                }
+
                 if (retryable) {
                     const pilih = await Swal.fire({
                         icon: 'warning',
                         title: 'Server belum memberi jawaban',
-                        text: 'Data utama disimpan sementara di HP dengan ID yang sama. Coba kirim ulang sekarang?',
+                        text: 'Status request sudah diperiksa tetapi belum ditemukan. Data tetap tersimpan di HP dengan ID yang sama.',
                         showCancelButton: true,
                         confirmButtonText: 'Coba Lagi',
                         cancelButtonText: 'Nanti'
