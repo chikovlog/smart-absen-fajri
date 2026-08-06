@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radar Absensi - Fajri Mandiri V9.3</title>
+    <title>Radar Absensi - Fajri Mandiri V9.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -30,7 +30,7 @@
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.3 - Absensi Stabil</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.4 - Pulang Stabil</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -254,9 +254,11 @@
         let lastGpsAt = 0; let lastGpsAccuracy = null; let cameraReady = false; let lastCameraError = null;
         let absenSedangDiproses = false; let pendingPromptSedangTampil = false;
         let namaLokasiAman = ""; // Menyimpan info apakah dia di TOKO atau di GUDANG
-        const ABSEN_TIMEOUT_MS = 50000;
+        const ABSEN_TIMEOUT_MS = 25000;
+        const FOTO_TIMEOUT_MS = 35000;
         const FOTO_MAX_CHARS = 43000; // aman di bawah batas isi sel Google Sheets
-        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93';
+        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93'; // dipertahankan agar antrean versi lama tidak hilang
+        const PENDING_FOTO_KEY = 'pending_foto_absen_fajri_v94';
         
         let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
         let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
@@ -357,7 +359,7 @@
                     errorTerakhir = err;
                     const bolehUlang = percobaan < retries && (adalahErrorJaringan(err) || err.retryable);
                     if (!bolehUlang) throw err;
-                    try { Swal.update({ title: `Koneksi lambat, mencoba lagi (${percobaan + 2}/${retries + 1})...` }); } catch (_) {}
+                    if (!opsi.silent) { try { Swal.update({ title: `Koneksi lambat, mencoba lagi (${percobaan + 2}/${retries + 1})...` }); } catch (_) {} }
                     await tidur(1200 + (percobaan * 800));
                 }
             }
@@ -820,6 +822,7 @@
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
             setTimeout(() => cekPendingAbsen(), 1300);
+            setTimeout(() => sinkronkanAntreanFoto(true), 1800);
         }
 
         function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
@@ -2204,6 +2207,76 @@
             try { localStorage.removeItem(PENDING_ABSEN_KEY); } catch (_) {}
         }
 
+        function bacaAntreanFoto() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(PENDING_FOTO_KEY) || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) { return []; }
+        }
+
+        function simpanAntreanFoto(list) {
+            try { localStorage.setItem(PENDING_FOTO_KEY, JSON.stringify((list || []).slice(-8))); } catch (_) {}
+        }
+
+        function tambahAntreanFoto(item) {
+            if (!item || !item.id || !item.fotoBase64) return;
+            const list = bacaAntreanFoto().filter(x => x && x.id !== item.id);
+            list.push({ id: item.id, nama: item.nama || '', fotoBase64: item.fotoBase64, savedAt: Date.now() });
+            simpanAntreanFoto(list);
+        }
+
+        function hapusDariAntreanFoto(id) {
+            simpanAntreanFoto(bacaAntreanFoto().filter(x => x && x.id !== id));
+        }
+
+        async function sinkronkanSatuFoto(item, silent = true) {
+            if (!item || !item.id || !item.fotoBase64) return false;
+            try {
+                await kirimAPIStabil({
+                    action: 'simpan_foto_absen',
+                    data: { id: item.id, nama: item.nama, fotoBase64: item.fotoBase64 }
+                }, { timeoutMs: FOTO_TIMEOUT_MS, retries: 2, silent: true });
+                hapusDariAntreanFoto(item.id);
+                if (!silent) Toast.fire({ icon: 'success', title: 'Foto absensi berhasil disinkronkan' });
+                return true;
+            } catch (err) {
+                if (!silent) Toast.fire({ icon: 'warning', title: 'Absensi aman, foto belum tersinkron' });
+                console.warn('Sinkron foto gagal:', err);
+                return false;
+            }
+        }
+
+        let sinkronFotoSedangBerjalan = false;
+        async function sinkronkanAntreanFoto(silent = true) {
+            if (sinkronFotoSedangBerjalan || !navigator.onLine) return;
+            const list = bacaAntreanFoto();
+            if (!list.length) return;
+            sinkronFotoSedangBerjalan = true;
+            try {
+                const batasUmur = 24 * 60 * 60 * 1000;
+                for (const item of list) {
+                    if (!item || (Date.now() - Number(item.savedAt || 0)) > batasUmur) {
+                        if (item && item.id) hapusDariAntreanFoto(item.id);
+                        continue;
+                    }
+                    const ok = await sinkronkanSatuFoto(item, silent);
+                    if (!ok && !navigator.onLine) break;
+                }
+            } finally {
+                sinkronFotoSedangBerjalan = false;
+            }
+        }
+
+        window.addEventListener('online', () => sinkronkanAntreanFoto(true));
+        window.addEventListener('pagehide', () => {
+            const item = bacaAntreanFoto()[0];
+            if (!item || !navigator.sendBeacon) return;
+            try {
+                const body = JSON.stringify({ action: 'simpan_foto_absen', data: { id: item.id, nama: item.nama, fotoBase64: item.fotoBase64 } });
+                navigator.sendBeacon(API_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+            } catch (_) {}
+        });
+
         async function cekPendingAbsen() {
             if (pendingPromptSedangTampil || absenSedangDiproses || !dataProfil) return;
             const pending = bacaPendingAbsen();
@@ -2334,10 +2407,16 @@
             absenSedangDiproses = true;
             setTombolAbsenDisabled(true);
             simpanPendingAbsen(payloadData);
-            Swal.fire({ title: dariAntrean ? 'Mengirim ulang absensi...' : 'Mengirim absensi...', text: 'Jangan tutup halaman sampai ada hasil.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: dariAntrean ? 'Mengirim ulang absensi...' : 'Menyimpan absensi...', text: 'Data utama disimpan lebih dulu agar tidak macet saat jam pulang.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
 
             try {
-                const result = await kirimAPIStabil({ action: 'simpan_absen', data: payloadData }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
+                // Foto dipisah dari request utama. Menulis base64 ke Google Sheets adalah
+                // bagian paling lambat dan sebelumnya membuat absen pulang ikut menunggu.
+                const fotoBase64 = payloadData.fotoBase64 || '';
+                const payloadRingan = { ...payloadData, fotoTerpisah: true };
+                delete payloadRingan.fotoBase64;
+
+                const result = await kirimAPIStabil({ action: 'simpan_absen', data: payloadRingan }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 2 });
                 hapusPendingAbsen();
 
                 const hasilData = (result && result.data) ? result.data : {};
@@ -2345,16 +2424,28 @@
                 const statusTersimpan = hasilData.status || payloadData.status;
                 const idTersimpan = result.id || hasilData.id || null;
 
-                if (!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
-                cacheRiwayatGlobal.unshift({ id: idTersimpan, waktu: waktuTersimpan, nama: payloadData.nama, tipe: payloadData.tipe, status: statusTersimpan, jarak: payloadData.jarak, lat: payloadData.lat, lng: payloadData.lng, perangkat: payloadData.perangkat, catatan: payloadData.catatan });
-                localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                if (result.allowPhotoUpload && idTersimpan && fotoBase64) {
+                    tambahAntreanFoto({ id: idTersimpan, nama: payloadData.nama, fotoBase64 });
+                    // Tidak ditunggu: absensi utama sudah sah dan popup tidak akan muter lama.
+                    sinkronkanAntreanFoto(true);
+                }
 
-                const tambahan = result.alreadySaved || result.duplicateRequest
+                if (!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
+                const sudahAdaDiCache = idTersimpan && cacheRiwayatGlobal.some(x => x && x.id === idTersimpan);
+                if (!sudahAdaDiCache) {
+                    cacheRiwayatGlobal.unshift({ id: idTersimpan, waktu: waktuTersimpan, nama: payloadData.nama, tipe: payloadData.tipe, status: statusTersimpan, jarak: payloadData.jarak, lat: payloadData.lat, lng: payloadData.lng, perangkat: payloadData.perangkat, catatan: payloadData.catatan });
+                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                }
+
+                let tambahan = result.alreadySaved || result.duplicateRequest
                     ? 'Data sebelumnya ternyata sudah tersimpan aman. Tidak dibuat ganda.'
                     : (result.otomatis && result.otomatis.lemburJam > 0)
-                        ? `Lembur otomatis ${result.otomatis.lemburJam} jam ikut tercatat.`
-                        : 'Data sudah tersimpan di server.';
-                await Swal.fire({ icon: 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Data Terkirim!', text: tambahan, confirmButtonColor: '#10b981' });
+                        ? `Absen pulang tersimpan. Lembur otomatis ${result.otomatis.lemburJam} jam ikut tercatat.`
+                        : 'Data absensi sudah tersimpan di server.';
+                if (result.warning) tambahan += ` ${result.warning}`;
+                else if (result.allowPhotoUpload && fotoBase64) tambahan += ' Foto bukti sedang disinkronkan otomatis.';
+
+                await Swal.fire({ icon: result.warning ? 'warning' : 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Absensi Berhasil!', text: tambahan, confirmButtonColor: '#10b981' });
                 fetchRiwayatRingan(true).catch(() => {});
             } catch (err) {
                 const retryable = adalahErrorJaringan(err) || err.retryable;
@@ -2364,7 +2455,7 @@
                     const pilih = await Swal.fire({
                         icon: 'warning',
                         title: 'Server belum memberi jawaban',
-                        text: 'Data disimpan sementara di HP. Jangan membuat absen baru. Coba kirim ulang sekarang?',
+                        text: 'Data utama disimpan sementara di HP dengan ID yang sama. Coba kirim ulang sekarang?',
                         showCancelButton: true,
                         confirmButtonText: 'Coba Lagi',
                         cancelButtonText: 'Nanti'
