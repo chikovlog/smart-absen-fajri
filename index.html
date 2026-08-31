@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f2f57">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Radar Absensi - Fajri Mandiri V9.5</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Smart Absen Fajri - Supabase</title>
+    <script src="https://cdn.tailwindcss.com/"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .scrollbar-thin::-webkit-scrollbar { height: 5px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-        .tab-btn { flex-shrink: 0; min-width: 90px; } 
-        
+        .tab-btn { flex-shrink: 0; min-width: 90px; }
+
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
@@ -24,16 +25,16 @@
             @page { size: A4 portrait; margin: 10mm; }
         }
     </style>
+    <link rel="stylesheet" href="./theme.css?v=2-live-payroll">
 </head>
-<body class="text-gray-800 flex flex-col min-h-screen">
-
+<body class="soft-refresh text-gray-800 flex flex-col min-h-screen">
     <!-- HEADER -->
     <header class="bg-emerald-600 text-white p-4 shadow-md flex justify-between items-center z-10 relative no-print">
         <div class="flex items-center gap-2 cursor-pointer active:scale-95 transition" onclick="loginOwner()">
             <div class="bg-emerald-500 p-2 rounded-lg shadow-inner"><i class="fas fa-satellite-dish text-xl"></i></div>
             <div>
                 <h1 class="font-black text-lg tracking-wide leading-none">RADAR ABSENSI</h1>
-                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System V9.5 - Pulang Cepat</p>
+                <p class="text-[10px] font-bold text-emerald-200 mt-0.5">HRD System Supabase V2 - Live Payroll</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end gap-1">
@@ -41,12 +42,11 @@
             <button id="btnLogout" onclick="logoutKaryawan()" class="text-[9px] bg-red-500 px-2 py-0.5 rounded font-bold shadow-sm hidden">Ganti Akun</button>
         </div>
     </header>
-
     <main class="flex-grow flex flex-col items-center p-3 w-full mx-auto relative overflow-hidden no-print">
-        
+
         <!-- INITIAL SETUP VIEW (LOGIN & DASHBOARD PUBLIK) -->
         <div id="setupView" class="w-full max-w-md mx-auto hidden flex-col gap-4 my-auto">
-            
+
             <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
                 <h2 class="text-center font-black text-emerald-700 mb-5 text-xl"><i class="fas fa-fingerprint"></i> Absen! biar gajimu dibayar</h2>
                 <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Pilih Nama Anda:</label>
@@ -57,7 +57,6 @@
                 <input type="password" id="inputPassword" placeholder="Sandi dari Owner..." class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-emerald-500 mb-5 font-mono text-center text-base tracking-widest transition">
                 <button onclick="simpanProfil()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md active:scale-95 text-sm"><i class="fas fa-key mr-1"></i> Absen Sekarang!</button>
             </div>
-
             <!-- PANEL RADAR ABSEN HARI INI -->
             <div class="bg-white p-4 rounded-2xl shadow-lg border border-gray-200 flex flex-col h-64">
                 <h3 class="text-[11px] font-black text-emerald-700 uppercase tracking-wide border-b border-gray-200 pb-2 mb-2 flex justify-between">
@@ -69,7 +68,6 @@
                 </div>
             </div>
         </div>
-
         <!-- ABSEN VIEW (SETELAH LOGIN) -->
         <div id="absenView" class="w-full max-w-md flex flex-col items-center hidden">
             <div class="bg-white w-full p-3 rounded-xl shadow-sm border border-gray-200 mb-3 flex justify-between items-center">
@@ -79,7 +77,6 @@
                 </div>
                 <div id="displayTipe" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold border border-blue-200 shadow-inner">TIPE</div>
             </div>
-
             <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden shadow-lg border-4 border-gray-300 mb-3">
                 <video id="kamera" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
                 <div id="kameraStatus" class="absolute top-2 right-2 bg-black/70 text-yellow-300 border border-gray-600 px-2 py-1 rounded-lg text-[9px] font-bold z-10"><i class="fas fa-camera mr-1"></i> Menyiapkan kamera...</div>
@@ -91,7 +88,6 @@
                     <span id="liveJarak" class="font-mono font-bold text-yellow-400">Jarak Radar: - Meter</span>
                 </div>
             </div>
-
             <div class="grid grid-cols-3 gap-2 w-full mb-3">
                 <button id="btnPagi" onclick="prosesAbsen('PAGI')" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-blue-800">
                     <i class="fas fa-sun text-lg"></i> <span id="labelPagi" class="text-[10px] text-center leading-tight">PAGI</span>
@@ -99,20 +95,19 @@
                 <button id="btnSetengah" onclick="prosesAbsen('SETENGAH HARI')" class="bg-orange-500 hover:bg-orange-600 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-orange-700">
                     <i class="fas fa-adjust text-lg"></i> <span class="text-[10px] text-center leading-tight">1/2 HARI</span>
                 </button>
-                <button id="btnPulang" onclick="prosesAbsen('PULANG')" class="bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 active:scale-95 border-b-4 border-red-800">
-                    <i class="fas fa-moon text-lg"></i> <span id="labelPulang" class="text-[10px] text-center leading-tight">PULANG</span>
+                <button id="btnPulang" onclick="infoPulangOtomatis()" class="bg-red-600 text-white font-black py-3 rounded-xl shadow-md transition flex flex-col items-center justify-center gap-1 border-b-4 border-red-800 opacity-60 grayscale cursor-help active:scale-95">
+                    <i class="fas fa-moon text-lg"></i> <span id="labelPulang" class="text-[10px] text-center leading-tight">PULANG<br>(AUTO 17:00)</span>
                 </button>
             </div>
-            
+
             <button id="btnKunjungan" onclick="prosesAbsen('KUNJUNGAN')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-yellow-700 hidden text-sm mb-3"><i class="fas fa-map-marker-alt text-lg"></i> ABSEN KUNJUNGAN LOKASI</button>
             <button id="btnIzin" onclick="prosesIzinSakit()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-95 border-b-4 border-purple-800 text-sm"><i class="fas fa-notes-medical text-lg"></i> AJUKAN IZIN / SAKIT</button>
         </div>
-
         <!-- DASHBOARD OWNER -->
         <div id="ownerView" class="w-full max-w-5xl mx-auto hidden flex flex-col gap-3">
             <div class="bg-emerald-700 p-4 rounded-xl shadow-lg flex justify-between items-center text-white border border-emerald-600">
                 <div>
-                    <h2 class="font-black text-lg"><i class="fas fa-users text-yellow-400 mr-1"></i> Dashboard HRD</h2>
+                    <h2 class="font-black text-lg"><i class="fas fa-users text-yellow-400 mr-1"></i> Dashboard HRD <span class="align-middle ml-1 text-[8px] bg-white/15 border border-white/20 px-2 py-1 rounded-full font-black tracking-widest">UPDATED</span></h2>
                     <p class="text-[10px] text-emerald-200 font-semibold">Fajri Mandiri Furniture</p>
                 </div>
                 <div class="flex gap-2">
@@ -120,7 +115,6 @@
                     <button onclick="tutupOwnerView()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm border border-red-400">Tutup</button>
                 </div>
             </div>
-
             <div class="flex overflow-x-auto bg-gray-200 p-1 rounded-lg gap-1 scrollbar-thin">
                 <button onclick="switchTabOwner('monitoring')" id="tabBtn-monitoring" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition shadow-sm bg-white text-emerald-700">🔍 Log Hr Ini</button>
                 <button onclick="switchTabOwner('rekap')" id="tabBtn-rekap" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">📅 Gaji</button>
@@ -128,7 +122,6 @@
                 <button onclick="switchTabOwner('kasbon')" id="tabBtn-kasbon" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">💸 Keuangan</button>
                 <button onclick="switchTabOwner('pengaturan')" id="tabBtn-pengaturan" class="tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300">⚙️ Seting</button>
             </div>
-
             <!-- PANEL 1: LOG KHUSUS HARI INI SAJA -->
             <div id="panel-monitoring" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
                 <div class="p-2 border-b border-gray-100 bg-gray-50 text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fas fa-calendar-day text-emerald-500 mr-1"></i> Data Kehadiran Khusus Hari Ini</div>
@@ -139,7 +132,6 @@
                     </table>
                 </div>
             </div>
-
             <!-- PANEL 2: MATRIKS GAJI BERSIH -->
             <div id="panel-rekap" class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden w-full hidden">
                 <div class="p-3 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-3 items-center justify-between">
@@ -149,7 +141,7 @@
                         <button onclick="cetakSemuaSlipGaji()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-purple-800"><i class="fas fa-print"></i> Cetak Semua Slip</button>
                         <button onclick="cetakRekapGlobal()" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-blue-800"><i class="fas fa-file-pdf"></i> Download Rekap PDF</button>
                         <div class="flex border border-gray-400 rounded-lg overflow-hidden shadow-sm">
-                            <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none border-r border-gray-400"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6" selected>Juni</option><option value="7">Juli</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
+                            <select id="rekapBulan" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none border-r border-gray-400"><option value="1">Januari</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8" selected>Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
                             <select id="rekapTahun" onchange="renderMatriks()" class="p-1.5 text-[10px] font-bold text-gray-700 bg-white outline-none"><option value="2026" selected>2026</option><option value="2027">2027</option></select>
                         </div>
                     </div>
@@ -164,7 +156,6 @@
                     </table>
                 </div>
             </div>
-
             <!-- PANEL 3: KELOLA KARYAWAN -->
             <div id="panel-karyawan" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -178,12 +169,12 @@
                         <button onclick="tambahKaryawanAPI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition shadow"><i class="fas fa-plus"></i> Simpan Data</button>
                     </div>
                     <div class="md:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                        
+
                         <div class="flex justify-between items-center bg-gray-100 p-2.5 border-b border-gray-200">
                             <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="fas fa-database text-emerald-500 mr-1"></i> Database Pusat</span>
                             <button onclick="toggleSensitiveData()" id="btnToggleEye" class="bg-white border border-gray-300 text-gray-600 px-3 py-1 rounded text-[9px] font-bold hover:bg-gray-50 transition shadow-sm"><i class="fas fa-eye"></i> Tampilkan Info</button>
                         </div>
-                        
+
                         <div class="overflow-x-auto scrollbar-thin">
                             <table class="w-full text-left">
                                 <thead class="bg-gray-50 text-[9px] text-gray-400 uppercase"><tr><th class="p-2.5">Nama & Kasta</th><th class="p-2.5">No. WA</th><th class="p-2.5 text-center">Password</th><th class="p-2.5 text-right">Gaji/Hari</th><th class="p-2.5 text-center">Aksi</th></tr></thead>
@@ -193,7 +184,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- PANEL 4: KEUANGAN -->
             <div id="panel-kasbon" class="w-full hidden flex flex-col gap-3">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -218,7 +208,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- PANEL 5: PENGATURAN -->
             <div id="panel-pengaturan" class="w-full hidden flex flex-col gap-3">
                 <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
@@ -232,49 +221,81 @@
             </div>
         </div>
     </main>
-
     <canvas id="kanvasFoto" class="hidden no-print"></canvas>
     <div id="printArea" class="hidden"></div>
-
+    <script src="./config.js?v=2-live-payroll"></script>
     <script>
         // =========================================================================
-        const TOKO_LAT = -6.699192;  
-        const TOKO_LNG = 107.481993; 
-        
+        const TOKO_LAT = -6.699192;
+        const TOKO_LNG = 107.481993;
+
         // KOORDINAT GUDANG (SILAKAN BOS GANTI DENGAN KOORDINAT GUDANG YANG ASLI DARI GOOGLE MAPS)
-        const GUDANG_LAT = -6.705640; 
-        const GUDANG_LNG = 107.482488; 
-        
-        const RADIUS_MAKSIMAL = 50; 
-        const API_URL = "https://script.google.com/macros/s/AKfycbzP1RHK8DV2mF65KOuHer7skp8Np5MtXwj5mMdvKYtrJ-Rasw0OKqC-UEG1OLqN-nPH/exec";
-        
+        const GUDANG_LAT = -6.705640;
+        const GUDANG_LNG = 107.482488;
+
+        const RADIUS_MAKSIMAL = 50;
+        const PERMANENT_API_URL = (window.SMART_ABSEN_CONFIG && window.SMART_ABSEN_CONFIG.API_URL) || 'https://zwibuxgcagxhceqyvohn.supabase.co/functions/v1/attendance-api';
+        let API_URL = PERMANENT_API_URL;
+
         let configHRD = { tarifLembur: 8000 };
         // =========================================================================
-
-        let dataProfil = JSON.parse(localStorage.getItem('profil_absen_fajri'));
+        // V11.2 FRESH ZERO: benar-benar mulai dari kondisi browser baru SATU KALI.
+        // Domain ini khusus Smart Absen, sehingga seluruh cache/data lokal lama dibuang.
+        (function freshZeroBrowserSekali(){
+            const marker = 'smart_absen_v1122_absen_stabil_ready';
+            if (localStorage.getItem(marker)) {
+                API_URL = PERMANENT_API_URL;
+                return;
+            }
+            // Upgrade V11.2.2: abaikan request absensi lama yang pernah macet,
+            // tetapi pertahankan profil/login dan cache database yang sah.
+            try { localStorage.removeItem('v112_pending_absen'); } catch (_) {}
+            try { localStorage.removeItem('v1122_pending_absen'); } catch (_) {}
+            // Pindahkan antrean foto/efek lama jika ada agar bukti yang sudah sah tetap tersinkron.
+            try {
+                const oldFoto = localStorage.getItem('v112_pending_foto');
+                if (oldFoto && !localStorage.getItem('v1122_pending_foto')) localStorage.setItem('v1122_pending_foto', oldFoto);
+                const oldEfek = localStorage.getItem('v112_pending_efek');
+                if (oldEfek && !localStorage.getItem('v1122_pending_efek')) localStorage.setItem('v1122_pending_efek', oldEfek);
+                localStorage.removeItem('v112_pending_foto');
+                localStorage.removeItem('v112_pending_efek');
+                localStorage.setItem(marker, new Date().toISOString());
+            } catch (_) {}
+            API_URL = PERMANENT_API_URL;
+        })();
+        let dataProfil = JSON.parse(localStorage.getItem('v112_profil_absen_fajri'));
         let deviceID = localStorage.getItem('device_id_fajri');
         let currentLat = null; let currentLng = null; let currentJarak = null; let gpsWatcher = null;
         let lastGpsAt = 0; let lastGpsAccuracy = null; let cameraReady = false; let lastCameraError = null;
         let absenSedangDiproses = false; let pendingPromptSedangTampil = false;
         let backendVersionAktif = '';
+        let backendVerifiedAt = 0;
+        let persiapanAbsenSedangBerjalan = false;
         let namaLokasiAman = ""; // Menyimpan info apakah dia di TOKO atau di GUDANG
-        const APP_VERSION = 'V9.5-PULANG-FAST';
-        const ABSEN_TIMEOUT_MS = 16000;
-        const STATUS_TIMEOUT_MS = 7000;
+        const APP_VERSION = 'SUPABASE-ABSENSI-V2-LIVE-PAYROLL';
+        const EXPECTED_BACKEND_VERSION = 'SUPABASE-ABSENSI-V1';
+        const EXPECTED_BACKEND_BUILD = 'SUPABASE-ABSENSI-V2-LIVE-PAYROLL';
+        const EXPECTED_DATABASE_ID = 'zwibuxgcagxhceqyvohn';
+        const ABSEN_TIMEOUT_MS = 14000;
+        const STATUS_TIMEOUT_MS = 5000;
         const FOTO_TIMEOUT_MS = 25000;
         const EFFECT_TIMEOUT_MS = 16000;
         const FOTO_MAX_CHARS = 43000; // aman di bawah batas isi sel Google Sheets
-        const PENDING_ABSEN_KEY = 'pending_absen_fajri_v93'; // antrean lama tetap dibaca
-        const PENDING_FOTO_KEY = 'pending_foto_absen_fajri_v94';
-        const PENDING_EFFECT_KEY = 'pending_efek_absen_fajri_v95';
-        
-        let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('cache_riwayat_global')) || null;
-        let cacheKasbonGlobal = JSON.parse(localStorage.getItem('cache_kasbon_global')) || []; 
-        let cacheKoreksiGajiGlobal = JSON.parse(localStorage.getItem('cache_koreksi_gaji')) || [];
-        let databaseCetakSlip = {}; 
-        let isEditPintasActive = false; 
-        let isDataSensitifVisible = false; 
-        
+        const PENDING_ABSEN_KEY = 'v1122_pending_absen'; // antrean lama tetap dibaca
+        const PENDING_FOTO_KEY = 'v1122_pending_foto';
+        const PENDING_EFFECT_KEY = 'v1122_pending_efek';
+
+        let attendanceSessionToken = localStorage.getItem('smart_absen_session_token') || '';
+        let cacheRiwayatGlobal = JSON.parse(localStorage.getItem('v112_cache_riwayat_global')) || null;
+        let cacheRadarPublik = [];
+        let cacheKasbonGlobal = JSON.parse(localStorage.getItem('v112_cache_kasbon_global')) || [];
+        let cacheKoreksiGajiGlobal = JSON.parse(localStorage.getItem('v112_cache_koreksi_gaji')) || [];
+        let databaseCetakSlip = {};
+        let isEditPintasActive = false;
+        let isDataSensitifVisible = false;
+        let liveRefreshTimer = null;
+        let liveRefreshSedangBerjalan = false;
+
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvasFoto');
         const ctx = kanvas.getContext('2d');
@@ -284,7 +305,6 @@
             const prefix = n >= 0 ? '+' : '-';
             return prefix + formatRupiah(Math.abs(n));
         };
-
         // ===============================================================
         // KONEKSI CLOUD STABIL: anti loading muter tanpa selesai
         // ===============================================================
@@ -294,9 +314,10 @@
             return fetch(url, { ...options, signal: controller.signal })
                 .finally(() => clearTimeout(timer));
         }
-
         async function ambilJSON(url, options = {}, timeoutMs = 12000) {
-            const response = await fetchDenganTimeout(url, options, timeoutMs);
+            const headers = { ...(options.headers || {}) };
+            if (attendanceSessionToken) headers['x-attendance-session'] = attendanceSessionToken;
+            const response = await fetchDenganTimeout(url, { ...options, headers }, timeoutMs);
             const text = await response.text();
             try {
                 return JSON.parse(text);
@@ -304,7 +325,6 @@
                 throw new Error('Balasan server bukan JSON. Kemungkinan Web App belum deploy ulang / akses belum benar. Cuplikan: ' + text.substring(0, 120));
             }
         }
-
         async function kirimAPI(payload, timeoutMs = 15000) {
             const res = await ambilJSON(API_URL, {
                 method: 'POST',
@@ -320,34 +340,102 @@
             }
             return res;
         }
-
         const tidur = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        async function tungguSwalTertutup(maxMs = 1200) {
+        async function tungguSwalTertutup(maxMs = 300) {
             try { Swal.close(); } catch (_) {}
-            const mulai = Date.now();
-            while (typeof Swal.isVisible === 'function' && Swal.isVisible() && (Date.now() - mulai) < maxMs) {
-                await tidur(40);
-            }
-            // iOS Safari membutuhkan satu frame tambahan sebelum popup berikutnya dibuat.
-            await tidur(90);
-        }
-
-        async function cekBackendKompatibel(silent = true) {
+            await tidur(40);
+            // SweetAlert kadang meninggalkan container lama di Android/iOS setelah
+            // textarea/keyboard ditutup. Hapus sisa DOM agar loader baru tidak pernah
+            // menempel pada popup form sebelumnya.
             try {
-                const res = await ambilJSON(API_URL + '?action=health&ts=' + Date.now(), {}, 6000);
+                document.querySelectorAll('.swal2-container').forEach(el => el.remove());
+                document.body.classList.remove('swal2-shown','swal2-height-auto','swal2-toast-shown');
+                document.documentElement.classList.remove('swal2-shown','swal2-height-auto');
+                document.body.style.removeProperty('padding-right');
+                document.body.style.removeProperty('overflow-y');
+            } catch (_) {}
+            await tidur(Math.min(80, Math.max(30, maxMs)));
+        }
+        // V10: loader absensi tidak lagi memakai SweetAlert. Di iPhone Safari,
+        // pergantian modal textarea -> Swal.showLoading kadang meninggalkan spinner
+        // di popup lama. Overlay DOM terpisah ini tidak berbagi lifecycle dengan Swal.
+        function tampilkanOverlayAbsen(judul, teks) {
+            let box = document.getElementById('absenOverlayV10');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'absenOverlayV10';
+                box.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;padding:18px;';
+                box.innerHTML = `<div style="width:min(92vw,420px);background:#fff;border-radius:18px;padding:26px 22px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.28);font-family:Arial,sans-serif">
+                    <div style="width:42px;height:42px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;margin:0 auto 16px;animation:spinV10 .8s linear infinite"></div>
+                    <div id="absenOverlayTitleV10" style="font-size:20px;font-weight:800;color:#111827"></div>
+                    <div id="absenOverlayTextV10" style="margin-top:8px;font-size:13px;line-height:1.45;color:#6b7280"></div>
+                </div>`;
+                const st = document.createElement('style');
+                st.textContent = '@keyframes spinV10{to{transform:rotate(360deg)}}';
+                document.head.appendChild(st);
+                document.body.appendChild(box);
+            }
+            document.getElementById('absenOverlayTitleV10').textContent = judul || 'Menyimpan absensi...';
+            document.getElementById('absenOverlayTextV10').textContent = teks || 'Mohon tunggu sebentar.';
+            box.style.display = 'flex';
+        }
+        function updateOverlayAbsen(judul, teks) {
+            const t = document.getElementById('absenOverlayTitleV10');
+            const d = document.getElementById('absenOverlayTextV10');
+            if (t && judul) t.textContent = judul;
+            if (d && teks) d.textContent = teks;
+        }
+        function sembunyikanOverlayAbsen() {
+            const box = document.getElementById('absenOverlayV10');
+            if (box) box.style.display = 'none';
+        }
+        async function mintaUrlBackendV112() {
+            // V11.2.1: backend terkunci permanen di paket Cloudflare.
+            API_URL = PERMANENT_API_URL;
+            return true;
+        }
+        async function cekBackendKompatibel(silent = true) {
+            if (!API_URL) {
+                const okUrl = await mintaUrlBackendV112();
+                if (!okUrl) return false;
+            }
+            try {
+                const res = await ambilJSON(API_URL + '?action=health&ts=' + Date.now(), {}, 7000);
                 backendVersionAktif = String((res && res.version) || 'VERSI-LAMA');
-                if (!backendVersionAktif.startsWith('V9.5') && !silent) {
-                    await Swal.fire('Backend Belum Diperbarui', 'Code.gs yang aktif masih versi lama. Deploy Code.gs V9.5 sebagai New version terlebih dahulu.', 'error');
-                    return false;
+                const backendBuild = String((res && res.build) || '');
+                const dbId = String((res && res.databaseId) || '');
+                const mode = String((res && res.mode) || '');
+                const cocok = !!(res && res.status === 'success' && res.setup === true &&
+                    backendVersionAktif === EXPECTED_BACKEND_VERSION &&
+                    backendBuild === EXPECTED_BACKEND_BUILD &&
+                    dbId === EXPECTED_DATABASE_ID &&
+                    mode === 'SUPABASE' &&
+                    res.freshZeroDone === true);
+                if (cocok) backendVerifiedAt = Date.now();
+                if (!cocok && !silent) {
+                    const detail = [
+                        'Backend terbaca: ' + backendVersionAktif,
+                        'Database terbaca: ' + (dbId || '-'),
+                        'Database wajib: ' + EXPECTED_DATABASE_ID
+                    ].join('<br>');
+                    await Swal.fire({
+                        icon:'error',
+                        title:'Backend Supabase Tidak Sesuai',
+                        html:'Aplikasi belum terhubung ke backend Supabase Absensi yang benar.<br><br><small>'+detail+'</small>',
+                        confirmButtonText:'Mengerti',
+                        allowOutsideClick:false
+                    });
+                    API_URL = PERMANENT_API_URL;
                 }
-                return backendVersionAktif.startsWith('V9.5');
-            } catch (_) {
-                // Gangguan health-check tidak boleh memblokir absensi. Request utama tetap dicoba.
-                return true;
+                return cocok;
+            } catch (err) {
+                backendVersionAktif = 'TIDAK-TERHUBUNG';
+                if (!silent) {
+                    await Swal.fire('Backend Supabase Belum Aktif', 'Tidak dapat memverifikasi koneksi Supabase. Periksa koneksi internet lalu muat ulang.', 'error');
+                }
+                return false;
             }
         }
-
         async function cekStatusAbsenServer(requestId) {
             const res = await ambilJSON(
                 API_URL + '?action=cek_absen_request&requestId=' + encodeURIComponent(requestId || '') + '&ts=' + Date.now(),
@@ -356,25 +444,21 @@
             if (res && res.status === 'success' && res.found) return res;
             return null;
         }
-
         function buatRequestId(prefix = 'REQ') {
             const uuid = (window.crypto && typeof window.crypto.randomUUID === 'function')
                 ? window.crypto.randomUUID()
                 : `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
             return `${prefix}-${uuid}`.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 90);
         }
-
         function adalahErrorJaringan(err) {
             const msg = String((err && err.message) || '').toLowerCase();
             return !navigator.onLine || (err && err.name === 'AbortError') || err instanceof TypeError ||
                 msg.includes('failed to fetch') || msg.includes('network') || msg.includes('timeout') || msg.includes('aborted') || msg.includes('balasan server bukan json');
         }
-
         async function kirimAPIStabil(payload, opsi = {}) {
             const timeoutMs = Number(opsi.timeoutMs) || ABSEN_TIMEOUT_MS;
             const retries = Number.isInteger(opsi.retries) ? opsi.retries : 1;
             let errorTerakhir = null;
-
             for (let percobaan = 0; percobaan <= retries; percobaan++) {
                 try {
                     const res = await ambilJSON(API_URL, {
@@ -382,16 +466,13 @@
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify(payload)
                     }, timeoutMs);
-
                     if (res && res.status === 'success') return res;
-
                     // Bila request pertama sebenarnya tersimpan tetapi jawabannya putus,
                     // backend akan mengenali requestId yang sama. Duplikat kategori juga
                     // dianggap informasi bahwa absen sudah aman tersimpan.
                     if (payload.action === 'simpan_absen' && res && res.code === 'DUPLICATE_ABSEN') {
                         return { ...res, status: 'success', alreadySaved: true };
                     }
-
                     const err = new Error((res && res.message) ? res.message : 'Server menolak proses.');
                     err.code = (res && res.code) ? res.code : 'SERVER_REJECT';
                     err.retryable = !!(res && res.retryable) || ['SERVER_BUSY', 'TEMPORARY_ERROR', 'EFFECT_PENDING'].includes(err.code);
@@ -407,7 +488,6 @@
             }
             throw errorTerakhir || new Error('Gagal mengirim data.');
         }
-
         function renderSetelahRefresh() {
             try {
                 if(!document.getElementById('panel-karyawan').classList.contains('hidden')) loadDataKaryawanOwner();
@@ -416,11 +496,10 @@
                 if(document.getElementById('setupView') && !document.getElementById('setupView').classList.contains('hidden')) renderAbsenPublik();
             } catch(e) { console.warn('Render refresh skip:', e); }
         }
-
         async function refreshKaryawanOnly() {
             const jK = await ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000);
             if (jK.status === 'success') {
-                localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data || []));
+                localStorage.setItem('v112_cache_nama_karyawan', JSON.stringify(jK.data || []));
                 const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
                 dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data || [], el); });
                 loadDataKaryawanOwner();
@@ -428,27 +507,21 @@
                 throw new Error(jK.message || 'Gagal mengambil data karyawan.');
             }
         }
-
         function normalNamaUI(nama) {
             return String(nama || '').toUpperCase().replace(/\s+/g, ' ').trim();
         }
-
         function getPendingKasbonLocal() {
-            try { return JSON.parse(localStorage.getItem('pending_kasbon_local') || '[]'); } catch(e) { return []; }
+            try { return JSON.parse(localStorage.getItem('v112_pending_kasbon_local') || '[]'); } catch(e) { return []; }
         }
-
         function setPendingKasbonLocal(list) {
-            localStorage.setItem('pending_kasbon_local', JSON.stringify((list || []).slice(0, 80)));
+            localStorage.setItem('v112_pending_kasbon_local', JSON.stringify((list || []).slice(0, 80)));
         }
-
         function getPendingRiwayatLocal() {
-            try { return JSON.parse(localStorage.getItem('pending_riwayat_local') || '[]'); } catch(e) { return []; }
+            try { return JSON.parse(localStorage.getItem('v112_pending_riwayat_local') || '[]'); } catch(e) { return []; }
         }
-
         function setPendingRiwayatLocal(list) {
-            localStorage.setItem('pending_riwayat_local', JSON.stringify((list || []).slice(0, 120)));
+            localStorage.setItem('v112_pending_riwayat_local', JSON.stringify((list || []).slice(0, 120)));
         }
-
         function isRiwayatSama(a, b) {
             if(!a || !b) return false;
             const sameId = a.id && b.id && String(a.id) === String(b.id);
@@ -458,16 +531,13 @@
                 && String(a.waktu || '').split(',')[1] === String(b.waktu || '').split(',')[1];
             return sameId || sameCore;
         }
-
         function mergeRiwayatAman(cloudRows) {
             const cloud = Array.isArray(cloudRows) ? cloudRows.slice() : [];
             const cacheLama = Array.isArray(cacheRiwayatGlobal) ? cacheRiwayatGlobal.slice() : [];
             const pending = getPendingRiwayatLocal();
             let merged = cloud.slice();
-
             // Kalau cloud tiba-tiba kosong karena salah sheet/deploy/cache, jangan hapus tampilan data lama.
             if (merged.length === 0 && cacheLama.length > 0) merged = cacheLama.slice();
-
             pending.forEach(p => { if(!merged.some(c => isRiwayatSama(c, p))) merged.unshift(p); });
             // Pertahankan data cache bulan berjalan agar data hari ini tidak menghilang saat Google lambat.
             cacheLama.forEach(oldRow => {
@@ -476,12 +546,10 @@
                 const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
                 if(key && key.startsWith(currentMonth) && !merged.some(c => isRiwayatSama(c, oldRow))) merged.push(oldRow);
             });
-
             const sisaPending = pending.filter(p => !cloud.some(c => isRiwayatSama(c, p)));
             setPendingRiwayatLocal(sisaPending);
             return merged;
         }
-
         function isKasbonSama(a, b) {
             if(!a || !b) return false;
             const sameId = a.id && b.id && String(a.id) === String(b.id);
@@ -490,7 +558,6 @@
                 && (parseInt(a.nominal) || 0) === (parseInt(b.nominal) || 0);
             return sameId || sameCore;
         }
-
         function mergeKasbonDenganPending(cloudRows) {
             const cloud = Array.isArray(cloudRows) ? cloudRows.slice() : [];
             const pending = getPendingKasbonLocal();
@@ -503,7 +570,6 @@
             setPendingKasbonLocal(sisaPending);
             return merged;
         }
-
         function pushKasbonLocal(row) {
             if(!row) return;
             const fixed = {
@@ -516,13 +582,11 @@
             if(!cacheKasbonGlobal) cacheKasbonGlobal = [];
             cacheKasbonGlobal = cacheKasbonGlobal.filter(x => !isKasbonSama(x, fixed));
             cacheKasbonGlobal.unshift(fixed);
-            localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
-
+            localStorage.setItem('v112_cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
             const pending = getPendingKasbonLocal().filter(x => !isKasbonSama(x, fixed));
             pending.unshift(fixed);
             setPendingKasbonLocal(pending);
         }
-
         function pushRiwayatLocal(row) {
             if(!row) return;
             const fixed = {
@@ -542,14 +606,11 @@
             if(!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
             cacheRiwayatGlobal = cacheRiwayatGlobal.filter(x => !isRiwayatSama(x, fixed));
             cacheRiwayatGlobal.unshift(fixed);
-            localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
-
+            localStorage.setItem('v112_cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
             const pending = getPendingRiwayatLocal().filter(x => !isRiwayatSama(x, fixed));
             pending.unshift(fixed);
             setPendingRiwayatLocal(pending);
         }
-
-
         function getKoreksiGajiAktif(nama, bulan, tahun) {
             const targetNama = normalNamaUI(nama);
             return (cacheKoreksiGajiGlobal || []).find(k =>
@@ -558,31 +619,25 @@
                 parseInt(k.tahun) === parseInt(tahun)
             ) || null;
         }
-
         function adaNominalKoreksi(value) {
             return value !== undefined && value !== null && String(value).trim() !== '' && Number.isFinite(Number(value));
         }
-
         function hitungNominalLemburFinal(koreksi, dataAsli, lemburJamFinal, tarifLemburFinal) {
             if(!koreksi) return Number(dataAsli.uangLembur) || 0;
-
             // Versi baru menyimpan jam dan nominal lembur secara terpisah agar angka historis
             // tidak berubah diam-diam saat tarif lembur saat ini berbeda dari tarif transaksi lama.
             if(adaNominalKoreksi(koreksi.lemburRp)) {
                 return Math.max(0, Math.round(Number(koreksi.lemburRp)));
             }
-
             // Migrasi aman untuk koreksi lama: jika jam tidak diubah, pertahankan nominal
             // lembur asli. Ini memperbaiki koreksi lama yang hanya mengubah kasbon/kehadiran.
             const jamAsli = Number(dataAsli.lemburJam) || 0;
             if(Math.abs((Number(lemburJamFinal) || 0) - jamAsli) < 0.0001) {
                 return Number(dataAsli.uangLembur) || 0;
             }
-
             // Fallback hanya untuk koreksi lama yang memang mengubah jumlah jam.
             return Math.max(0, Math.round((Number(lemburJamFinal) || 0) * (Number(tarifLemburFinal) || 0)));
         }
-
         function upsertKoreksiGajiLocal(row) {
             if(!row) return;
             const rawLemburRp = row.lemburRp;
@@ -599,6 +654,12 @@
                 lemburJam: Math.max(0, parseFloat(row.lemburJam) || 0),
                 lemburRp: lemburRp,
                 kasbon: Math.max(0, Math.round(Number(row.kasbon) || 0)),
+                baseHadirPenuh: Math.max(0, parseFloat(row.baseHadirPenuh) || 0),
+                baseSetengahHari: Math.max(0, parseFloat(row.baseSetengahHari) || 0),
+                baseLemburJam: Math.max(0, parseFloat(row.baseLemburJam) || 0),
+                baseLemburRp: Math.max(0, Math.round(Number(row.baseLemburRp) || 0)),
+                baseKasbon: Math.max(0, Math.round(Number(row.baseKasbon) || 0)),
+                correctionMode: String(row.correctionMode || 'DELTA').toUpperCase(),
                 tarifLembur: Math.max(0, Math.round(Number(row.tarifLembur) || Number(configHRD.tarifLembur) || 0)),
                 catatan: String(row.catatan || 'Koreksi admin'),
                 updatedAt: row.updatedAt || new Date().toLocaleString('id-ID')
@@ -609,39 +670,34 @@
                 parseInt(k.tahun) === fixed.tahun
             ));
             cacheKoreksiGajiGlobal.unshift(fixed);
-            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+            localStorage.setItem('v112_cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
         }
-
         function hapusKoreksiGajiLocal(nama, bulan, tahun) {
             cacheKoreksiGajiGlobal = (cacheKoreksiGajiGlobal || []).filter(k => !(
                 normalNamaUI(k.nama) === normalNamaUI(nama) &&
                 parseInt(k.bulan) === parseInt(bulan) &&
                 parseInt(k.tahun) === parseInt(tahun)
             ));
-            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+            localStorage.setItem('v112_cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
         }
-
         async function refreshKoreksiGajiOnly() {
             const j = await ambilJSON(API_URL + '?action=get_koreksi_gaji&ts=' + Date.now(), {}, 12000);
             if(j.status !== 'success') throw new Error(j.message || 'Gagal mengambil koreksi gaji.');
             cacheKoreksiGajiGlobal = Array.isArray(j.data) ? j.data : [];
-            localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+            localStorage.setItem('v112_cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
             renderMatriks();
         }
-
         async function refreshKasbonOnly() {
             const jKB = await ambilJSON(API_URL + '?action=get_kasbon&ts=' + Date.now(), {}, 12000);
             if (jKB.status === 'success') {
                 cacheKasbonGlobal = mergeKasbonDenganPending(jKB.data || []);
-                localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                localStorage.setItem('v112_cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
                 renderSetelahRefresh();
             } else {
                 throw new Error(jKB.message || 'Gagal mengambil data kasbon.');
             }
         }
-
         function formatWA(el) { let val = el.value.replace(/\D/g, ''); el.value = val.replace(/(.{4})/g, '$1 ').trim(); }
-
         function parseTanggalSakti(waktuAsli) {
             if(!waktuAsli) return null;
             let textDate = String(waktuAsli).split(/[\s,]+/)[0].replace(',', '').trim();
@@ -661,17 +717,14 @@
             if(!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return null;
             return { tgl: d, bln: m, thn: y };
         }
-
         function tanggalKeyDariPars(dPars) {
             if(!dPars) return '';
             return `${dPars.thn}-${String(dPars.bln).padStart(2,'0')}-${String(dPars.tgl).padStart(2,'0')}`;
         }
-
         function tanggalKeyDariText(text) {
             const parsed = parseTanggalSakti(text);
             return tanggalKeyDariPars(parsed);
         }
-
         function ekstrakTanggalDariKeterangan(ket) {
             const text = String(ket || '');
             // Format baru: TGL=2026-06-01
@@ -682,26 +735,21 @@
             if(m) return tanggalKeyDariText(m[1]);
             return '';
         }
-
         function parseLemburEntry(kb) {
             const ket = String(kb && kb.keterangan ? kb.keterangan : '');
             const ketUpper = ket.toUpperCase();
             if(!ketUpper.includes('LEMBUR')) return null;
-
             const nominal = parseInt(kb.nominal) || 0;
             const tarif = parseInt(configHRD.tarifLembur) || 1;
             let jam = null;
-
             // Format baru: JAM=3 atau JAM=-1
             let m = ket.match(/JAM\s*=\s*([\-+]?\d+(?:[\.,]\d+)?)/i);
             if(m) jam = parseFloat(m[1].replace(',', '.'));
-
             // Format lama: +3 JAM / -1 JAM / 3x
             if(jam === null || isNaN(jam)) {
                 m = ket.match(/([\-+]?\d+(?:[\.,]\d+)?)\s*(?:JAM|X)/i);
                 if(m) jam = parseFloat(m[1].replace(',', '.'));
             }
-
             // Koreksi lembur wajib negatif meskipun regex menangkap angka positif
             if(ketUpper.includes('KOREKSI') && jam !== null && !isNaN(jam)) jam = -Math.abs(jam);
             if((jam === null || isNaN(jam)) && nominal !== 0) {
@@ -709,73 +757,65 @@
                 jam = (nominal < 0 ? Math.abs(nominal) : -Math.abs(nominal)) / tarif;
             }
             if(jam === null || isNaN(jam)) jam = 0;
-
             let tanggalKey = ekstrakTanggalDariKeterangan(ket) || tanggalKeyDariText(kb.waktu);
             const nilaiRp = nominal < 0 ? Math.abs(nominal) : -Math.abs(nominal);
             return { jam, tanggalKey, nilaiRp, keterangan: ket };
         }
-
         // ===============================================================
         // FUNGSI CEK SUDAH ABSEN (ANTI-DOUBLE SEMUA KATEGORI)
         // ===============================================================
         function getJamAbsenHariIni(kategoriTarget) {
             if (!cacheRiwayatGlobal || !dataProfil) return null;
-            let tHariIni = new Date();
-            let tglSkg = tHariIni.getDate(); let blnSkg = tHariIni.getMonth() + 1; let thnSkg = tHariIni.getFullYear();
-            
+            const bagian = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year:'numeric', month:'numeric', day:'numeric' }).formatToParts(new Date());
+            const map = {}; bagian.forEach(x => map[x.type] = x.value);
+            const tglSkg = Number(map.day), blnSkg = Number(map.month), thnSkg = Number(map.year);
+
             let absen = cacheRiwayatGlobal.find(t => {
                 let dPars = parseTanggalSakti(t.waktu);
-                if (!(dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg && t.nama.toUpperCase() === dataProfil.nama.toUpperCase())) return false;
-                
+                if (!(dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg && String(t.nama || '').toUpperCase() === String(dataProfil.nama || '').toUpperCase())) return false;
+
                 if (kategoriTarget === 'PAGI') return t.status.includes("PAGI") || t.status.includes("MASUK");
                 if (kategoriTarget === 'PULANG') return t.status.includes("PULANG");
                 if (kategoriTarget === 'SETENGAH HARI') return t.status.includes("SETENGAH HARI");
                 return false;
             });
-
             if (absen) {
                 let parts = String(absen.waktu).split(',');
                 return parts.length > 1 ? parts[1].trim() : absen.waktu;
             }
             return null;
         }
-
         // ===============================================================
         // RENDER RADAR PUBLIK (DASHBOARD AWAL LOGIN)
         // ===============================================================
         function renderAbsenPublik() {
             const container = document.getElementById('listAbsenPublik');
-            if (!container) return; 
-            
-            let dNow = new Date();
-            document.getElementById('labelTglPublik').innerText = dNow.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+            if (!container) return;
 
-            if (!cacheRiwayatGlobal) {
+            let dNow = new Date();
+            document.getElementById('labelTglPublik').innerText = new Intl.DateTimeFormat('id-ID', { timeZone:'Asia/Jakarta', weekday:'long', day:'numeric', month:'long' }).format(dNow);
+            if (!Array.isArray(cacheRadarPublik)) {
                 container.innerHTML = '<div class="text-center text-xs text-gray-400 mt-6 italic">Gagal memuat data radar.</div>';
                 return;
             }
-            
-            let tglSkg = dNow.getDate(); let blnSkg = dNow.getMonth() + 1; let thnSkg = dNow.getFullYear();
+
             let adaData = false; let absenMap = {};
-            
-            cacheRiwayatGlobal.forEach(t => {
-                let dPars = parseTanggalSakti(t.waktu);
-                if (dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg) {
-                    adaData = true;
-                    if(!absenMap[t.nama]) absenMap[t.nama] = [];
-                    absenMap[t.nama].push({status: t.status, waktu: t.waktu});
-                }
+
+            cacheRadarPublik.forEach(t => {
+                adaData = true;
+                if(!absenMap[t.nama]) absenMap[t.nama] = [];
+                absenMap[t.nama].push({status: t.status, waktu: t.waktu});
             });
-            
+
             if(!adaData) {
                 container.innerHTML = '<div class="text-center text-[10px] text-gray-400 mt-10 font-bold uppercase tracking-widest"><i class="fas fa-moon text-3xl opacity-20 block mb-2"></i>Belum Ada Aktivitas Hari Ini</div>';
                 return;
             }
-            
+
             let html = "";
             for(let nama in absenMap) {
                 let badgeHtml = '';
-                absenMap[nama].reverse().forEach(ab => { 
+                absenMap[nama].reverse().forEach(ab => {
                     let w = ab.waktu.split(',')[1] ? ab.waktu.split(',')[1].substring(0,6).trim() : '';
                     if(ab.status.includes('PAGI') || ab.status.includes('MASUK')) {
                         let c = ab.status.includes('TELAT') ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200';
@@ -788,7 +828,7 @@
                         badgeHtml += `<span class="bg-purple-50 text-purple-600 border border-purple-200 text-[8px] px-1.5 py-0.5 rounded font-bold mr-1 shadow-sm">Izin/Sakit</span>`;
                     }
                 });
-                
+
                 html += `
                 <div class="flex flex-col bg-gray-50 border border-gray-100 p-2 rounded-lg">
                     <span class="text-[10px] font-black text-gray-700 uppercase"><i class="fas fa-user-circle text-gray-400 mr-1 text-xs"></i> ${nama}</span>
@@ -798,110 +838,176 @@
             }
             container.innerHTML = html;
         }
-
-        window.onload = () => {
+        async function fetchRadarPublik() {
+            const result = await ambilJSON(API_URL + '?action=get_radar_hari_ini&ts=' + Date.now(), {}, 8000);
+            if (!result || result.status !== 'success') throw new Error((result && result.message) || 'Radar belum dapat diperbarui.');
+            cacheRadarPublik = Array.isArray(result.data) ? result.data : [];
+            renderAbsenPublik();
+            return true;
+        }
+        async function refreshLiveViewSekarang() {
+            if (document.hidden || liveRefreshSedangBerjalan || absenSedangDiproses) return;
+            liveRefreshSedangBerjalan = true;
+            try {
+                const setupTerbuka = !document.getElementById('setupView').classList.contains('hidden');
+                const absenTerbuka = !document.getElementById('absenView').classList.contains('hidden');
+                if (setupTerbuka) await fetchRadarPublik();
+                else if (absenTerbuka && dataProfil && attendanceSessionToken) await fetchRiwayatRingan(true);
+            } catch (_) {
+                if (!cacheRadarPublik.length && !dataProfil) renderAbsenPublik();
+            } finally {
+                liveRefreshSedangBerjalan = false;
+            }
+        }
+        function mulaiLiveView() {
+            if (liveRefreshTimer) clearInterval(liveRefreshTimer);
+            refreshLiveViewSekarang();
+            liveRefreshTimer = setInterval(refreshLiveViewSekarang, 5000);
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveViewSekarang(); });
+        window.addEventListener('focus', refreshLiveViewSekarang);
+        window.addEventListener('pageshow', refreshLiveViewSekarang);
+        window.onload = async () => {
             if (!deviceID) { deviceID = "DEV-" + Math.floor(Math.random() * 1000000000).toString(16).toUpperCase(); localStorage.setItem('device_id_fajri', deviceID); }
             document.getElementById('labelPerangkat').innerText = "Dev: " + deviceID.substring(0,8);
-            if (!dataProfil) { 
-                document.getElementById('setupView').classList.remove('hidden'); 
+            setPeriodeGajiSaatIni();
+            // FRESH LOCK: jangan render cache / profil / riwayat sebelum backend baru terverifikasi.
+            const backendOK = await cekBackendKompatibel(false);
+            if (!backendOK) {
+                document.getElementById('setupView').classList.add('hidden');
+                document.getElementById('absenView').classList.add('hidden');
+                document.getElementById('ownerView').classList.add('hidden');
+                return;
+            }
+            if (dataProfil && !localStorage.getItem('smart_absen_employee_session_token')) {
+                dataProfil = null;
+                localStorage.removeItem('v112_profil_absen_fajri');
+            }
+            if (!dataProfil) {
+                document.getElementById('setupView').classList.remove('hidden');
                 document.getElementById('setupView').classList.add('flex');
-                loadDropdownKaryawan(); 
+                await Promise.allSettled([loadDropdownKaryawan(), fetchRadarPublik()]);
             } else { bukaSistemKaryawan(); }
-            
+
             setInterval(() => {
                 const now = new Date(); document.getElementById('liveJam').innerText = now.toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
                 const jamSekarang = now.getHours();
                 const labelPagi = document.getElementById('labelPagi');
                 if(labelPagi) { if (jamSekarang >= 8) labelPagi.innerHTML = '<span class="text-red-300">PAGI<br>(TELAT)</span>'; else labelPagi.innerHTML = 'PAGI'; }
                 const btnPulang = document.getElementById('btnPulang'); const labelPulang = document.getElementById('labelPulang');
-                if(btnPulang && labelPulang) { if (jamSekarang < 17) { btnPulang.classList.add('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG<br>(Buka 17:00)'; } else { btnPulang.classList.remove('opacity-50', 'grayscale'); labelPulang.innerHTML = 'PULANG'; } }
+                if(btnPulang && labelPulang) {
+                    btnPulang.disabled = false;
+                    btnPulang.classList.add('opacity-60', 'grayscale', 'cursor-help');
+                    const jamPulang = getJamAbsenHariIni('PULANG');
+                    labelPulang.innerHTML = jamPulang ? `SUDAH PULANG<br>${jamPulang}` : 'PULANG<br>(AUTO 17:00)';
+                }
             }, 1000);
-
-            // Halaman karyawan cukup menarik riwayat ringan. Data gaji/kasbon hanya
-            // ditarik saat owner masuk agar server tidak berat ketika banyak orang absen bersamaan.
-            cekBackendKompatibel(true).catch(() => {});
-            fetchRiwayatRingan(true).catch(() => {});
+            mulaiLiveView();
         };
-
         async function loadDropdownKaryawan() {
-            const dropdown = document.getElementById('inputNama'); 
-            const cacheNama = localStorage.getItem('cache_nama_karyawan');
+            const dropdown = document.getElementById('inputNama');
+            const cacheNama = localStorage.getItem('v112_cache_nama_karyawan');
             if (cacheNama) { let data = JSON.parse(cacheNama); renderDropdown(data, dropdown); }
             try {
                 const result = await ambilJSON(API_URL + '?action=get_karyawan&ts=' + Date.now(), {}, 12000);
-                if (result.status === "success") { 
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(result.data)); 
-                    renderDropdown(result.data, dropdown); 
+                if (result.status === "success") {
+                    localStorage.setItem('v112_cache_nama_karyawan', JSON.stringify(result.data));
+                    renderDropdown(result.data, dropdown);
                 }
             } catch (e) { }
         }
-
         function renderDropdown(dataList, element) {
             let html = '<option value="" disabled selected>-- Pilih Nama --</option>';
-            dataList.forEach(k => { html += `<option value="${k.nama}">${k.nama}</option>`; }); 
+            dataList.forEach(k => { html += `<option value="${k.nama}">${k.nama}</option>`; });
             if(element) element.innerHTML = html;
         }
-
         async function simpanProfil() {
             const nama = document.getElementById('inputNama').value; const password = document.getElementById('inputPassword').value.trim();
             if (!nama) return Swal.fire('Error', 'Pilih nama Anda!', 'error'); if (!password) return Swal.fire('Error', 'Masukkan password gembok!', 'error');
             Swal.fire({ title: 'Menghubungkan Satelit...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const result = await kirimAPI({ action: "verifikasi_karyawan", nama: nama, password: password }, 15000);
+                const result = await kirimAPI({ action: "verifikasi_karyawan", nama: nama, password: password, deviceLabel: deviceID }, 15000);
                 if (result.status === "success") {
-                    dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe }; localStorage.setItem('profil_absen_fajri', JSON.stringify(dataProfil));
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => { 
-                        document.getElementById('setupView').classList.add('hidden'); 
+                    attendanceSessionToken = result.sessionToken || '';
+                    localStorage.setItem('smart_absen_session_token', attendanceSessionToken);
+                    localStorage.setItem('smart_absen_employee_session_token', attendanceSessionToken);
+                    dataProfil = { nama: nama.toUpperCase(), tipe: result.tipe }; localStorage.setItem('v112_profil_absen_fajri', JSON.stringify(dataProfil));
+                    Swal.fire({ icon: 'success', title: 'Berhasil!', showConfirmButton: false, timer: 1500 }).then(() => {
+                        document.getElementById('setupView').classList.add('hidden');
                         document.getElementById('setupView').classList.remove('flex');
-                        bukaSistemKaryawan(); 
+                        bukaSistemKaryawan();
                     });
                 } else { Swal.fire('Akses Gagal', result.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Gagal verifikasi internet terputus!', 'error'); }
         }
-
         function bukaSistemKaryawan() {
             document.getElementById('absenView').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
             document.getElementById('displayNama').innerText = dataProfil.nama; document.getElementById('displayTipe').innerText = "TIPE: " + dataProfil.tipe;
             if (dataProfil.tipe === 'MOBILE') { document.getElementById('btnKunjungan').classList.remove('hidden'); }
             nyalakanKamera(); nyalakanRadarGPS();
+            fetchRiwayatRingan(true).catch(() => {});
             setTimeout(() => cekPendingAbsen(), 1100);
-            setTimeout(() => sinkronkanAntreanEfek(true), 1500);
-            setTimeout(() => sinkronkanAntreanFoto(true), 2600);
+            setTimeout(() => sinkronkanAntreanEfek(true), 1200);
+            // Recovery server-side: menangkap lembur Pulang yang pernah tersimpan sebagai PENDING.
+            setTimeout(() => kirimAPIStabil({ action:'sinkronkan_efek_pending' }, { timeoutMs:12000, retries:0, silent:true }).catch(()=>{}), 2200);
+            setTimeout(() => sinkronkanAntreanFoto(true), 3000);
         }
-
-        function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('profil_absen_fajri'); window.location.reload(); } }); }
-
-        function loginOwner() {
-            Swal.fire({ title: 'Akses Mastermind', input: 'password', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Masuk' }).then((res) => {
-                if (res.isConfirmed && res.value === 'Cidalung') {
-                    document.getElementById('absenView').classList.add('hidden'); 
+        function infoPulangOtomatis() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Pulang Otomatis',
+                html: 'Sistem mencatat pulang otomatis pukul <b>17.00 WIB</b> bagi karyawan yang sudah absen masuk.<br><br>Lembur dimasukkan manual oleh HRD dari tab <b>Keuangan</b>.',
+                confirmButtonColor: '#dc2626'
+            });
+        }
+        function logoutKaryawan() { Swal.fire({ title: 'Lepas Gembok HP?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then((res) => { if (res.isConfirmed) { localStorage.removeItem('v112_profil_absen_fajri'); localStorage.removeItem('smart_absen_session_token'); localStorage.removeItem('smart_absen_employee_session_token'); window.location.reload(); } }); }
+        async function loginOwner() {
+            const res = await Swal.fire({ title: 'Akses Mastermind', input: 'password', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Masuk' });
+            if (!res.isConfirmed) return;
+            try {
+                const owner = await kirimAPI({ action:'owner_login', password:res.value, deviceLabel:deviceID }, 15000);
+                attendanceSessionToken = owner.sessionToken || '';
+                localStorage.setItem('smart_absen_session_token', attendanceSessionToken);
+                    document.getElementById('absenView').classList.add('hidden');
                     document.getElementById('setupView').classList.add('hidden');
                     document.getElementById('setupView').classList.remove('flex');
-
                     if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                     document.getElementById('ownerView').classList.remove('hidden');
-                    
-                    const dropdowns = ['addNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
-                    const cacheNama = localStorage.getItem('cache_nama_karyawan');
-                    if (cacheNama) { let data = JSON.parse(cacheNama); dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(data, el); }); }
-                    
-                    switchTabOwner('monitoring'); fetchAndCacheAll(true);
-                } else if(res.isConfirmed) { Swal.fire('Ditolak', 'Sandi salah!', 'error'); }
-            });
-        }
-        function tutupOwnerView() { document.getElementById('ownerView').classList.add('hidden'); if (dataProfil) bukaSistemKaryawan(); else window.location.reload(); }
 
+                    const dropdowns = ['addNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
+                    const cacheNama = localStorage.getItem('v112_cache_nama_karyawan');
+                    if (cacheNama) { let data = JSON.parse(cacheNama); dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(data, el); }); }
+
+                    switchTabOwner('monitoring'); fetchAndCacheAll(true);
+            } catch (_) { Swal.fire('Ditolak', 'Sandi owner salah atau koneksi bermasalah.', 'error'); }
+        }
+        function tutupOwnerView() { document.getElementById('ownerView').classList.add('hidden'); attendanceSessionToken = localStorage.getItem('smart_absen_employee_session_token') || ''; localStorage.setItem('smart_absen_session_token', attendanceSessionToken); if (dataProfil && attendanceSessionToken) bukaSistemKaryawan(); else window.location.reload(); }
+        function getPeriodeJakartaSekarang() {
+            const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: 'numeric' }).formatToParts(new Date());
+            const m = {}; parts.forEach(x => m[x.type] = x.value);
+            return { bulan: Number(m.month), tahun: Number(m.year) };
+        }
+        function setPeriodeGajiSaatIni() {
+            const periode = getPeriodeJakartaSekarang();
+            const bulanEl = document.getElementById('rekapBulan');
+            const tahunEl = document.getElementById('rekapTahun');
+            if (bulanEl) bulanEl.value = String(periode.bulan);
+            if (tahunEl) {
+                let ada = Array.from(tahunEl.options).some(o => Number(o.value) === periode.tahun);
+                if (!ada) tahunEl.add(new Option(String(periode.tahun), String(periode.tahun)));
+                tahunEl.value = String(periode.tahun);
+            }
+        }
         function switchTabOwner(tab) {
-            ['monitoring', 'karyawan', 'rekap', 'kasbon', 'pengaturan'].forEach(t => { 
-                document.getElementById('panel-'+t).classList.add('hidden'); document.getElementById('tabBtn-'+t).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300"; 
+            ['monitoring', 'karyawan', 'rekap', 'kasbon', 'pengaturan'].forEach(t => {
+                document.getElementById('panel-'+t).classList.add('hidden'); document.getElementById('tabBtn-'+t).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition text-gray-500 hover:bg-gray-300";
             });
             document.getElementById('panel-' + tab).classList.remove('hidden'); document.getElementById('tabBtn-' + tab).className = "tab-btn flex-1 py-2 px-2 rounded-md text-[10px] uppercase font-bold transition shadow-sm bg-white text-emerald-700";
-            if(tab === 'monitoring') renderTabelHarian(); 
-            if(tab === 'rekap') renderMatriks(); 
+            if(tab === 'monitoring') renderTabelHarian();
+            if(tab === 'rekap') { setPeriodeGajiSaatIni(); renderMatriks(); }
             if(tab === 'karyawan') loadDataKaryawanOwner();
             if(tab === 'pengaturan') { document.getElementById('cfgTarifLembur').value = configHRD.tarifLembur; }
         }
-
         async function simpanConfigHRD() {
             const tarif = parseInt(document.getElementById('cfgTarifLembur').value) || 0;
             Swal.fire({ title: 'Upload ke Server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -913,7 +1019,6 @@
                 }
             } catch(e) { Swal.fire('Error', 'Gagal memproses ke server Google.', 'error'); }
         }
-
         async function refreshSemuaDataSilent() {
             Swal.fire({ title: 'Menarik Data...', text: 'Menyamakan data dari Cloud. Maksimal tunggu 15 detik.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
@@ -925,13 +1030,12 @@
                 Swal.fire('Refresh Tidak Sempurna', (e && e.message) ? e.message : 'Koneksi Cloud lambat. Data lokal tetap dipakai dulu.', 'warning');
             }
         }
-
         async function fetchRiwayatRingan(isBackground = false) {
             try {
                 const jR = await ambilJSON(API_URL + '?action=get_riwayat&ts=' + Date.now(), {}, 15000);
                 if (!jR || jR.status !== 'success') throw new Error((jR && jR.message) || 'Gagal mengambil riwayat.');
                 cacheRiwayatGlobal = mergeRiwayatAman(jR.data || []);
-                localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                localStorage.setItem('v112_cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
                 if (isBackground) {
                     renderAbsenPublik();
                     if (document.getElementById('panel-monitoring') && !document.getElementById('panel-monitoring').classList.contains('hidden')) renderTabelHarian();
@@ -944,7 +1048,6 @@
                 throw err;
             }
         }
-
         async function fetchAndCacheAll(isBackground = false) {
             try {
                 // Endpoint baru: 1x tarik semua data ringan. Lebih cepat daripada 4 request paralel.
@@ -955,10 +1058,10 @@
                     cacheKasbonGlobal = mergeKasbonDenganPending(d.kasbon || []);
                     configHRD.tarifLembur = parseInt((d.config || {}).tarifLembur) || 8000;
                     cacheKoreksiGajiGlobal = Array.isArray(d.koreksiGaji) ? d.koreksiGaji : [];
-                    localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
-                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
-                    localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(d.karyawan || []));
+                    localStorage.setItem('v112_cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+                    localStorage.setItem('v112_cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                    localStorage.setItem('v112_cache_kasbon_global', JSON.stringify(cacheKasbonGlobal));
+                    localStorage.setItem('v112_cache_nama_karyawan', JSON.stringify(d.karyawan || []));
                     const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
                     dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(d.karyawan || [], el); });
                     if (isBackground) renderSetelahRefresh();
@@ -974,45 +1077,37 @@
                     ambilJSON(API_URL + '?action=get_config_hrd&ts=' + Date.now(), {}, 12000),
                     ambilJSON(API_URL + '?action=get_koreksi_gaji&ts=' + Date.now(), {}, 12000)
                 ]);
-
                 let adaSukses = false;
                 const jR = hasil[0].status === 'fulfilled' ? hasil[0].value : null;
-                if (jR && jR.status === 'success') { cacheRiwayatGlobal = mergeRiwayatAman(jR.data || []); localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); adaSukses = true; }
-
+                if (jR && jR.status === 'success') { cacheRiwayatGlobal = mergeRiwayatAman(jR.data || []); localStorage.setItem('v112_cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal)); adaSukses = true; }
                 const jK = hasil[1].status === 'fulfilled' ? hasil[1].value : null;
                 if (jK && jK.status === 'success') {
-                    localStorage.setItem('cache_nama_karyawan', JSON.stringify(jK.data || []));
+                    localStorage.setItem('v112_cache_nama_karyawan', JSON.stringify(jK.data || []));
                     const dropdowns = ['inputNama', 'kasbonNama', 'setengahNama', 'lemburNama'];
                     dropdowns.forEach(id => { let el = document.getElementById(id); if(el && el.tagName === 'SELECT') renderDropdown(jK.data || [], el); });
                     adaSukses = true;
                 }
-
                 const jKB = hasil[2].status === 'fulfilled' ? hasil[2].value : null;
-                if (jKB && jKB.status === 'success') { cacheKasbonGlobal = mergeKasbonDenganPending(jKB.data || []); localStorage.setItem('cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); adaSukses = true; }
-
+                if (jKB && jKB.status === 'success') { cacheKasbonGlobal = mergeKasbonDenganPending(jKB.data || []); localStorage.setItem('v112_cache_kasbon_global', JSON.stringify(cacheKasbonGlobal)); adaSukses = true; }
                 const jCfg = hasil[3].status === 'fulfilled' ? hasil[3].value : null;
                 if (jCfg && jCfg.status === 'success') { configHRD.tarifLembur = parseInt(jCfg.data.tarifLembur) || 8000; adaSukses = true; }
-
                 const jKG = hasil[4].status === 'fulfilled' ? hasil[4].value : null;
                 if (jKG && jKG.status === 'success') {
                     cacheKoreksiGajiGlobal = Array.isArray(jKG.data) ? jKG.data : [];
-                    localStorage.setItem('cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
+                    localStorage.setItem('v112_cache_koreksi_gaji', JSON.stringify(cacheKoreksiGajiGlobal));
                     adaSukses = true;
                 }
-
                 if (isBackground) renderSetelahRefresh();
                 if (!adaSukses) throw errGetAll;
                 return true;
             }
         }
-
         function renderTabelHarian() {
             const tbody = document.getElementById('tableRiwayatOwner'); if (!cacheRiwayatGlobal) return;
             let tHariIni = new Date(); let blnSkg = tHariIni.getMonth() + 1; let thnSkg = tHariIni.getFullYear(); let tglSkg = tHariIni.getDate();
-
             const dataHariIni = cacheRiwayatGlobal.filter(t => { let dPars = parseTanggalSakti(t.waktu); return dPars && dPars.tgl === tglSkg && dPars.bln === blnSkg && dPars.thn === thnSkg; });
             if (dataHariIni.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-4 border border-gray-200 text-center text-gray-400 text-[10px] italic">Sistem kosong. Belum ada absen HARI INI.</td></tr>`;
-            
+
             let html = "";
             dataHariIni.forEach(t => {
                 let colorStatus = t.status.includes("PAGI") || t.status.includes("MASUK") ? "text-blue-600 bg-blue-50" : (t.status.includes("PULANG") ? "text-red-600 bg-red-50" : "text-yellow-700 bg-yellow-50");
@@ -1020,13 +1115,12 @@
                 let colorJarak = t.jarak <= RADIUS_MAKSIMAL ? "text-green-600 font-bold" : "text-red-500 font-bold"; if (t.tipe === 'MOBILE' || t.status.includes("IZIN")) colorJarak = "text-gray-600 font-semibold";
                 let tgl = new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }); if (tgl === "Invalid Date") tgl = t.waktu;
                 let divCatatan = t.catatan && t.catatan !== "-" ? `<div class="text-[8px] text-gray-500 mt-1 text-center font-semibold w-[80px] truncate cursor-pointer mx-auto" onclick="Swal.fire('Laporan/Catatan', '${t.catatan}', 'info')">📝 ${t.catatan}</div>` : "";
-                
+
                 const fotoSafe = encodeURIComponent(t.foto || '-');
                 const mapsSafe = encodeURIComponent(t.maps || '#');
                 html += `<tr class="border-b border-gray-200 hover:bg-gray-50"><td class="p-2"><div class="font-bold text-gray-800 text-[10px]">${t.nama}</div><div class="text-[8px] text-gray-400"><i class="fas fa-clock text-emerald-500"></i> ${tgl}</div></td><td class="p-2 text-center flex flex-col items-center pt-2"><span class="${colorStatus} px-1.5 py-0.5 rounded text-[8px] font-black border tracking-wider">${t.status}</span>${divCatatan}</td><td class="p-2 text-[9px] ${colorJarak} text-center">${t.status.includes("IZIN") ? '-' : t.jarak + 'M'}</td><td class="p-2 text-center"><button onclick="bukaFoto('${fotoSafe}')" class="bg-emerald-100 text-emerald-700 px-1.5 py-1 rounded text-[10px]"><i class="fas fa-camera"></i></button> <button onclick="bukaMapsInline('${mapsSafe}', '${t.lat || ''}', '${t.lng || ''}')" class="bg-blue-100 text-blue-700 px-1.5 py-1 rounded text-[10px] inline-block"><i class="fas fa-map-marker-alt"></i></button></td></tr>`;
             }); tbody.innerHTML = html;
         }
-
         // ===============================================================
         // TOMBOL EDIT PINTAS / QUICK EDIT (MODE DARURAT - 3 PILIHAN)
         // ===============================================================
@@ -1041,20 +1135,16 @@
                 btn.innerHTML = '<i class="fas fa-bolt"></i> Edit Darurat: OFF';
                 btn.className = "bg-gray-500 hover:bg-gray-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm border border-gray-600";
             }
-            renderMatriks(); 
+            renderMatriks();
         }
-
         function handleCellClick(nama, tgl, sim) {
             if(!isEditPintasActive) return;
             let selectBulan = document.getElementById('rekapBulan').value;
             let selectTahun = document.getElementById('rekapTahun').value;
             let formatTgl = `${tgl}/${selectBulan}/${selectTahun}`;
-
             let warnText = sim === "🌗" ? `<div class="text-[10px] mt-3 bg-red-100 border border-red-300 text-red-600 p-2 rounded font-bold uppercase"><i class="fas fa-exclamation-triangle"></i> Penting: Status sebelumnya adalah 1/2 Hari. Jika Anda ubah ke Hadir/Bolos, sistem HANYA mengubah tampilan centang. Anda tetap WAJIB menghapus data potongannya di menu KASBON secara manual agar gajinya normal!</div>` : '';
-
             const tarifJam = parseInt(configHRD.tarifLembur) || 0;
             const lemburSaatIni = hitungLemburTanggal(nama, formatTgl);
-
             Swal.fire({
                 title: `Edit Darurat: ${nama}`,
                 html: `
@@ -1066,7 +1156,6 @@
                             <button type="button" id="btnDaruratBolos" class="bg-red-600 hover:bg-red-700 text-white font-black py-2.5 rounded-lg text-[10px] shadow active:scale-95">🟥 BOLOS</button>
                         </div>
                         ${warnText}
-
                         <div class="mt-4 p-3 rounded-xl border border-green-300 bg-green-50 text-left">
                             <div class="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1"><i class="fas fa-clock"></i> Lembur Darurat</div>
                             <div class="text-[9px] text-gray-500 font-bold mb-2">Klik + / - dulu untuk mengumpulkan jumlah jam, lalu tekan tombol <b>SIMPAN LEMBUR</b>.</div>
@@ -1109,14 +1198,12 @@
                             labelNominal.className = `${nominalDraft < 0 ? 'text-red-600' : 'text-green-700'} font-black`;
                         }
                     };
-
                     const btnHadir = document.getElementById('btnDaruratHadir');
                     const btnSetengah = document.getElementById('btnDaruratSetengah');
                     const btnBolos = document.getElementById('btnDaruratBolos');
                     const btnPlus = document.getElementById('btnLemburPlusDarurat');
                     const btnMinus = document.getElementById('btnLemburMinusDarurat');
                     const btnSimpan = document.getElementById('btnSimpanLemburDarurat');
-
                     if(btnHadir) btnHadir.addEventListener('click', () => { Swal.close(); eksekusiEditDarurat(nama, formatTgl, "MASUK (MANUAL)"); });
                     if(btnSetengah) btnSetengah.addEventListener('click', () => { Swal.close(); eksekusiSetengahHariPintas(nama, formatTgl); });
                     if(btnBolos) btnBolos.addEventListener('click', () => { Swal.close(); eksekusiEditDarurat(nama, formatTgl, "ALPA MANUAL"); });
@@ -1134,7 +1221,6 @@
                 }
             });
         }
-
         function hitungLemburTanggal(nama, formatTgl) {
             const targetNama = String(nama || '').toUpperCase();
             const targetKey = tanggalKeyDariText(formatTgl);
@@ -1147,15 +1233,13 @@
             });
             return Number.isInteger(totalJam) ? totalJam : Number(totalJam.toFixed(2));
         }
-
         async function eksekusiEditDarurat(nama, formatTgl, statusBaru) {
             Swal.fire({ title: 'Memperbarui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+            let cacheKaryawan = JSON.parse(localStorage.getItem('v112_cache_nama_karyawan') || '[]');
             let kar = cacheKaryawan.find(k => normalNamaUI(k.nama) === normalNamaUI(nama));
             let tipeKaryawan = kar ? kar.tipe : "TETAP";
             let waktuManipulasi = `${formatTgl}, 08.00.00`;
             const payloadData = { requestId: buatRequestId('MAN'), waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: tipeKaryawan, status: statusBaru, jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: "HRD-MANUAL", catatan: "Edit Darurat" };
-
             try {
                 const res = await kirimAPIStabil({ action: "simpan_absen", data: payloadData }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
                 pushRiwayatLocal({ ...payloadData, id: res.id || null });
@@ -1167,50 +1251,41 @@
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghubungi server', 'error');
             }
         }
-
         async function eksekusiSetengahHariPintas(nama, formatTgl) {
-            let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+            let cache = JSON.parse(localStorage.getItem('v112_cache_nama_karyawan') || '[]');
             let kar = cache.find(k => normalNamaUI(k.nama) === normalNamaUI(nama));
-            if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error'); 
-            let nom = Math.round((parseInt(kar.gaji) || 0) / 2); 
+            if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error');
             let waktuManipulasi = `${formatTgl}, 12.00.00`;
-            let ket = `SETENGAH HARI: ${formatTgl}`;
             const payloadAbsen = { requestId: buatRequestId('MANHALF'), waktu: waktuManipulasi, nama: normalNamaUI(nama), tipe: kar.tipe || 'TETAP', status: 'SETENGAH HARI', jarak: 0, lat: null, lng: null, fotoBase64: null, perangkat: 'HRD-MANUAL', catatan: 'Edit Darurat Setengah Hari' };
-
-            Swal.fire({ title: 'Menyimpan 1/2 Hari...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
-            try { 
-                // Simpan status absensi agar kotak matriks langsung berubah menjadi 🌗.
+            Swal.fire({ title: 'Menyimpan 1/2 Hari...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                // V10: setengah hari adalah status kehadiran, BUKAN transaksi Kasbon.
+                // Payroll menghitung 50% langsung dari status SETENGAH HARI di sheet Absensi.
                 let resAbsen = await kirimAPIStabil({ action: "simpan_absen", data: payloadAbsen }, { timeoutMs: ABSEN_TIMEOUT_MS, retries: 1 });
-                // Simpan potongan gaji 50% ke pembukuan.
-                let resKasbon = await kirimAPI({ action: "tambah_kasbon", waktu: waktuManipulasi, nama: normalNamaUI(nama), nominal: nom, keterangan: ket }, 15000);
-
                 pushRiwayatLocal({ ...payloadAbsen, id: resAbsen.id || null });
-                pushKasbonLocal({ id: resKasbon.id || null, waktu: waktuManipulasi, nama: normalNamaUI(nama), nominal: nom, keterangan: ket });
                 renderMatriks();
                 Swal.close();
-                Toast.fire({ icon: 'success', title: 'Berhasil diubah ke 🌗 dan potongan masuk gaji' });
+                Toast.fire({ icon: 'success', title: 'Berhasil diubah ke 🌗 Setengah Hari' });
+                fetchRiwayatRingan(true).catch(() => {});
+                refreshKasbonOnly().catch(() => {});
             } catch(e) {
                 Swal.close();
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghubungi server', 'error');
             }
         }
-
         async function eksekusiLemburPintas(nama, formatTgl, jumlahJam) {
             const jam = parseInt(jumlahJam) || 0;
             if(jam === 0) return;
             const tarif = parseInt(configHRD.tarifLembur) || 0;
             if(tarif <= 0) return Swal.fire('Tarif Lembur Kosong', 'Atur dulu tarif lembur per jam di menu Seting HRD.', 'warning');
-
             const targetKey = tanggalKeyDariText(formatTgl);
             const nominal = -(jam * tarif); // +jam = bonus, disimpan negatif agar kompatibel dengan Kasbon lama.
             const ket = `LEMBUR|JAM=${jam}|TGL=${targetKey}|SUMBER=EDIT_DARURAT`;
             const waktu = `${formatTgl}, 18.00.00`;
-
             Swal.fire({ title: jam > 0 ? `Menyimpan Lembur +${Math.abs(jam)} Jam...` : `Menyimpan Koreksi Lembur -${Math.abs(jam)} Jam...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                // Pakai tambah_kasbon sebagai jalur utama karena action ini paling stabil di semua versi backend.
-                const res = await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: normalNamaUI(nama), nominal: nominal, keterangan: ket }, 15000);
-
+                // V10: lembur disimpan ke sheet Lembur, tidak lagi bercampur dengan Kasbon.
+                const res = await kirimAPI({ action: "tambah_lembur", waktu: waktu, nama: normalNamaUI(nama), jam: jam, tarif: tarif, tanggal_key: targetKey, nominal: nominal, keterangan: ket }, 15000);
                 pushKasbonLocal({ id: res.id || null, waktu: waktu, nama: normalNamaUI(nama), nominal: nominal, keterangan: ket });
                 renderMatriks();
                 Swal.close();
@@ -1222,55 +1297,48 @@
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi lembur.', 'error');
             }
         }
-
         // ===============================================================
         // LOGIKA MATRIKS GRID KOTAK-KOTAK 1:1
         // ===============================================================
         function renderMatriks() {
             const selectBulan = parseInt(document.getElementById('rekapBulan').value); const selectTahun = parseInt(document.getElementById('rekapTahun').value);
-            const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate(); 
-            
+            const jumlahHari = new Date(selectTahun, selectBulan, 0).getDate();
+
             const theadRow = document.getElementById('headerRekapBulanan');
             let headerHtml = `<th class="p-1 border border-gray-400 bg-gray-200 text-gray-700 sticky left-0 z-20 text-[9px] min-w-[70px]">NAMA</th>`;
-            for (let i = 1; i <= jumlahHari; i++) { 
-                headerHtml += `<th class="p-0 border border-gray-400 bg-gray-200 text-center font-black text-[9px] min-w-[26px] w-[26px] h-[26px]">${i}</th>`; 
+            for (let i = 1; i <= jumlahHari; i++) {
+                headerHtml += `<th class="p-0 border border-gray-400 bg-gray-200 text-center font-black text-[9px] min-w-[26px] w-[26px] h-[26px]">${i}</th>`;
             }
             headerHtml += `<th class="p-1 border border-gray-400 bg-emerald-200 text-emerald-800 text-[9px] min-w-[70px] text-center uppercase">PAYROLL</th>`;
             headerHtml += `<th class="p-1 border border-gray-400 bg-blue-200 text-blue-900 text-[9px] min-w-[92px] text-center uppercase">TOTAL GAJI</th>`;
             theadRow.innerHTML = headerHtml;
-
             const tbody = document.getElementById('tableRekapBulanan');
-            let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
+            let cacheKaryawan = JSON.parse(localStorage.getItem('v112_cache_nama_karyawan') || '[]');
             if (cacheKaryawan.length === 0) return tbody.innerHTML = `<tr><td colspan="${jumlahHari + 3}" class="p-5 text-center text-gray-400 italic text-xs">Belum ada karyawan.</td></tr>`;
-
             let karyawanSet = new Set(); let gajiDict = {};
             cacheKaryawan.forEach(k => { const nm = normalNamaUI(k.nama); karyawanSet.add(nm); gajiDict[nm] = parseInt(k.gaji) || 0; });
-
             let matriks = {}; let rekapFinansial = {};
             karyawanSet.forEach(nama => { matriks[nama] = {}; rekapFinansial[nama] = { kasbon: 0, lemburRp: 0, jmlLembur: 0, jmlSetHari: 0 }; for (let i = 1; i <= jumlahHari; i++) { matriks[nama][i] = ""; } });
-
             if (cacheRiwayatGlobal) {
                 cacheRiwayatGlobal.slice().reverse().forEach(t => {
                     let dPars = parseTanggalSakti(t.waktu);
                     if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                         let dTgl = dPars.tgl; let nama = normalNamaUI(t.nama);
-                        if (matriks[nama] && !t.status.includes("PULANG")) { 
-                            if (t.status === "PAGI" || t.status.includes("MASUK")) matriks[nama][dTgl] = "✔️"; 
-                            else if (t.status === "PAGI (TELAT)") matriks[nama][dTgl] = "⚠️"; 
-                            else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️"; 
+                        if (matriks[nama] && !t.status.includes("PULANG")) {
+                            if (t.status === "PAGI" || t.status.includes("MASUK")) matriks[nama][dTgl] = "✔️";
+                            else if (t.status === "PAGI (TELAT)") matriks[nama][dTgl] = "⚠️";
+                            else if (t.status === "KUNJUNGAN") matriks[nama][dTgl] = "🏍️";
                             else if (t.status.includes("IZIN") || t.status.includes("SAKIT")) matriks[nama][dTgl] = "🪪";
                             else if (t.status === "SETENGAH HARI") matriks[nama][dTgl] = "🌗";
-                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = "✖️"; 
+                            else if (t.status.includes("ALPA")) matriks[nama][dTgl] = "✖️";
                         }
                     }
                 });
             }
-
             cacheKasbonGlobal.forEach(kb => {
                 let nama = normalNamaUI(kb.nama); if(!rekapFinansial[nama]) return;
                 let ketText = String(kb.keterangan || '');
                 let ketUpper = ketText.toUpperCase();
-
                 if (ketUpper.includes("LEMBUR")) {
                     const infoLembur = parseLemburEntry(kb);
                     if(!infoLembur || !infoLembur.tanggalKey) return;
@@ -1282,7 +1350,6 @@
                     }
                     return;
                 }
-
                 if (ketUpper.includes("SETENGAH HARI")) {
                     const targetSetengah = ekstrakTanggalDariKeterangan(ketText) || tanggalKeyDariText(kb.waktu);
                     if(!targetSetengah) return;
@@ -1294,24 +1361,23 @@
                     }
                     return;
                 }
-
                 let dPars = parseTanggalSakti(kb.waktu);
                 if (dPars && dPars.bln === selectBulan && dPars.thn === selectTahun) {
                     let nom = parseInt(kb.nominal) || 0;
-                    rekapFinansial[nama].kasbon += nom; 
+                    rekapFinansial[nama].kasbon += nom;
                 }
             });
+            let grandTotalBersih = 0; let bodyHtml = ""; databaseCetakSlip = {};
 
-            let grandTotalBersih = 0; let bodyHtml = ""; databaseCetakSlip = {}; 
-            
             karyawanSet.forEach(nama => {
                 bodyHtml += `<tr class="hover:bg-blue-50 transition"><td class="p-1 border border-gray-400 font-bold text-gray-800 text-left sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-[9px] z-10 uppercase truncate max-w-[80px]">${nama}</td>`;
-                
+
                 let hadirPenuh = 0;
+                let setengahHariAktif = 0;
                 for (let i = 1; i <= jumlahHari; i++) {
                     let sim = matriks[nama][i]; let styleWarna = "";
-                    if (sim === "✔️" || sim === "⚠️" || sim === "🏍️") hadirPenuh++; 
-
+                    if (sim === "✔️" || sim === "⚠️" || sim === "🏍️") hadirPenuh++;
+                    if (sim === "🌗") setengahHariAktif++;
                     if (sim === "✔️") styleWarna = "text-green-600 font-bold bg-green-50";
                     else if (sim === "⚠️") styleWarna = "text-red-500 font-bold bg-red-50";
                     else if (sim === "🏍️") styleWarna = "text-blue-500 font-bold bg-blue-50";
@@ -1319,34 +1385,47 @@
                     else if (sim === "🌗") styleWarna = "text-orange-500 font-bold bg-orange-50";
                     else if (sim === "✖️") styleWarna = "bg-red-600 text-white font-bold";
                     else if (sim === "") { styleWarna = "bg-red-500 text-white font-bold"; }
-                    
+
                     let cursorStyle = isEditPintasActive ? "cursor-pointer hover:bg-yellow-200 transition ring-inset ring-2 ring-yellow-500 z-20 relative shadow-lg" : "";
-                    
+
                     bodyHtml += `<td onclick="handleCellClick('${nama}', ${i}, '${sim}')" class="p-0 border border-gray-400 text-center text-[10px] h-[26px] ${styleWarna} ${cursorStyle}">${sim}</td>`;
                 }
-                
+
                 let gajiHarian = gajiDict[nama] || 0;
                 const dataAsli = {
                     hadir: hadirPenuh,
-                    setHari: rekapFinansial[nama].jmlSetHari,
+                    setHari: setengahHariAktif,
                     lemburJam: rekapFinansial[nama].jmlLembur,
                     kasbon: rekapFinansial[nama].kasbon,
                     uangLembur: rekapFinansial[nama].lemburRp
                 };
                 const koreksi = getKoreksiGajiAktif(nama, selectBulan, selectTahun);
-                const hadirFinal = koreksi ? Math.max(0, parseInt(koreksi.hadirPenuh) || 0) : dataAsli.hadir;
-                const setengahFinal = koreksi ? Math.max(0, parseInt(koreksi.setengahHari) || 0) : dataAsli.setHari;
-                const lemburJamFinal = koreksi ? Math.max(0, parseFloat(koreksi.lemburJam) || 0) : dataAsli.lemburJam;
-                const kasbonFinal = koreksi ? Math.max(0, parseInt(koreksi.kasbon) || 0) : dataAsli.kasbon;
+                const modeKoreksiDelta = !!koreksi && String(koreksi.correctionMode || '').toUpperCase() === 'DELTA';
+                const deltaHadir = modeKoreksiDelta ? (Number(koreksi.hadirPenuh || 0) - Number(koreksi.baseHadirPenuh || 0)) : 0;
+                const deltaSetengah = modeKoreksiDelta ? (Number(koreksi.setengahHari || 0) - Number(koreksi.baseSetengahHari || 0)) : 0;
+                const deltaLemburJam = modeKoreksiDelta ? (Number(koreksi.lemburJam || 0) - Number(koreksi.baseLemburJam || 0)) : 0;
+                const deltaKasbon = modeKoreksiDelta ? (Number(koreksi.kasbon || 0) - Number(koreksi.baseKasbon || 0)) : 0;
+                const hadirFinal = koreksi
+                    ? Math.max(0, modeKoreksiDelta ? dataAsli.hadir + deltaHadir : (parseInt(koreksi.hadirPenuh) || 0))
+                    : dataAsli.hadir;
+                const setengahFinal = koreksi
+                    ? Math.max(0, modeKoreksiDelta ? dataAsli.setHari + deltaSetengah : (parseInt(koreksi.setengahHari) || 0))
+                    : dataAsli.setHari;
+                const lemburJamFinal = koreksi
+                    ? Math.max(0, modeKoreksiDelta ? dataAsli.lemburJam + deltaLemburJam : (parseFloat(koreksi.lemburJam) || 0))
+                    : dataAsli.lemburJam;
+                const kasbonFinal = koreksi
+                    ? Math.max(0, modeKoreksiDelta ? dataAsli.kasbon + deltaKasbon : (parseInt(koreksi.kasbon) || 0))
+                    : dataAsli.kasbon;
                 const tarifLemburFinal = koreksi ? (parseInt(koreksi.tarifLembur) || parseInt(configHRD.tarifLembur) || 0) : (parseInt(configHRD.tarifLembur) || 0);
-
                 let uangHadirPenuh = hadirFinal * gajiHarian;
                 let uangSetHari = setengahFinal * (gajiHarian / 2);
-                let totalLembur = hitungNominalLemburFinal(koreksi, dataAsli, lemburJamFinal, tarifLemburFinal);
+                let totalLembur = modeKoreksiDelta
+                    ? Math.max(0, Number(dataAsli.uangLembur || 0) + (Number(koreksi.lemburRp || 0) - Number(koreksi.baseLemburRp || 0)))
+                    : hitungNominalLemburFinal(koreksi, dataAsli, lemburJamFinal, tarifLemburFinal);
                 let totalPotongan = kasbonFinal;
                 let sisaBersih = uangHadirPenuh + uangSetHari + totalLembur - totalPotongan;
                 grandTotalBersih += sisaBersih;
-
                 databaseCetakSlip[nama] = {
                     hadir: hadirFinal, uangPokok: uangHadirPenuh, setHari: setengahFinal, uangSetHari: uangSetHari,
                     lemburJam: lemburJamFinal, uangLembur: totalLembur, kasbon: totalPotongan, bersih: sisaBersih,
@@ -1356,7 +1435,6 @@
                     catatanKoreksi: koreksi ? (koreksi.catatan || 'Koreksi admin') : '',
                     updatedAtKoreksi: koreksi ? (koreksi.updatedAt || '') : '', dataAsli: dataAsli
                 };
-
                 const btnPayrollClass = koreksi ? 'bg-orange-500 hover:bg-orange-600' : 'bg-emerald-600 hover:bg-emerald-700';
                 const btnPayrollIcon = koreksi ? 'fa-user-edit' : 'fa-eye';
                 const btnPayrollText = koreksi ? 'GAJI EDIT' : 'BUKA GAJI';
@@ -1368,11 +1446,9 @@
                 </td>
                 <td class="p-1 border border-gray-400 ${totalGajiWarna} text-center text-[9px] font-black whitespace-nowrap" title="Total gaji bersih ${nama}">${formatRupiah(sisaBersih)}</td></tr>`;
             });
-
             bodyHtml += `<tr class="bg-gray-800 text-white font-bold border-t border-black"><td class="p-1.5 sticky left-0 z-10 bg-gray-800 border-r border-gray-600 text-[10px]">TOTAL</td><td colspan="${jumlahHari + 1}" class="p-1 border-r border-gray-600 text-center text-[9px] text-emerald-300">Pengeluaran Keseluruhan Gaji Bulan Ini</td><td class="p-1.5 border border-gray-600 text-center text-[11px] font-black text-emerald-400 whitespace-nowrap">${formatRupiah(grandTotalBersih)}</td></tr>`;
             tbody.innerHTML = bodyHtml;
         }
-
         // ===============================================================
         // FUNGSI POPUP BUKA GAJI, WHATSAPP, & CETAK DOKUMEN RESMI
         // ===============================================================
@@ -1387,14 +1463,12 @@
                     <i class="fas fa-user-edit"></i> Payroll ini memakai koreksi admin.<br>
                     <span class="font-normal">${data.catatanKoreksi || 'Koreksi admin'}${data.updatedAtKoreksi ? ' • ' + data.updatedAtKoreksi : ''}</span>
                 </div>` : '';
-
             const rowGaji = (label, detail, nominal, warna, fokus, prefix = '') => `
                 <div class="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm mb-1 ${warna}">
                     <span>${label} (${detail}):</span>
                     <span class="font-semibold whitespace-nowrap">${prefix}${nominal}</span>
                     <button type="button" onclick="editDataGaji(decodeURIComponent('${namaEncoded}'), '${fokus}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-[10px] font-black whitespace-nowrap"><i class="fas fa-edit"></i> Edit</button>
                 </div>`;
-
             let htmlGaji = `
                 <div class="text-left text-xs font-bold text-gray-600 mb-3 border-b pb-2">Periode: ${data.periode}</div>
                 ${infoKoreksi}
@@ -1409,7 +1483,6 @@
                 </div>
                 ${data.koreksiAktif ? `<button onclick="hapusKoreksiGaji(decodeURIComponent('${namaEncoded}'))" class="mt-2 w-full bg-red-50 hover:bg-red-100 border border-red-300 text-red-600 py-2 rounded-lg font-bold text-[10px]"><i class="fas fa-undo"></i> Hapus Koreksi & Kembali ke Data Absensi</button>` : ''}
             `;
-
             Swal.fire({
                 title: namaNormal,
                 html: htmlGaji,
@@ -1420,7 +1493,6 @@
                 width: 560
             });
         }
-
         async function editDataGaji(nama, fokusField) {
             renderMatriks();
             const namaNormal = normalNamaUI(nama);
@@ -1428,7 +1500,6 @@
             if(!data) return Swal.fire('Error', 'Data gaji tidak ditemukan', 'error');
             const jumlahHari = new Date(data.tahun, data.bulan, 0).getDate();
             const catatanAwal = data.koreksiAktif ? data.catatanKoreksi : 'Koreksi admin';
-
             const result = await Swal.fire({
                 title: `Edit Gaji: ${namaNormal}`,
                 html: `
@@ -1506,21 +1577,18 @@
                         if(!Number.isFinite(value)) throw new Error(`${label} tidak valid.`);
                         return value;
                     };
-
                     try {
                         const hadirRaw = readRequiredNumber('editGajiHadir', 'Hadir Penuh');
                         const setengahRaw = readRequiredNumber('editGajiSetengah', 'Setengah Hari');
                         const lemburJamRaw = readRequiredNumber('editGajiLemburJam', 'Jam Lembur');
                         const lemburRpRaw = readRequiredNumber('editGajiLemburRp', 'Nominal Lembur');
                         const kasbonRaw = readRequiredNumber('editGajiKasbon', 'Kasbon');
-
                         if(!Number.isInteger(hadirRaw) || hadirRaw < 0) throw new Error('Hadir Penuh harus berupa bilangan bulat 0 atau lebih.');
                         if(!Number.isInteger(setengahRaw) || setengahRaw < 0) throw new Error('Setengah Hari harus berupa bilangan bulat 0 atau lebih.');
                         if(lemburJamRaw < 0 || lemburJamRaw > 1000) throw new Error('Jam Lembur tidak valid.');
                         if(lemburRpRaw < 0 || lemburRpRaw > 1000000000) throw new Error('Nominal Lembur tidak valid.');
                         if(kasbonRaw < 0 || kasbonRaw > 1000000000) throw new Error('Nominal Kasbon tidak valid.');
                         if((hadirRaw + setengahRaw) > jumlahHari) throw new Error(`Hadir Penuh + Setengah Hari maksimal ${jumlahHari} hari.`);
-
                         const catatan = document.getElementById('editGajiCatatan').value.trim() || 'Koreksi admin';
                         return {
                             hadirPenuh: hadirRaw,
@@ -1536,7 +1604,6 @@
                     }
                 }
             });
-
             if(!result.isConfirmed || !result.value) return;
             Swal.fire({ title: 'Memperbarui seluruh data gaji...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
@@ -1570,7 +1637,6 @@
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan koreksi gaji.', 'error');
             }
         }
-
         async function hapusKoreksiGaji(nama) {
             renderMatriks();
             const namaNormal = normalNamaUI(nama);
@@ -1600,18 +1666,15 @@
                 Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menghapus koreksi gaji.', 'error');
             }
         }
-
         function kirimWA(nama) {
-            let cacheKaryawan = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]'); 
+            let cacheKaryawan = JSON.parse(localStorage.getItem('v112_cache_nama_karyawan') || '[]');
             let kar = cacheKaryawan.find(k => k.nama.toUpperCase() === nama.toUpperCase());
-            
+
             if(!kar || !kar.wa || kar.wa === "-") {
                 return Swal.fire('Gagal', `Nomor WA untuk ${nama} belum diatur di menu Data Karyawan.`, 'error');
             }
-
             let noWA = kar.wa.toString().replace(/[^0-9]/g, '');
             if(noWA.startsWith('0')) { noWA = '62' + noWA.substring(1); }
-
             const data = databaseCetakSlip[normalNamaUI(nama)];
             let pesan = `*SLIP GAJI FAJRI MANDIRI FURNITUR* 🏢\n\n`;
             pesan += `Nama: *${nama}*\n`;
@@ -1625,21 +1688,19 @@
             pesan += `--------------------------------\n`;
             pesan += `*TOTAL DITERIMA: ${formatRupiah(data.bersih)}*\n\n`;
             pesan += `_Terima kasih atas kerja keras dan dedikasinya!_`;
-
             let url = `https://wa.me/${noWA}?text=${encodeURIComponent(pesan)}`;
             window.open(url, '_blank');
         }
-
         function cetakSlipGaji(nama) {
             const data = databaseCetakSlip[normalNamaUI(nama)]; if(!data) return Swal.fire('Error', 'Data belum siap dicetak', 'error');
-            
+
             document.getElementById('printArea').innerHTML = `
                 <div style="padding: 40px; font-family: sans-serif; color: black; background: white; width: 100%; min-height: 100vh;">
                     <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 15px; margin-bottom: 30px;">
                         <h1 style="font-size: 32px; font-weight: 900; letter-spacing: 2px; margin: 0;">FAJRI MANDIRI FURNITUR</h1>
                         <p style="margin: 5px 0 0 0; color: #555; font-weight: bold;">DOKUMEN RESMI PENGGAJIAN KARYAWAN</p>
                     </div>
-                    
+
                     <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
                         <div>
                             <p style="margin:0; font-weight:bold; color: #666;">Diberikan Kepada:</p>
@@ -1651,21 +1712,21 @@
                         </div>
                     </div>
                     ${data.koreksiAktif ? `<div style="margin: -10px 0 20px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; font-size: 12px; font-weight: bold;">PAYROLL DIKOREKSI ADMIN: ${data.catatanKoreksi || 'Koreksi admin'}</div>` : ''}
-                    
+
                     <h3 style="border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">RINCIAN KOMPONEN GAJI</h3>
-                    
+
                     <table style="width: 100%; font-size: 18px; border-collapse: collapse; margin-bottom: 30px;">
                         <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Kehadiran Penuh (${data.hadir}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangPokok)}</td></tr>
                         <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Setengah Hari (${data.setHari}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangSetHari)}</td></tr>
                         <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatBonusRupiah(data.uangLembur)}</td></tr>
                         <tr><td style="padding: 12px 0; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">Potongan Kasbon</td><td style="text-align: right; font-family: monospace; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">${formatRupiah(data.kasbon)}</td></tr>
                     </table>
-                    
+
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
                         <span style="font-size: 22px; font-weight: 900;">TOTAL DITERIMA:</span>
                         <span style="font-size: 28px; font-weight: 900; background: #f3f4f6; padding: 10px 20px; border: 2px solid black;">${formatRupiah(data.bersih)}</span>
                     </div>
-                    
+
                     <div style="display: flex; justify-content: space-between; margin-top: 80px; font-size: 16px;">
                         <div style="text-align: center; width: 250px;">
                             <p style="margin-bottom: 100px; font-weight: bold;">Penerima,</p>
@@ -1680,21 +1741,19 @@
             `;
             window.print();
         }
-
         function cetakSemuaSlipGaji() {
             if(Object.keys(databaseCetakSlip).length === 0) return Swal.fire('Kosong', 'Belum ada data gaji untuk dicetak', 'error');
-
             let htmlAllSlips = "";
             for(let nama in databaseCetakSlip) {
                 let data = databaseCetakSlip[nama];
-                
+
                 htmlAllSlips += `
                     <div style="page-break-after: always; padding: 40px; font-family: sans-serif; color: black; background: white; width: 100%; min-height: 100vh;">
                         <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 15px; margin-bottom: 30px;">
                             <h1 style="font-size: 32px; font-weight: 900; letter-spacing: 2px; margin: 0;">FAJRI MANDIRI FURNITUR</h1>
                             <p style="margin: 5px 0 0 0; color: #555; font-weight: bold;">DOKUMEN RESMI PENGGAJIAN KARYAWAN</p>
                         </div>
-                        
+
                         <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
                             <div>
                                 <p style="margin:0; font-weight:bold; color: #666;">Diberikan Kepada:</p>
@@ -1705,21 +1764,21 @@
                                 <p style="margin:5px 0 0 0; font-size: 20px; font-weight: bold;">${data.periode}</p>
                             </div>
                         </div>
-                        
+
                         <h3 style="border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">RINCIAN KOMPONEN GAJI</h3>
-                        
+
                         <table style="width: 100%; font-size: 18px; border-collapse: collapse; margin-bottom: 30px;">
                             <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Kehadiran Penuh (${data.hadir}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangPokok)}</td></tr>
                             <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee;">Gaji Setengah Hari (${data.setHari}x)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee;">${formatRupiah(data.uangSetHari)}</td></tr>
                             <tr><td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">Tambahan Lembur (${data.lemburJam} Jam)</td><td style="text-align: right; font-family: monospace; border-bottom: 1px solid #eee; color: #16a34a; font-weight: bold;">${formatBonusRupiah(data.uangLembur)}</td></tr>
                             <tr><td style="padding: 12px 0; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">Potongan Kasbon</td><td style="text-align: right; font-family: monospace; border-bottom: 2px solid black; color: #dc2626; font-weight: bold;">${formatRupiah(data.kasbon)}</td></tr>
                         </table>
-                        
+
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
                             <span style="font-size: 22px; font-weight: 900;">TOTAL DITERIMA:</span>
                             <span style="font-size: 28px; font-weight: 900; background: #f3f4f6; padding: 10px 20px; border: 2px solid black;">${formatRupiah(data.bersih)}</span>
                         </div>
-                        
+
                         <div style="display: flex; justify-content: space-between; margin-top: 80px; font-size: 16px;">
                             <div style="text-align: center; width: 250px;">
                                 <p style="margin-bottom: 100px; font-weight: bold;">Penerima,</p>
@@ -1733,16 +1792,14 @@
                     </div>
                 `;
             }
-            
+
             document.getElementById('printArea').innerHTML = htmlAllSlips;
             window.print();
         }
-
         function cetakRekapGlobal() {
             let selectBulan = document.getElementById('rekapBulan').options[document.getElementById('rekapBulan').selectedIndex].text;
             let selectTahun = document.getElementById('rekapTahun').value;
             let periode = `${selectBulan} ${selectTahun}`;
-
             let htmlRekap = `
                 <div class="p-8 font-sans text-black bg-white w-full min-h-screen">
                     <h1 class="text-3xl font-black text-center mb-1 tracking-widest text-gray-800">FAJRI TOYS</h1>
@@ -1761,7 +1818,6 @@
                         </thead>
                         <tbody>
             `;
-
             let grandTotal = 0;
             for(let nama in databaseCetakSlip) {
                 let d = databaseCetakSlip[nama];
@@ -1777,7 +1833,6 @@
                 `;
                 grandTotal += d.bersih;
             }
-
             htmlRekap += `
                         </tbody>
                         <tfoot>
@@ -1798,7 +1853,6 @@
             document.getElementById('printArea').innerHTML = htmlRekap;
             window.print();
         }
-
         // --- MANAJEMEN KARYAWAN DENGAN TOMBOL MATA SENSOR DATA ---
         function toggleSensitiveData() {
             isDataSensitifVisible = !isDataSensitifVisible;
@@ -1812,55 +1866,51 @@
             }
             loadDataKaryawanOwner();
         }
-
         function loadDataKaryawanOwner() {
-            const tbody = document.getElementById('tableKaryawanOwner'); const cacheNama = localStorage.getItem('cache_nama_karyawan');
+            const tbody = document.getElementById('tableKaryawanOwner'); const cacheNama = localStorage.getItem('v112_cache_nama_karyawan');
             if (cacheNama) {
                 let data = JSON.parse(cacheNama); let html = "";
-                data.forEach((k, idx) => { 
+                data.forEach((k, idx) => {
                     let waText = k.wa && k.wa !== '-' ? k.wa.toString().replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim() : '-';
-                    let displayWa = isDataSensitifVisible ? waText : waText.replace(/\d/g, '*').replace(/\*/, '0').replace(/\*/, '8'); 
+                    let displayWa = isDataSensitifVisible ? waText : waText.replace(/\d/g, '*').replace(/\*/, '0').replace(/\*/, '8');
                     if(!isDataSensitifVisible && displayWa.length > 5 && waText !== '-') displayWa = displayWa.substring(0,4) + ' **** ****';
-                    
-                    let displayGaji = isDataSensitifVisible ? formatRupiah(k.gaji || 0) : '<span class="text-gray-400">Rp ••••••</span>';
 
-                    html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 text-xs text-green-600 font-semibold whitespace-nowrap">${displayWa}</td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">••••••</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">${displayGaji}</td><td class="p-2.5 text-center whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '${k.password}', '${k.gaji || 0}', '${k.wa || ''}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-1"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
+                    let displayGaji = isDataSensitifVisible ? formatRupiah(k.gaji || 0) : '<span class="text-gray-400">Rp ••••••</span>';
+                    html += `<tr class="hover:bg-gray-50"><td class="p-2.5 font-bold text-gray-800">${k.nama}<br><span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${k.tipe}</span></td><td class="p-2.5 text-xs text-green-600 font-semibold whitespace-nowrap">${displayWa}</td><td class="p-2.5 font-mono font-bold text-center text-emerald-600 tracking-widest">••••••</td><td class="p-2.5 text-right text-blue-600 font-bold text-[10px] whitespace-nowrap">${displayGaji}</td><td class="p-2.5 text-center whitespace-nowrap"><button onclick="editKaryawanAPI('${k.nama}', '${k.tipe}', '', '${k.gaji || 0}', '${k.wa || ''}')" class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-1"><i class="fas fa-edit"></i></button><button onclick="hapusKaryawanAPI('${k.nama}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs"><i class="fas fa-trash-alt"></i></button></td></tr>`;
                 });
                 tbody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-xs">Belum ada karyawan</td></tr>';
             }
         }
-
-        async function tambahKaryawanAPI() { 
-            const nama = document.getElementById('addNama').value.trim(); const wa = document.getElementById('addWA').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0; 
-            if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error'); 
-            Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() }); 
-            try { 
-                const res = await kirimAPI({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji, wa: wa }, 15000); 
-                document.getElementById('addNama').value = ''; document.getElementById('addWA').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Karyawan tersimpan!' }); 
-            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan ke server.', 'error'); } 
+        async function tambahKaryawanAPI() {
+            const nama = document.getElementById('addNama').value.trim(); const wa = document.getElementById('addWA').value.trim(); const tipe = document.getElementById('addTipe').value; const password = document.getElementById('addPassword').value.trim(); const gaji = document.getElementById('addGaji').value || 0;
+            if(!nama || !password) return Swal.fire('Error', 'Lengkapi Nama & Password!', 'error');
+            Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await kirimAPI({ action: "tambah_karyawan", nama: nama, tipe: tipe, password: password, gaji: gaji, wa: wa }, 15000);
+                document.getElementById('addNama').value = ''; document.getElementById('addWA').value = ''; document.getElementById('addPassword').value = ''; document.getElementById('addGaji').value = ''; await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Karyawan tersimpan!' });
+            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan ke server.', 'error'); }
         }
-        
-        async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama, waLama) { 
-            const { value: formValues } = await Swal.fire({ 
-                title: 'Edit: ' + nama, 
+
+        async function editKaryawanAPI(nama, tipeLama, passLama, gajiLama, waLama) {
+            const { value: formValues } = await Swal.fire({
+                title: 'Edit: ' + nama,
                 html: `
                     <input id="swal-wa" type="text" oninput="formatWA(this)" class="swal2-input mt-2 w-full font-bold text-green-600 text-center" placeholder="No. WA (0812...)" value="${waLama}">
                     <select id="swal-tipe" class="swal2-input mt-3 w-full font-bold"><option value="TETAP" ${tipeLama==='TETAP'?'selected':''}>TETAP</option><option value="MOBILE" ${tipeLama==='MOBILE'?'selected':''}>MOBILE</option></select>
-                    <input id="swal-pass" class="swal2-input mt-3 w-full font-mono text-center" placeholder="Password" value="${passLama}">
+                    <input id="swal-pass" class="swal2-input mt-3 w-full font-mono text-center" placeholder="Password baru (kosongkan bila tidak diubah)" value="">
                     <input id="swal-gaji" type="number" class="swal2-input mt-3 w-full font-bold text-blue-600 text-center" placeholder="Gaji/Hari" value="${gajiLama}">
-                `, 
-                focusConfirm: false, showCancelButton: true, confirmButtonText: 'Simpan', 
-                preConfirm: () => { return { wa: document.getElementById('swal-wa').value, tipe: document.getElementById('swal-tipe').value, password: document.getElementById('swal-pass').value, gaji: document.getElementById('swal-gaji').value || 0 } } 
-            }); 
-            if (formValues) { 
-                Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() }); 
-                try { 
-                    const res = await kirimAPI({ action: "edit_karyawan", nama: nama, wa: formValues.wa, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }, 15000); 
-                    await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Data karyawan diperbarui!' }); 
-                } catch (e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal memperbarui data.', 'error'); } 
-            } 
+                `,
+                focusConfirm: false, showCancelButton: true, confirmButtonText: 'Simpan',
+                preConfirm: () => { return { wa: document.getElementById('swal-wa').value, tipe: document.getElementById('swal-tipe').value, password: document.getElementById('swal-pass').value, gaji: document.getElementById('swal-gaji').value || 0 } }
+            });
+            if (formValues) {
+                Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await kirimAPI({ action: "edit_karyawan", nama: nama, wa: formValues.wa, tipe: formValues.tipe, password: formValues.password, gaji: formValues.gaji }, 15000);
+                    await refreshKaryawanOnly(); Swal.close(); switchTabOwner('karyawan'); Toast.fire({ icon: 'success', title: 'Data karyawan diperbarui!' });
+                } catch (e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal memperbarui data.', 'error'); }
+            }
         }
-
         async function hapusKaryawanAPI(nama) {
             Swal.fire({ title: 'Hapus ' + nama + '?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(async (result) => {
                 if (result.isConfirmed) {
@@ -1878,7 +1928,6 @@
                 }
             });
         }
-
         // --- FUNGSI KEUANGAN ---
         async function tambahKasbonAPI() {
             const nama = document.getElementById('kasbonNama').value;
@@ -1902,19 +1951,7 @@
             if(!nama || !tgl) return Swal.fire('Error', 'Pilih nama & tanggal!', 'error');
             const p = tgl.split('-');
             const formatTgl = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`;
-            let cache = JSON.parse(localStorage.getItem('cache_nama_karyawan') || '[]');
-            let kar = cache.find(k => k.nama.toUpperCase() === nama.toUpperCase());
-            if(!kar) return Swal.fire('Error', 'Gaji belum disetting!', 'error');
-            let nom = parseInt(kar.gaji) / 2;
-            Swal.fire({ title: 'Memotong Gaji 50%...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                let waktu = new Date().toLocaleString('id-ID');
-                let ket = `SETENGAH HARI: ${formatTgl}`;
-                await kirimAPI({ action: "tambah_kasbon", waktu: waktu, nama: nama, nominal: nom, keterangan: ket }, 15000);
-                await refreshKasbonOnly();
-                Swal.close();
-                Swal.fire('Berhasil!', `Tgl ${formatTgl} menjadi 🌗`, 'success');
-            } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan setengah hari.', 'error'); }
+            await eksekusiSetengahHariPintas(nama, formatTgl);
         }
         async function tambahLemburAPI() {
             const nama = document.getElementById('lemburNama').value;
@@ -1943,21 +1980,17 @@
                 Toast.fire({ icon: 'success', title: 'Bonus Ditambahkan' });
             } catch(e) { Swal.close(); Swal.fire('Gagal', (e && e.message) ? e.message : 'Gagal menyimpan lembur.', 'error'); }
         }
-
         // --- KAMERA & GPS & ABSEN ---
-        
+
         function decodeSafeURL(value) {
             try { return decodeURIComponent(value || ''); } catch(e) { return value || ''; }
         }
-
         function escapeAttr(value) {
             return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
-
         function bukaFoto(urlEncoded) {
             const url = decodeSafeURL(urlEncoded);
             if (url === "-" || !url) return Swal.fire('Gagal', 'Foto kosong', 'error');
-
             if (String(url).startsWith('data:image')) {
                 return Swal.fire({
                     title: 'Bukti Otentik',
@@ -1967,7 +2000,6 @@
                     confirmButtonColor: '#10b981'
                 });
             }
-
             if (String(url).startsWith('http')) {
                 return Swal.fire({
                     title: 'Bukti Absen',
@@ -1978,15 +2010,12 @@
                     confirmButtonText: 'Tutup'
                 });
             }
-
             Swal.fire({ title: 'Bukti Otentik', imageUrl: url, imageAlt: 'Bukti Absen', width: '95%', confirmButtonColor: '#10b981' });
         }
-
         function bukaMapsInline(mapsEncoded, lat, lng) {
             let mapsUrl = decodeSafeURL(mapsEncoded);
             lat = String(lat || '').trim();
             lng = String(lng || '').trim();
-
             if ((!lat || !lng) && mapsUrl && mapsUrl !== '#') {
                 try {
                     const qMatch = mapsUrl.match(/[?&]q=([^&]+)/);
@@ -1997,14 +2026,11 @@
                     }
                 } catch(e) {}
             }
-
             if (!lat || !lng) {
                 return Swal.fire('Gagal', 'Koordinat maps kosong.', 'error');
             }
-
             const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}&z=18&output=embed`;
             const normalUrl = `https://www.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}`;
-
             Swal.fire({
                 title: 'Lokasi Absen',
                 html: `
@@ -2018,7 +2044,6 @@
                 confirmButtonText: 'Tutup'
             });
         }
-
         function setStatusKamera(teks, tipe = 'loading') {
             const el = document.getElementById('kameraStatus');
             if (!el) return;
@@ -2030,7 +2055,6 @@
             el.className = `absolute top-2 right-2 ${kelas} border px-2 py-1 rounded-lg text-[9px] font-bold z-10`;
             el.innerHTML = `<i class="fas fa-camera mr-1"></i> ${teks}`;
         }
-
         function pesanErrorKamera(err) {
             const nama = String((err && err.name) || '');
             if (nama === 'NotAllowedError' || nama === 'PermissionDeniedError') return 'Izin kamera ditolak. Aktifkan kamera untuk situs ini.';
@@ -2039,7 +2063,6 @@
             if (!window.isSecureContext) return 'Kamera hanya bisa digunakan melalui HTTPS.';
             return 'Kamera belum siap. Muat ulang halaman lalu izinkan kamera.';
         }
-
         function tungguVideoSiap(timeoutMs = 10000) {
             return new Promise((resolve, reject) => {
                 if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return resolve(true);
@@ -2065,7 +2088,6 @@
                 video.addEventListener('canplay', beres);
             });
         }
-
         async function nyalakanKamera() {
             cameraReady = false;
             lastCameraError = null;
@@ -2092,7 +2114,6 @@
                 return false;
             }
         }
-
         async function pastikanKameraSiap() {
             if (cameraReady && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return true;
             const berhasil = await nyalakanKamera();
@@ -2103,7 +2124,6 @@
             }
             return true;
         }
-
         function pesanErrorGPS(err) {
             if (!err) return 'GPS tidak tersedia.';
             if (err.code === 1) return 'Izin lokasi ditolak. Aktifkan Lokasi untuk situs ini.';
@@ -2111,19 +2131,16 @@
             if (err.code === 3) return 'Pencarian GPS terlalu lama. Coba lagi.';
             return 'GPS bermasalah. Pastikan layanan lokasi aktif.';
         }
-
         function terapkanPosisiGPS(pos) {
             currentLat = Number(pos.coords.latitude);
             currentLng = Number(pos.coords.longitude);
             lastGpsAccuracy = Number(pos.coords.accuracy) || null;
             lastGpsAt = Date.now();
             document.getElementById('liveGPS').innerText = `GPS: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}${lastGpsAccuracy ? ` (akurasi ±${Math.round(lastGpsAccuracy)}m)` : ''}`;
-
             const jarakToko = hitungJarak(currentLat, currentLng, TOKO_LAT, TOKO_LNG);
             const jarakGudang = hitungJarak(currentLat, currentLng, GUDANG_LAT, GUDANG_LNG);
             currentJarak = Math.min(jarakToko, jarakGudang);
             namaLokasiAman = jarakToko <= jarakGudang ? 'TOKO' : 'GUDANG';
-
             const labelJarak = document.getElementById('liveJarak');
             if (dataProfil.tipe === 'TETAP') {
                 if (currentJarak <= RADIUS_MAKSIMAL) {
@@ -2138,7 +2155,6 @@
                 labelJarak.className = 'font-mono text-blue-400';
             }
         }
-
         function ambilLokasiSekali(timeoutMs = 18000) {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) return reject(new Error('Browser tidak mendukung GPS.'));
@@ -2149,7 +2165,6 @@
                 );
             });
         }
-
         function nyalakanRadarGPS() {
             if (!navigator.geolocation) {
                 document.getElementById('liveGPS').innerText = 'GPS tidak didukung browser.';
@@ -2166,7 +2181,6 @@
                 { enableHighAccuracy: true, timeout: 20000, maximumAge: 8000 }
             );
         }
-
         async function pastikanGPSBaru() {
             const valid = Number.isFinite(currentLat) && Number.isFinite(currentLng) && Number.isFinite(currentJarak);
             const masihBaru = valid && (Date.now() - lastGpsAt) < 90000;
@@ -2175,14 +2189,11 @@
             await ambilLokasiSekali(18000);
             return true;
         }
-
         function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180; const dP = (lat2-lat1) * Math.PI/180; const dL = (lon2-lon1) * Math.PI/180; const a = Math.sin(dP/2) * Math.sin(dP/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dL/2) * Math.sin(dL/2); return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))); }
-
         function formatWaktuKanonik(tanggal = new Date()) {
             const pad = n => String(n).padStart(2, '0');
             return `${pad(tanggal.getDate())}/${pad(tanggal.getMonth() + 1)}/${tanggal.getFullYear()}, ${pad(tanggal.getHours())}.${pad(tanggal.getMinutes())}.${pad(tanggal.getSeconds())}`;
         }
-
         function setTombolAbsenDisabled(disabled) {
             ['btnPagi', 'btnSetengah', 'btnPulang', 'btnKunjungan', 'btnIzin'].forEach(id => {
                 const el = document.getElementById(id);
@@ -2192,16 +2203,13 @@
                 el.classList.toggle('pointer-events-none', !!disabled);
             });
         }
-
         function gambarFotoKompres(statusAbsen, waktuSekarang) {
             const vw = Number(video.videoWidth) || 0;
             const vh = Number(video.videoHeight) || 0;
             if (vw < 2 || vh < 2) throw new Error('Gambar kamera belum siap. Tunggu sebentar lalu coba lagi.');
-
             let targetWidth = Math.min(320, vw);
             let kualitas = 0.62;
             let hasil = '';
-
             const gambarUlang = () => {
                 const targetHeight = Math.max(180, Math.round(vh * (targetWidth / vw)));
                 kanvas.width = Math.round(targetWidth);
@@ -2212,7 +2220,6 @@
                 ctx.scale(-1, 1);
                 ctx.drawImage(video, 0, 0, kanvas.width, kanvas.height);
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
-
                 const panelH = Math.min(70, Math.max(52, Math.round(kanvas.height * 0.22)));
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
                 ctx.fillRect(0, kanvas.height - panelH, kanvas.width, panelH);
@@ -2224,7 +2231,6 @@
                 ctx.fillStyle = '#facc15'; ctx.fillText(`LOKASI: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}`, 8, kanvas.height - 5);
                 hasil = kanvas.toDataURL('image/jpeg', kualitas);
             };
-
             gambarUlang();
             let penjaga = 0;
             while (hasil.length > FOTO_MAX_CHARS && penjaga < 8) {
@@ -2238,41 +2244,33 @@
             }
             return hasil;
         }
-
         function simpanPendingAbsen(payload) {
             try { localStorage.setItem(PENDING_ABSEN_KEY, JSON.stringify({ payload, savedAt: Date.now() })); } catch (_) {}
         }
-
         function bacaPendingAbsen() {
             try { return JSON.parse(localStorage.getItem(PENDING_ABSEN_KEY) || 'null'); } catch (_) { return null; }
         }
-
         function hapusPendingAbsen() {
             try { localStorage.removeItem(PENDING_ABSEN_KEY); } catch (_) {}
         }
-
         function bacaAntreanFoto() {
             try {
                 const parsed = JSON.parse(localStorage.getItem(PENDING_FOTO_KEY) || '[]');
                 return Array.isArray(parsed) ? parsed : [];
             } catch (_) { return []; }
         }
-
         function simpanAntreanFoto(list) {
             try { localStorage.setItem(PENDING_FOTO_KEY, JSON.stringify((list || []).slice(-8))); } catch (_) {}
         }
-
         function tambahAntreanFoto(item) {
             if (!item || !item.id || !item.fotoBase64) return;
             const list = bacaAntreanFoto().filter(x => x && x.id !== item.id);
             list.push({ id: item.id, nama: item.nama || '', fotoBase64: item.fotoBase64, savedAt: Date.now() });
             simpanAntreanFoto(list);
         }
-
         function hapusDariAntreanFoto(id) {
             simpanAntreanFoto(bacaAntreanFoto().filter(x => x && x.id !== id));
         }
-
         async function sinkronkanSatuFoto(item, silent = true) {
             if (!item || !item.id || !item.fotoBase64) return false;
             try {
@@ -2289,7 +2287,6 @@
                 return false;
             }
         }
-
         let sinkronFotoSedangBerjalan = false;
         async function sinkronkanAntreanFoto(silent = true) {
             if (sinkronFotoSedangBerjalan || !navigator.onLine) return;
@@ -2310,29 +2307,24 @@
                 sinkronFotoSedangBerjalan = false;
             }
         }
-
         function bacaAntreanEfek() {
             try {
                 const parsed = JSON.parse(localStorage.getItem(PENDING_EFFECT_KEY) || '[]');
                 return Array.isArray(parsed) ? parsed : [];
             } catch (_) { return []; }
         }
-
         function simpanAntreanEfek(list) {
             try { localStorage.setItem(PENDING_EFFECT_KEY, JSON.stringify((list || []).slice(-30))); } catch (_) {}
         }
-
         function tambahAntreanEfek(item) {
             if (!item || !item.id) return;
             const list = bacaAntreanEfek().filter(x => x && x.id !== item.id);
             list.push({ id: item.id, savedAt: Date.now() });
             simpanAntreanEfek(list);
         }
-
         function hapusDariAntreanEfek(id) {
             simpanAntreanEfek(bacaAntreanEfek().filter(x => x && x.id !== id));
         }
-
         let sinkronEfekSedangBerjalan = false;
         async function sinkronkanAntreanEfek(silent = true) {
             if (sinkronEfekSedangBerjalan || !navigator.onLine) return;
@@ -2362,7 +2354,6 @@
                 sinkronEfekSedangBerjalan = false;
             }
         }
-
         window.addEventListener('online', () => {
             sinkronkanAntreanEfek(true);
             setTimeout(() => sinkronkanAntreanFoto(true), 1200);
@@ -2375,7 +2366,6 @@
                 navigator.sendBeacon(API_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }));
             } catch (_) {}
         });
-
         async function cekPendingAbsen() {
             if (pendingPromptSedangTampil || absenSedangDiproses || !dataProfil) return;
             const pending = bacaPendingAbsen();
@@ -2420,7 +2410,6 @@
                 pendingPromptSedangTampil = false;
             }
         }
-
         async function prosesIzinSakit() {
             if (absenSedangDiproses) return;
             if (bacaPendingAbsen()) return cekPendingAbsen();
@@ -2430,40 +2419,41 @@
                 if (res.isConfirmed) eksekusiKirimData('IZIN / SAKIT', alasan);
             }
         }
-
         async function prosesAbsen(statusAbsen) {
-            if (absenSedangDiproses) return;
+            if (absenSedangDiproses || persiapanAbsenSedangBerjalan) return;
             if (bacaPendingAbsen()) return cekPendingAbsen();
+            if (statusAbsen === 'PULANG') return infoPulangOtomatis();
             const now = new Date(); const jamSekarang = now.getHours();
-
             let kategori = statusAbsen;
             if (statusAbsen === 'PAGI' && jamSekarang >= 8) statusAbsen = 'PAGI (TELAT)';
             if (statusAbsen.includes('PAGI') || statusAbsen.includes('MASUK')) kategori = 'PAGI';
-
             const jamSudah = getJamAbsenHariIni(kategori);
             if (jamSudah) {
                 return Swal.fire({ icon: 'error', title: 'SUDAH ABSEN!', text: `Kamu sudah absen ${kategori} hari ini pada jam ${jamSudah}. Tidak perlu absen lagi!`, confirmButtonColor: '#10b981' });
             }
-            if (statusAbsen === 'PULANG' && jamSekarang < 17) return Swal.fire('Belum Waktunya!', 'Absen pulang buka jam 17:00!', 'warning');
-
+            persiapanAbsenSedangBerjalan = true;
+            setTombolAbsenDisabled(true);
+            tampilkanOverlayAbsen('Memastikan Kamera & GPS...', 'Menyiapkan bukti absensi. Proses ini biasanya hanya beberapa detik.');
             try {
-                Swal.fire({ title: 'Memastikan Kamera & GPS...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 await Promise.all([pastikanKameraSiap(), pastikanGPSBaru()]);
-                Swal.close();
             } catch (err) {
-                Swal.close();
+                sembunyikanOverlayAbsen();
+                persiapanAbsenSedangBerjalan = false;
+                setTombolAbsenDisabled(false);
+                await tungguSwalTertutup();
                 return Swal.fire('Belum Siap', err.message || 'Kamera atau GPS belum siap.', 'warning');
             }
-
+            sembunyikanOverlayAbsen();
+            persiapanAbsenSedangBerjalan = false;
+            setTombolAbsenDisabled(false);
             if (dataProfil.tipe === 'TETAP' && currentJarak > RADIUS_MAKSIMAL) {
                 if (lastGpsAccuracy && lastGpsAccuracy > 45) {
                     return Swal.fire('GPS Belum Akurat', `Akurasi GPS masih ±${Math.round(lastGpsAccuracy)} meter dan posisi terbaca ${currentJarak} meter dari lokasi. Pindah ke area terbuka lalu coba lagi.`, 'warning');
                 }
                 return Swal.fire('Ditolak!', `Di luar zona (${currentJarak} M)`, 'error');
             }
-
             let laporanHarian = null;
-            if (statusAbsen === 'PULANG' || statusAbsen === 'SETENGAH HARI') {
+            if (statusAbsen === 'SETENGAH HARI') {
                 const hasilLaporan = await Swal.fire({
                     title: 'Laporan Hari Ini',
                     input: 'textarea',
@@ -2471,36 +2461,33 @@
                     showCancelButton: true,
                     confirmButtonText: 'Kirim',
                     cancelButtonText: 'Batal',
-                    confirmButtonColor: '#10b981',
+                    confirmButtonColor: '#0f8b8d',
                     returnFocus: false,
                     heightAuto: false,
+                    showClass: { popup: '' },
+                    hideClass: { popup: '' },
                     inputValidator: (v) => !String(v || '').trim() && 'Laporan tidak boleh kosong!'
                 });
                 if (!hasilLaporan.isConfirmed) return;
                 laporanHarian = String(hasilLaporan.value || '').trim();
-                // Wajib menunggu popup input benar-benar hilang. Tanpa ini iOS kadang
-                // menampilkan loader di popup laporan dan terlihat seperti macet selamanya.
                 await tungguSwalTertutup();
             }
             await eksekusiKirimData(statusAbsen, laporanHarian);
         }
-
         async function eksekusiKirimData(statusAbsen, catatanTambahan) {
             if (absenSedangDiproses) return;
             try {
                 const kameraMasihSiap = cameraReady && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0;
                 const gpsMasihSiap = Number.isFinite(currentLat) && Number.isFinite(currentLng) && Number.isFinite(currentJarak) && (Date.now() - lastGpsAt) < 120000;
-
+                await tungguSwalTertutup();
+                tampilkanOverlayAbsen('Menyiapkan absensi...', 'Memastikan kamera dan GPS tetap valid sebelum data dikirim.');
                 if (!kameraMasihSiap || !gpsMasihSiap) {
-                    await tungguSwalTertutup();
-                    Swal.fire({ title: 'Menyiapkan bukti absensi...', text: 'Memastikan kamera dan GPS satu kali lagi.', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
                     if (!kameraMasihSiap) await pastikanKameraSiap();
                     if (!gpsMasihSiap) await pastikanGPSBaru();
-                    await tungguSwalTertutup();
                 }
-
                 const waktuSekarang = formatWaktuKanonik(new Date());
                 const fotoBase64 = gambarFotoKompres(statusAbsen, waktuSekarang);
+                const catatanFinal = catatanTambahan || '-';
                 const payloadData = {
                     requestId: buatRequestId('ABS'),
                     waktu: waktuSekarang,
@@ -2514,41 +2501,35 @@
                     akurasi: lastGpsAccuracy,
                     fotoBase64,
                     perangkat: deviceID,
-                    catatan: catatanTambahan || '-'
+                    catatan: catatanFinal
                 };
                 await kirimPayloadAbsen(payloadData, false);
             } catch (err) {
+                sembunyikanOverlayAbsen();
                 await tungguSwalTertutup();
                 Swal.fire('Gagal Menyiapkan Absen', err.message || 'Kamera/GPS belum siap.', 'error');
             }
         }
-
         async function kirimPayloadAbsen(payloadData, dariAntrean = false) {
             if (absenSedangDiproses) return;
             let dialihkanKeRetry = false;
             absenSedangDiproses = true;
             setTombolAbsenDisabled(true);
             simpanPendingAbsen(payloadData);
-
             try {
-                if (!backendVersionAktif) await cekBackendKompatibel(false);
-                if (backendVersionAktif && !backendVersionAktif.startsWith('V9.5')) {
-                    throw Object.assign(new Error('Code.gs yang aktif masih versi lama. Deploy Code.gs V9.5 sebagai New version.'), { code: 'OLD_BACKEND' });
+                const backendMasihTerverifikasi = backendVersionAktif === EXPECTED_BACKEND_VERSION && (Date.now() - backendVerifiedAt) < 300000;
+                const backendOK = backendMasihTerverifikasi ? true : await cekBackendKompatibel(false);
+                if (!backendOK) {
+                    throw Object.assign(new Error('Backend Supabase V2 Live Payroll belum aktif.'), { code: 'OLD_BACKEND' });
                 }
-
-                await tungguSwalTertutup();
-                Swal.fire({
-                    title: dariAntrean ? 'Mengirim ulang absensi...' : 'Menyimpan absensi...',
-                    text: 'Data utama diproses maksimal sekitar 20 detik.',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
+                await tungguSwalTertutup(900);
+                tampilkanOverlayAbsen(
+                    dariAntrean ? 'Mengirim ulang absensi...' : 'Menyimpan absensi...',
+                    'Data utama dikirim lebih dulu. Foto bukti disinkronkan setelah absensi sah.'
+                );
                 const fotoBase64 = payloadData.fotoBase64 || '';
                 const payloadRingan = { ...payloadData, fotoTerpisah: true };
                 delete payloadRingan.fotoBase64;
-
                 let result = null;
                 let errorUtama = null;
                 try {
@@ -2561,61 +2542,53 @@
                     errorUtama = err;
                     if (adalahErrorJaringan(err) || err.retryable) {
                         try {
-                            Swal.update({ title: 'Memastikan hasil di server...', text: 'Jangan tutup halaman. Sistem sedang mengecek apakah data sudah masuk.' });
+                            updateOverlayAbsen('Memastikan hasil di server...', 'Sistem mengecek Request ID yang sama agar tidak membuat absensi ganda.');
                             const statusServer = await cekStatusAbsenServer(payloadData.requestId);
                             if (statusServer) result = { ...statusServer, status: 'success', alreadySaved: true };
                         } catch (_) {}
                     }
                 }
                 if (!result) throw errorUtama || new Error('Server tidak memberi jawaban.');
-
                 hapusPendingAbsen();
                 if (result.version) backendVersionAktif = String(result.version);
-
                 const hasilData = (result && result.data) ? result.data : {};
                 const waktuTersimpan = hasilData.waktu || payloadData.waktu;
                 const statusTersimpan = hasilData.status || payloadData.status;
                 const idTersimpan = result.id || hasilData.id || null;
-
                 if (result.allowPhotoUpload && idTersimpan && fotoBase64) {
                     tambahAntreanFoto({ id: idTersimpan, nama: payloadData.nama, fotoBase64 });
                 }
-
                 const kategoriEfek = statusTersimpan.includes('PULANG') || statusTersimpan.includes('SETENGAH');
-                if (idTersimpan && (result.efekPending || kategoriEfek)) {
+                if (idTersimpan && result.efekPending) {
                     tambahAntreanEfek({ id: idTersimpan });
                 }
-
                 if (!cacheRiwayatGlobal) cacheRiwayatGlobal = [];
                 const sudahAdaDiCache = idTersimpan && cacheRiwayatGlobal.some(x => x && x.id === idTersimpan);
                 if (!sudahAdaDiCache) {
                     cacheRiwayatGlobal.unshift({ id: idTersimpan, waktu: waktuTersimpan, nama: payloadData.nama, tipe: payloadData.tipe, status: statusTersimpan, jarak: payloadData.jarak, lat: payloadData.lat, lng: payloadData.lng, perangkat: payloadData.perangkat, catatan: payloadData.catatan });
-                    localStorage.setItem('cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
+                    localStorage.setItem('v112_cache_riwayat_global', JSON.stringify(cacheRiwayatGlobal));
                 }
-
                 // Jalankan sinkronisasi setelah data utama sah, tanpa ditunggu popup.
                 setTimeout(() => sinkronkanAntreanEfek(true), 500);
                 setTimeout(() => sinkronkanAntreanFoto(true), 1800);
-
                 let tambahan = result.alreadySaved || result.duplicateRequest
                     ? 'Data sebelumnya ternyata sudah tersimpan aman. Tidak dibuat ganda.'
                     : 'Data absensi utama sudah tersimpan di server.';
-                if (kategoriEfek) tambahan += ' Perhitungan lembur/potongan disinkronkan terpisah agar tombol pulang tidak macet.';
+                if (result.lemburTersimpan && result.lembur) tambahan += ` Lembur ${result.lembur.lemburJam} jam sudah masuk ke data lembur.`;
                 if (result.allowPhotoUpload && fotoBase64) tambahan += ' Foto bukti ikut disinkronkan otomatis.';
-
-                await tungguSwalTertutup();
+                sembunyikanOverlayAbsen();
+                await tungguSwalTertutup(300);
                 await Swal.fire({ icon: 'success', title: result.alreadySaved ? 'Absen Sudah Tersimpan' : 'Absensi Berhasil!', text: tambahan, confirmButtonColor: '#10b981' });
                 fetchRiwayatRingan(true).catch(() => {});
             } catch (err) {
+                sembunyikanOverlayAbsen();
                 const retryable = adalahErrorJaringan(err) || err.retryable;
                 if (!retryable) hapusPendingAbsen();
                 await tungguSwalTertutup();
-
                 if (err && err.code === 'OLD_BACKEND') {
                     await Swal.fire('Backend Belum Diperbarui', err.message, 'error');
                     return;
                 }
-
                 if (retryable) {
                     const pilih = await Swal.fire({
                         icon: 'warning',
@@ -2635,17 +2608,15 @@
                 }
                 await Swal.fire('Absen Ditolak', err.message || 'Server menolak data.', 'error');
             } finally {
+                sembunyikanOverlayAbsen();
                 if (!dialihkanKeRetry) {
                     absenSedangDiproses = false;
                     setTombolAbsenDisabled(false);
                 }
             }
         }
-
-        // Efek setengah hari dan lembur otomatis sekarang dibuat oleh backend
-        // dalam request absensi yang sama. Fungsi lama sengaja tidak dipanggil lagi
-        // agar tidak ada potongan/bonus ganda ketika jaringan lambat.
-
+        // V10: absensi utama sah lebih dulu. Lembur otomatis diproses terpisah dan idempotent.
+        // Setengah hari dihitung dari status Absensi, tidak pernah ditulis sebagai Kasbon.
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
     </script>
 </body>
